@@ -85,15 +85,15 @@ export default function Hero() {
       className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden gradient-bg"
     >
       {/* Floating orbs */}
-      <div className="orb orb-gold w-[600px] h-[600px] top-[-100px] right-[-100px]" style={{ animationDelay: '0s' }} />
-      <div className="orb orb-navy w-[500px] h-[500px] bottom-[-80px] left-[-80px]" style={{ animationDelay: '3s' }} />
-      <div className="orb orb-gold w-[300px] h-[300px] top-[40%] left-[15%]" style={{ animationDelay: '1.5s', opacity: 0.1 }} />
+      <div className="orb orb-gold w-[320px] h-[320px] sm:w-[600px] sm:h-[600px] top-[-100px] right-[-100px]" style={{ animationDelay: '0s' }} />
+      <div className="orb orb-navy w-[280px] h-[280px] sm:w-[500px] sm:h-[500px] bottom-[-80px] left-[-80px]" style={{ animationDelay: '3s' }} />
+      <div className="orb orb-gold w-[180px] h-[180px] sm:w-[300px] sm:h-[300px] top-[40%] left-[15%]" style={{ animationDelay: '1.5s', opacity: 0.1 }} />
 
       {/* Particle canvas */}
       <canvas ref={canvasRef} className="particles absolute inset-0" />
 
       {/* Hero content */}
-      <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-4xl">
+      <div className="relative z-10 flex flex-col items-center text-center px-4 sm:px-6 max-w-4xl w-full">
         {/* Pen icon ornament */}
         <div className="mb-6 flex flex-col items-center gap-2 animate-[fadeInDown_1s_ease_0.2s_both]">
           <div className="w-px h-8 bg-gradient-to-b from-transparent to-gold/60" />
@@ -107,7 +107,7 @@ export default function Hero() {
 
         {/* Brand name */}
         <h1
-          className="font-serif text-8xl md:text-[9rem] lg:text-[11rem] font-light tracking-[0.25em] text-white mb-0 leading-none animate-[fadeInUp_1s_ease_0.4s_both]"
+          className="font-serif text-[3.2rem] sm:text-7xl md:text-[9rem] lg:text-[11rem] font-light tracking-[0.08em] sm:tracking-[0.15em] md:tracking-[0.25em] text-white mb-0 leading-none animate-[fadeInUp_1s_ease_0.4s_both] break-words"
           style={{ fontFamily: 'Cormorant Garamond, serif' }}
         >
           TEXTUM
@@ -124,22 +124,22 @@ export default function Hero() {
 
         {/* Tagline */}
         <p
-          className="font-serif italic text-2xl md:text-3xl font-light text-white/85 tracking-wide mb-3 animate-[fadeInUp_1s_ease_0.9s_both]"
+          className="font-serif italic text-xl sm:text-2xl md:text-3xl font-light text-white/85 tracking-wide mb-3 animate-[fadeInUp_1s_ease_0.9s_both] px-2"
         >
           De la corrección al aprendizaje
         </p>
-        <p className="text-xs md:text-sm tracking-[0.3em] text-gold/80 font-light uppercase mb-12 animate-[fadeIn_1s_ease_1s_both]">
+        <p className="text-xs md:text-sm tracking-[0.2em] sm:tracking-[0.3em] text-gold/80 font-light uppercase mb-12 animate-[fadeIn_1s_ease_1s_both] text-center px-2">
           Mentoría Académica
         </p>
 
         {/* CTA buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 animate-[fadeInUp_1s_ease_1.1s_both]">
-          <a href="#servicios" className="btn-primary px-10 py-4 text-sm tracking-[0.15em] rounded-sm">
+        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto px-4 sm:px-0 animate-[fadeInUp_1s_ease_1.1s_both]">
+          <a href="#servicios" className="btn-primary px-10 py-4 text-sm tracking-[0.15em] rounded-sm w-full sm:w-auto text-center">
             <span>DESCUBRIR SERVICIOS</span>
           </a>
           <a
             href="#contacto"
-            className="px-10 py-4 text-sm tracking-[0.15em] text-white border border-white/30 rounded-sm hover:border-gold/60 hover:text-gold transition-all duration-300 backdrop-blur-sm bg-white/5"
+            className="px-10 py-4 text-sm tracking-[0.15em] text-white border border-white/30 rounded-sm hover:border-gold/60 hover:text-gold transition-all duration-300 backdrop-blur-sm bg-white/5 w-full sm:w-auto text-center"
           >
             RESERVAR SESIÓN
           </a>
@@ -147,13 +147,13 @@ export default function Hero() {
       </div>
 
       {/* Scroll indicator */}
-      <div className="absolute bottom-10 flex flex-col items-center gap-2 scroll-indicator">
+      <div className="absolute bottom-6 sm:bottom-10 flex flex-col items-center gap-2 scroll-indicator">
         <span className="text-white/40 text-xs tracking-[0.2em] uppercase">Explorar</span>
         <ChevronDown size={18} className="text-gold/60" />
       </div>
 
       {/* Bottom wave */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 overflow-hidden">
+      <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-24 overflow-hidden">
         <svg viewBox="0 0 1440 96" preserveAspectRatio="none" className="w-full h-full">
           <path
             d="M0,96 C360,0 1080,96 1440,0 L1440,96 L0,96Z"

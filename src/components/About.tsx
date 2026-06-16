@@ -1,15 +1,15 @@
 export default function About() {
   return (
-    <section id="sobre-mi" className="section-cream py-28 px-6 relative overflow-hidden">
+    <section id="sobre-mi" className="section-cream py-20 sm:py-28 px-4 sm:px-6 relative overflow-hidden">
       <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230d1f3c' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
       }} />
 
       <div className="max-w-6xl mx-auto">
         {/* Main two-column block */}
-        <div className="grid md:grid-cols-2 gap-16 items-center">
+        <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
           {/* Image */}
-          <div className="reveal-left relative">
+          <div className="reveal-left relative mx-2 sm:mx-0 mb-6 md:mb-0">
             <div className="relative rounded-sm overflow-hidden aspect-[4/5] shadow-2xl">
               <img
                 src="https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=800"
@@ -19,19 +19,19 @@ export default function About() {
               <div className="absolute inset-0 bg-gradient-to-t from-navy/60 via-transparent to-transparent" />
             </div>
 
-            <div className="absolute -bottom-6 -right-6 glass-cream rounded-sm p-5 shadow-xl max-w-[200px]">
-              <p className="font-serif text-4xl font-semibold text-navy leading-none">+40</p>
+            <div className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 glass-cream rounded-sm p-4 sm:p-5 shadow-xl max-w-[150px] sm:max-w-[200px]">
+              <p className="font-serif text-3xl sm:text-4xl font-semibold text-navy leading-none">+40</p>
               <p className="text-xs tracking-widest text-navy/60 mt-1 uppercase">Años de experiencia</p>
             </div>
 
-            <div className="absolute -top-3 -left-3 w-24 h-24 border-t-2 border-l-2 border-gold/60 rounded-tl-sm" />
+            <div className="absolute -top-3 -left-3 w-20 h-20 sm:w-24 sm:h-24 border-t-2 border-l-2 border-gold/60 rounded-tl-sm" />
           </div>
 
           {/* Content */}
           <div className="reveal space-y-6">
             <div>
               <p className="text-xs tracking-[0.3em] text-gold uppercase mb-3">Sobre nosotros</p>
-              <h2 className="font-serif text-5xl md:text-6xl font-light text-navy leading-tight">
+              <h2 className="font-serif text-4xl sm:text-5xl md:text-6xl font-light text-navy leading-tight">
                 Acompañamiento<br />
                 <em className="not-italic text-gold-gradient">personalizado</em>
               </h2>
@@ -67,10 +67,10 @@ export default function About() {
         </div>
 
         {/* Team members */}
-        <div className="mt-24 reveal">
+        <div className="mt-20 sm:mt-24 reveal">
           <div className="flex items-center gap-4 mb-10">
             <div className="w-12 h-px bg-gradient-to-r from-transparent to-gold/60" />
-            <p className="text-xs tracking-[0.3em] text-gold uppercase">Nuestro equipo</p>
+            <p className="text-xs tracking-[0.3em] text-gold uppercase whitespace-nowrap">Nuestro equipo</p>
             <div className="flex-1 h-px bg-gradient-to-l from-transparent to-gold/60" />
           </div>
 
@@ -80,7 +80,7 @@ export default function About() {
               <div className="flex flex-col md:flex-row">
                 {/* Photo */}
                 <div className="relative md:w-64 flex-shrink-0">
-                  <div className="relative h-72 md:h-full overflow-hidden">
+                  <div className="relative h-56 sm:h-72 md:h-full overflow-hidden">
                     <img
                       src="/WhatsApp_Image_2026-06-15_at_11.19.28.jpeg"
                       alt="Vilma María Pérez Viñas"
@@ -95,12 +95,12 @@ export default function About() {
                 </div>
 
                 {/* Bio */}
-                <div className="flex-1 p-8 md:p-10 flex flex-col justify-center">
+                <div className="flex-1 p-6 sm:p-8 md:p-10 flex flex-col justify-center">
                   <div className="mb-5">
-                    <h3 className="font-serif text-2xl md:text-3xl font-light text-navy leading-snug">
+                    <h3 className="font-serif text-xl sm:text-2xl md:text-3xl font-light text-navy leading-snug">
                       Vilma María Pérez Viñas
                     </h3>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <a
                         href="https://orcid.org/0000-0003-3041-096X"
                         target="_blank"
@@ -137,7 +137,7 @@ export default function About() {
               <div className="flex flex-col md:flex-row-reverse">
                 {/* Photo */}
                 <div className="relative md:w-64 flex-shrink-0">
-                  <div className="relative h-72 md:h-full overflow-hidden">
+                  <div className="relative h-56 sm:h-72 md:h-full overflow-hidden">
                     <img
                       src="/Yadyra_Pinera_Concepcion.png"
                       alt="Yadyra de la Caridad Piñera Concepción"
@@ -152,12 +152,12 @@ export default function About() {
                 </div>
 
                 {/* Bio */}
-                <div className="flex-1 p-8 md:p-10 flex flex-col justify-center">
+                <div className="flex-1 p-6 sm:p-8 md:p-10 flex flex-col justify-center">
                   <div className="mb-5">
-                    <h3 className="font-serif text-2xl md:text-3xl font-light text-navy leading-snug">
+                    <h3 className="font-serif text-xl sm:text-2xl md:text-3xl font-light text-navy leading-snug">
                       Yadyra de la Caridad Piñera Concepción
                     </h3>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <a
                         href="https://orcid.org/0000-0002-8947-1364"
                         target="_blank"

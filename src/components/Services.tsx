@@ -214,18 +214,18 @@ function AddonCard({ addon }: { addon: AddonTier }) {
 
 function IndependentServiceRow({ service }: { service: { name: string; price: string } }) {
   return (
-    <div className="mt-4 flex items-center justify-between gap-6 px-5 py-4 rounded-sm border border-white/8 bg-white/3 hover:border-gold/25 transition-colors duration-300">
-      <div className="flex items-center gap-3">
-        <span className="text-[10px] tracking-[0.2em] uppercase text-white/35 border border-white/15 px-2 py-0.5 rounded-full whitespace-nowrap">
+    <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 px-5 py-4 rounded-sm bg-gold border border-gold-light shadow-[0_8px_40px_rgba(201,168,76,0.35)]">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
+        <span className="text-[10px] tracking-[0.2em] uppercase text-navy/70 border border-navy/30 px-2 py-0.5 rounded-full whitespace-nowrap w-fit">
           Servicio independiente
         </span>
-        <p className="text-sm text-white/70">{service.name}</p>
+        <p className="text-sm text-navy/80 break-words">{service.name}</p>
       </div>
       <div className="flex items-center gap-4 flex-shrink-0">
-        <p className="font-serif text-lg font-semibold text-gold">{service.price}</p>
+        <p className="font-serif text-lg font-semibold text-navy whitespace-nowrap">{service.price}</p>
         <a
           href="#contacto"
-          className="text-xs tracking-[0.12em] px-4 py-2 rounded-sm border border-gold/30 text-gold hover:bg-gold/10 transition-all duration-200"
+          className="text-xs tracking-[0.12em] px-4 py-2 rounded-sm bg-navy text-gold hover:bg-navy-light transition-all duration-200 whitespace-nowrap"
         >
           SOLICITAR
         </a>
@@ -299,15 +299,15 @@ function TierCard({ tier }: { tier: Tier }) {
 
 export default function Services() {
   return (
-    <section id="servicios" className="section-navy py-28 px-6 relative overflow-hidden">
-      <div className="orb orb-gold w-[400px] h-[400px] top-0 right-0 opacity-10" />
-      <div className="orb orb-navy w-[300px] h-[300px] bottom-0 left-0 opacity-20" style={{ animationDelay: '4s' }} />
+    <section id="servicios" className="section-navy py-20 sm:py-28 px-4 sm:px-6 relative overflow-hidden">
+      <div className="orb orb-gold w-[260px] h-[260px] sm:w-[400px] sm:h-[400px] top-0 right-0 opacity-10" />
+      <div className="orb orb-navy w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] bottom-0 left-0 opacity-20" style={{ animationDelay: '4s' }} />
 
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-20 reveal">
+        <div className="text-center mb-14 sm:mb-20 reveal">
           <p className="text-xs tracking-[0.3em] text-gold uppercase mb-4">Qué ofrecemos</p>
-          <h2 className="font-serif text-5xl md:text-6xl font-light text-white leading-tight">
+          <h2 className="font-serif text-4xl sm:text-5xl md:text-6xl font-light text-white leading-tight">
             Servicios de <em className="not-italic text-gold">excelencia</em>
           </h2>
           <div className="flex items-center justify-center gap-4 mt-6">
@@ -320,20 +320,20 @@ export default function Services() {
         </div>
 
         {/* Service blocks */}
-        <div className="space-y-20">
+        <div className="space-y-16 sm:space-y-20">
           {services.map((service) => (
             <div key={service.title} className="reveal">
               {/* Service title */}
-              <div className="flex items-center gap-4 mb-8">
+              <div className="flex flex-wrap items-center gap-4 mb-8">
                 <div>
-                  <h3 className="font-serif text-3xl font-light text-white">{service.title}</h3>
+                  <h3 className="font-serif text-2xl sm:text-3xl font-light text-white">{service.title}</h3>
                   <p className="text-sm text-gold/70 tracking-wide mt-0.5">{service.subtitle}</p>
                 </div>
                 <div className="flex-1 h-px bg-gradient-to-r from-gold/30 to-transparent ml-4 hidden md:block" />
               </div>
 
               {/* Tier cards */}
-              <div className="grid md:grid-cols-3 gap-6 stagger">
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 stagger">
                 {service.tiers.map((tier) => (
                   <TierCard key={tier.name} tier={tier} />
                 ))}
@@ -349,10 +349,10 @@ export default function Services() {
         </div>
 
         {/* Comparison table */}
-        <div className="mt-24 reveal">
+        <div className="mt-20 sm:mt-24 reveal">
           <div className="text-center mb-10">
             <p className="text-xs tracking-[0.3em] text-gold uppercase mb-3">Nuestra diferencia</p>
-            <h3 className="font-serif text-3xl md:text-4xl font-light text-white">
+            <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl font-light text-white">
               ¿Qué significa{' '}
               <em className="not-italic text-gold">"De la corrección al aprendizaje"</em>?
             </h3>
@@ -360,8 +360,8 @@ export default function Services() {
 
           <div className="rounded-sm overflow-hidden border border-white/10">
             {/* Table header */}
-            <div className="grid grid-cols-2">
-              <div className="px-6 py-4 bg-white/5 border-b border-r border-white/10">
+            <div className="grid grid-cols-1 sm:grid-cols-2">
+              <div className="px-6 py-4 bg-white/5 border-b sm:border-r border-white/10">
                 <p className="text-xs tracking-[0.2em] text-white/40 uppercase">Servicio tradicional</p>
               </div>
               <div className="px-6 py-4 bg-gold/10 border-b border-white/10">
@@ -373,9 +373,9 @@ export default function Services() {
             {comparison.map((row, i) => (
               <div
                 key={i}
-                className={`grid grid-cols-2 ${i < comparison.length - 1 ? 'border-b border-white/8' : ''}`}
+                className={`grid grid-cols-1 sm:grid-cols-2 ${i < comparison.length - 1 ? 'border-b border-white/8' : ''}`}
               >
-                <div className="px-6 py-5 border-r border-white/8 flex items-start gap-3">
+                <div className="px-6 py-5 sm:border-r border-b sm:border-b-0 border-white/8 flex items-start gap-3">
                   <span className="text-white/25 text-lg leading-none mt-0.5 flex-shrink-0">✗</span>
                   <p className="text-sm text-white/45 leading-relaxed">{row.traditional}</p>
                 </div>
@@ -389,7 +389,7 @@ export default function Services() {
         </div>
 
         {/* CTA */}
-        <div className="text-center mt-16 reveal">
+        <div className="text-center mt-14 sm:mt-16 reveal">
           <p className="text-white/50 text-sm mb-6">¿Tienes dudas sobre qué nivel es el ideal para ti? Escríbenos.</p>
           <a href="#contacto" className="btn-primary inline-block px-10 py-4 text-xs tracking-[0.15em] rounded-sm">
             <span>SOLICITAR INFORMACIÓN</span>

@@ -42,15 +42,15 @@ export default function Contact() {
   };
 
   return (
-    <section id="contacto" className="section-navy py-28 px-6 relative overflow-hidden">
-      <div className="orb orb-gold w-[500px] h-[500px] top-[-100px] left-[-100px] opacity-10" />
-      <div className="orb orb-gold w-[300px] h-[300px] bottom-0 right-0 opacity-8" style={{ animationDelay: '2s' }} />
+    <section id="contacto" className="section-navy py-20 sm:py-28 px-4 sm:px-6 relative overflow-hidden">
+      <div className="orb orb-gold w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] top-[-100px] left-[-100px] opacity-10" />
+      <div className="orb orb-gold w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] bottom-0 right-0 opacity-8" style={{ animationDelay: '2s' }} />
 
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-16 reveal">
+        <div className="text-center mb-12 sm:mb-16 reveal">
           <p className="text-xs tracking-[0.3em] text-gold uppercase mb-4">Conectemos</p>
-          <h2 className="font-serif text-5xl md:text-6xl font-light text-white leading-tight">
+          <h2 className="font-serif text-4xl sm:text-5xl md:text-6xl font-light text-white leading-tight">
             Inicia tu <em className="not-italic text-gold">transformación</em>
           </h2>
           <p className="text-white/50 text-sm mt-4 max-w-md mx-auto font-light">
@@ -58,7 +58,7 @@ export default function Contact() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-5 gap-12 items-start">
+        <div className="grid lg:grid-cols-5 gap-10 sm:gap-12 items-start">
           {/* Contact info */}
           <div className="lg:col-span-2 reveal-left space-y-8">
             <div>
@@ -79,9 +79,9 @@ export default function Contact() {
                       <div className="w-10 h-10 rounded-sm bg-gold/10 border border-gold/20 flex items-center justify-center flex-shrink-0 group-hover:bg-gold/20 group-hover:border-gold/40 transition-all">
                         <Icon size={18} className="text-gold" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-white/40 text-xs tracking-widest uppercase">{c.label}</p>
-                        <p className="text-white/80 text-sm group-hover:text-gold transition-colors">{c.value}</p>
+                        <p className="text-white/80 text-sm group-hover:text-gold transition-colors break-words">{c.value}</p>
                       </div>
                     </a>
                   );
@@ -105,7 +105,7 @@ export default function Contact() {
 
           {/* Form */}
           <div className="lg:col-span-3 reveal-right">
-            <div className="glass-navy rounded-sm p-8 md:p-10 shadow-2xl">
+            <div className="glass-navy rounded-sm p-6 sm:p-8 md:p-10 shadow-2xl">
               {sent ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
                   <CheckCircle size={56} className="text-gold" strokeWidth={1} />
@@ -159,8 +159,8 @@ export default function Contact() {
                       style={{ background: 'rgba(13,31,60,0.8)' }}
                     >
                       <option value="" className="bg-navy">Selecciona un servicio...</option>
-                      <option value="redaccion" className="bg-navy">Artículo Científico</option>
                       <option value="examen" className="bg-navy">Examen Complexivo</option>
+                      <option value="articulo" className="bg-navy">Artículo Científico</option>
                       <option value="feedback" className="bg-navy">Sesiones de Feedback</option>
                       <option value="plan" className="bg-navy">Plan de Mejora Personalizado</option>
                     </select>
