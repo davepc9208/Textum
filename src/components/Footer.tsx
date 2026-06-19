@@ -1,12 +1,6 @@
 import { Mail, Globe, Linkedin, Instagram, Facebook } from 'lucide-react';
-
-const navLinks = [
-  { href: '#inicio', label: 'Inicio' },
-  { href: '#sobre-mi', label: 'Sobre nosotros' },
-  { href: '#servicios', label: 'Servicios' },
-  { href: '#valores', label: 'Valores' },
-  { href: '#contacto', label: 'Contacto' },
-];
+import { Link } from 'react-router-dom';
+import { useLang } from '../i18n/LangContext';
 
 const socialLinks = [
   { icon: Linkedin, href: '#', label: 'LinkedIn' },
@@ -15,9 +9,20 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const { t } = useLang();
+  const f = t.footer;
+
+  const navLinks = [
+    { href: '/#inicio', label: t.nav.inicio },
+    { href: '/#sobre-mi', label: t.nav.sobre },
+    { href: '/#servicios', label: t.nav.servicios },
+    { href: '/#valores', label: t.nav.valores },
+    { href: '/blog', label: t.nav.blog, isRouter: true },
+    { href: '/#contacto', label: t.nav.contacto },
+  ];
+
   return (
     <footer className="bg-[#070f1e] text-white/60 pt-16 pb-8 px-6 relative overflow-hidden">
-      {/* Gold top border */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
 
       <div className="max-w-6xl mx-auto">
@@ -33,25 +38,26 @@ export default function Footer() {
                 </svg>
                 <div className="h-px w-8 bg-gold/50" />
               </div>
-              <p className="font-serif italic text-sm text-white/50">De la corrección al aprendizaje</p>
+              <p className="font-serif italic text-sm text-white/50">{f.tagline}</p>
             </div>
-            <p className="text-xs leading-relaxed text-white/40 font-light max-w-xs">
-              Mentoría académica personalizada que transforma la corrección en aprendizaje real y duradero.
-            </p>
+            <p className="text-xs leading-relaxed text-white/40 font-light max-w-xs">{f.desc}</p>
           </div>
 
           {/* Nav */}
           <div>
-            <h4 className="text-xs tracking-[0.25em] text-gold/70 uppercase mb-5">Navegación</h4>
+            <h4 className="text-xs tracking-[0.25em] text-gold/70 uppercase mb-5">{f.navTitle}</h4>
             <ul className="space-y-3">
               {navLinks.map((l) => (
                 <li key={l.href}>
-                  <a
-                    href={l.href}
-                    className="text-sm text-white/50 hover:text-gold transition-colors duration-200 tracking-wide"
-                  >
-                    {l.label}
-                  </a>
+                  {l.isRouter ? (
+                    <Link to="/blog" className="text-sm text-white/50 hover:text-gold transition-colors duration-200 tracking-wide">
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <a href={l.href} className="text-sm text-white/50 hover:text-gold transition-colors duration-200 tracking-wide">
+                      {l.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -59,26 +65,22 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="text-xs tracking-[0.25em] text-gold/70 uppercase mb-5">Contacto</h4>
+            <h4 className="text-xs tracking-[0.25em] text-gold/70 uppercase mb-5">{f.contactTitle}</h4>
             <div className="space-y-4">
-              <a href="mailto:hola@mentoriatextum.com" className="flex items-center gap-3 text-sm text-white/50 hover:text-gold transition-colors group">
+              <a href="mailto:revedit917@gmail.com" className="flex items-center gap-3 text-sm text-white/50 hover:text-gold transition-colors group">
                 <Mail size={15} className="text-gold/50 group-hover:text-gold transition-colors" />
-                hola@mentoriatextum.com
+                revedit917@gmail.com
               </a>
-              <a href="#" className="flex items-center gap-3 text-sm text-white/50 hover:text-gold transition-colors group">
+              <a href="https://textumm.netlify.app/" className="flex items-center gap-3 text-sm text-white/50 hover:text-gold transition-colors group">
                 <Globe size={15} className="text-gold/50 group-hover:text-gold transition-colors" />
-                www.mentoriatextum.com
+                textumm.netlify.app
               </a>
               <div className="flex items-center gap-3 pt-2">
                 {socialLinks.map((s) => {
                   const Icon = s.icon;
                   return (
-                    <a
-                      key={s.label}
-                      href={s.href}
-                      aria-label={s.label}
-                      className="w-9 h-9 rounded-sm bg-white/5 border border-white/10 flex items-center justify-center hover:bg-gold/15 hover:border-gold/30 transition-all group"
-                    >
+                    <a key={s.label} href={s.href} aria-label={s.label}
+                      className="w-9 h-9 rounded-sm bg-white/5 border border-white/10 flex items-center justify-center hover:bg-gold/15 hover:border-gold/30 transition-all group">
                       <Icon size={15} className="text-white/50 group-hover:text-gold transition-colors" />
                     </a>
                   );
@@ -88,10 +90,9 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 text-xs text-white/25 tracking-wide">
-          <p>© {new Date().getFullYear()} TEXTUM — Mentoría Académica. Todos los derechos reservados.</p>
-          <p className="text-gold/30">Diseñado con excelencia</p>
+          <p>© {new Date().getFullYear()} TEXTUM — Mentoría Académica. {f.rights}</p>
+          <p className="text-gold/30">{f.designed}</p>
         </div>
       </div>
     </footer>

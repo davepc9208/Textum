@@ -1,14 +1,17 @@
 import { useEffect, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useLang } from '../i18n/LangContext';
 
 export default function Hero() {
+  const { t } = useLang();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    const ctx: CanvasRenderingContext2D = context;
 
     let W = (canvas.width = window.innerWidth);
     let H = (canvas.height = canvas.parentElement?.offsetHeight ?? window.innerHeight);
@@ -39,62 +42,40 @@ export default function Hero() {
     function draw() {
       ctx.clearRect(0, 0, W, H);
       particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0) p.x = W;
-        if (p.x > W) p.x = 0;
-        if (p.y < 0) p.y = H;
-        if (p.y > H) p.y = 0;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(201,168,76,${p.alpha})`;
-        ctx.fill();
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(201,168,76,${p.alpha})`; ctx.fill();
       });
-
-      // Draw connecting lines
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 120) {
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.strokeStyle = `rgba(201,168,76,${0.07 * (1 - dist / 120)})`;
-            ctx.lineWidth = 0.6;
-            ctx.stroke();
+            ctx.lineWidth = 0.6; ctx.stroke();
           }
         }
       }
-
       raf = requestAnimationFrame(draw);
     }
     draw();
 
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', onResize);
-    };
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); };
   }, []);
 
   return (
-    <section
-      id="inicio"
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden gradient-bg"
-    >
-      {/* Floating orbs */}
-      <div className="orb orb-gold w-[320px] h-[320px] sm:w-[600px] sm:h-[600px] top-[-100px] right-[-100px]" style={{ animationDelay: '0s' }} />
-      <div className="orb orb-navy w-[280px] h-[280px] sm:w-[500px] sm:h-[500px] bottom-[-80px] left-[-80px]" style={{ animationDelay: '3s' }} />
-      <div className="orb orb-gold w-[180px] h-[180px] sm:w-[300px] sm:h-[300px] top-[40%] left-[15%]" style={{ animationDelay: '1.5s', opacity: 0.1 }} />
-
-      {/* Particle canvas */}
+    <section id="inicio" className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden gradient-bg">
+      <div className="orb orb-gold w-[600px] h-[600px] top-[-100px] right-[-100px]" style={{ animationDelay: '0s' }} />
+      <div className="orb orb-navy w-[500px] h-[500px] bottom-[-80px] left-[-80px]" style={{ animationDelay: '3s' }} />
+      <div className="orb orb-gold w-[300px] h-[300px] top-[40%] left-[15%]" style={{ animationDelay: '1.5s', opacity: 0.1 }} />
       <canvas ref={canvasRef} className="particles absolute inset-0" />
 
-      {/* Hero content */}
-      <div className="relative z-10 flex flex-col items-center text-center px-4 sm:px-6 max-w-4xl w-full">
-        {/* Pen icon ornament */}
+      <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-4xl">
         <div className="mb-6 flex flex-col items-center gap-2 animate-[fadeInDown_1s_ease_0.2s_both]">
           <div className="w-px h-8 bg-gradient-to-b from-transparent to-gold/60" />
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -105,15 +86,10 @@ export default function Hero() {
           <div className="w-px h-4 bg-gradient-to-b from-gold/60 to-transparent" />
         </div>
 
-        {/* Brand name */}
-        <h1
-          className="font-serif text-[3.2rem] sm:text-7xl md:text-[9rem] lg:text-[11rem] font-light tracking-[0.08em] sm:tracking-[0.15em] md:tracking-[0.25em] text-white mb-0 leading-none animate-[fadeInUp_1s_ease_0.4s_both] break-words"
-          style={{ fontFamily: 'Cormorant Garamond, serif' }}
-        >
+        <h1 className="font-serif text-8xl md:text-[9rem] lg:text-[11rem] font-light tracking-[0.25em] text-white mb-0 leading-none animate-[fadeInUp_1s_ease_0.4s_both]">
           TEXTUM
         </h1>
 
-        {/* Gold rule */}
         <div className="flex items-center gap-4 my-5 w-full max-w-sm animate-[fadeIn_1s_ease_0.8s_both]">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
           <svg width="10" height="10" viewBox="0 0 10 10">
@@ -122,59 +98,38 @@ export default function Hero() {
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
         </div>
 
-        {/* Tagline */}
-        <p
-          className="font-serif italic text-xl sm:text-2xl md:text-3xl font-light text-white/85 tracking-wide mb-3 animate-[fadeInUp_1s_ease_0.9s_both] px-2"
-        >
-          De la corrección al aprendizaje
+        <p className="font-serif italic text-2xl md:text-3xl font-light text-white/85 tracking-wide mb-3 animate-[fadeInUp_1s_ease_0.9s_both]">
+          {t.hero.tagline}
         </p>
-        <p className="text-xs md:text-sm tracking-[0.2em] sm:tracking-[0.3em] text-gold/80 font-light uppercase mb-12 animate-[fadeIn_1s_ease_1s_both] text-center px-2">
-          Mentoría Académica
+        <p className="text-xs md:text-sm tracking-[0.3em] text-gold/80 font-light uppercase mb-12 animate-[fadeIn_1s_ease_1s_both]">
+          {t.hero.sub}
         </p>
 
-        {/* CTA buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto px-4 sm:px-0 animate-[fadeInUp_1s_ease_1.1s_both]">
-          <a href="#servicios" className="btn-primary px-10 py-4 text-sm tracking-[0.15em] rounded-sm w-full sm:w-auto text-center">
-            <span>DESCUBRIR SERVICIOS</span>
+        <div className="flex flex-col sm:flex-row gap-4 animate-[fadeInUp_1s_ease_1.1s_both]">
+          <a href="#servicios" className="btn-primary px-10 py-4 text-sm tracking-[0.15em] rounded-sm">
+            <span>{t.hero.cta1}</span>
           </a>
-          <a
-            href="#contacto"
-            className="px-10 py-4 text-sm tracking-[0.15em] text-white border border-white/30 rounded-sm hover:border-gold/60 hover:text-gold transition-all duration-300 backdrop-blur-sm bg-white/5 w-full sm:w-auto text-center"
-          >
-            RESERVAR SESIÓN
+          <a href="#contacto" className="px-10 py-4 text-sm tracking-[0.15em] text-white border border-white/30 rounded-sm hover:border-gold/60 hover:text-gold transition-all duration-300 backdrop-blur-sm bg-white/5">
+            {t.hero.cta2}
           </a>
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-6 sm:bottom-10 flex flex-col items-center gap-2 scroll-indicator">
-        <span className="text-white/40 text-xs tracking-[0.2em] uppercase">Explorar</span>
+      <div className="absolute bottom-10 flex flex-col items-center gap-2 scroll-indicator">
+        <span className="text-white/40 text-xs tracking-[0.2em] uppercase">{t.hero.scroll}</span>
         <ChevronDown size={18} className="text-gold/60" />
       </div>
 
-      {/* Bottom wave */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-24 overflow-hidden">
+      <div className="absolute bottom-0 left-0 right-0 h-24 overflow-hidden">
         <svg viewBox="0 0 1440 96" preserveAspectRatio="none" className="w-full h-full">
-          <path
-            d="M0,96 C360,0 1080,96 1440,0 L1440,96 L0,96Z"
-            fill="#faf7f2"
-          />
+          <path d="M0,96 C360,0 1080,96 1440,0 L1440,96 L0,96Z" fill="#faf7f2" />
         </svg>
       </div>
 
       <style>{`
-        @keyframes fadeInDown {
-          from { opacity: 0; transform: translateY(-20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(25px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
+        @keyframes fadeInDown { from { opacity:0; transform:translateY(-20px);} to{opacity:1;transform:translateY(0);}}
+        @keyframes fadeInUp { from{opacity:0;transform:translateY(25px);}to{opacity:1;transform:translateY(0);}}
+        @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
       `}</style>
     </section>
   );
