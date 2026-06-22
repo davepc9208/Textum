@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase, Post } from '../lib/supabase';
-import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X } from 'lucide-react';
+import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, ShieldCheck } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
+import RichTextEditor from '../components/RichTextEditor';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function slugify(str: string) {
@@ -34,29 +35,93 @@ const EMPTY: Omit<Post, 'id' | 'created_at'> = {
   reading_time: 1,
 };
 
-// ─── Login form ─────────────────────────────────────────────────────────────
+// ─── Login form (con soporte 2FA) ──────────────────────────────────────────
 function LoginForm({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // 2FA state
+  const [needsMfa, setNeedsMfa] = useState(false);
+  const [factorId, setFactorId] = useState('');
+  const [code, setCode] = useState('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErr('');
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-      if (error) throw error;
-      onLogin();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
-      setErr(msg);
-      console.error('Login error:', err);
-    } finally {
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) {
+      setErr(error.message);
       setLoading(false);
+      return;
     }
+
+    // ¿La cuenta tiene 2FA activado? Si sí, el nivel de sesión actual (aal1)
+    // no es suficiente todavía y hay que pedir el código de la app autenticadora.
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const totpFactor = factors?.totp?.[0];
+      if (totpFactor) {
+        setFactorId(totpFactor.id);
+        setNeedsMfa(true);
+        setLoading(false);
+        return;
+      }
+    }
+
+    onLogin();
+    setLoading(false);
   };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErr('');
+    const { data: challenge, error: chErr } = await supabase.auth.mfa.challenge({ factorId });
+    if (chErr) { setErr(chErr.message); setLoading(false); return; }
+    const { error: verErr } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId: challenge.id,
+      code,
+    });
+    if (verErr) { setErr('Código incorrecto. Inténtalo de nuevo.'); setLoading(false); return; }
+    onLogin();
+    setLoading(false);
+  };
+
+  if (needsMfa) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center px-4">
+        <div className="glass-navy rounded-sm p-10 w-full max-w-sm shadow-2xl">
+          <div className="text-center mb-8">
+            <span className="font-serif text-3xl tracking-[0.2em] text-white">TEXTUM</span>
+            <p className="text-gold/60 text-xs tracking-widest mt-1 uppercase">Verificación en dos pasos</p>
+          </div>
+          <form onSubmit={handleVerifyCode} className="space-y-5">
+            <div>
+              <label className="block text-white/50 text-xs tracking-widest mb-2 uppercase">Código de tu app autenticadora</label>
+              <input
+                type="text" inputMode="numeric" autoFocus value={code}
+                onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                required maxLength={6}
+                className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-center text-2xl tracking-[0.3em] placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all"
+                placeholder="000000"
+              />
+            </div>
+            {err && <p className="text-red-400 text-xs">{err}</p>}
+            <button type="submit" disabled={loading || code.length !== 6}
+              className="btn-primary w-full py-3 text-xs tracking-[0.15em] rounded-sm disabled:opacity-50">
+              <span>{loading ? 'VERIFICANDO...' : 'VERIFICAR'}</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center px-4">
@@ -68,21 +133,91 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-white/50 text-xs tracking-widest mb-2 uppercase">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={loading}
-              className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all disabled:opacity-50" />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+              className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all"
+              placeholder="tu@email.com" />
           </div>
           <div>
             <label className="block text-white/50 text-xs tracking-widest mb-2 uppercase">Contraseña</label>
-            <input type="password" value={pass} onChange={e => setPass(e.target.value)} required disabled={loading}
-              className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all disabled:opacity-50" />
+            <input type="password" value={pass} onChange={e => setPass(e.target.value)} required
+              className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all"
+              placeholder="••••••••" />
           </div>
-          {err && <div className="p-3 bg-red-500/15 border border-red-500/30 rounded-sm text-red-200 text-xs">{err}</div>}
+          {err && <p className="text-red-400 text-xs">{err}</p>}
           <button type="submit" disabled={loading}
             className="btn-primary w-full py-3 text-xs tracking-[0.15em] rounded-sm disabled:opacity-70">
             <span>{loading ? 'ENTRANDO...' : 'ENTRAR'}</span>
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+// ─── Cover image picker (subida desde el computador) ───────────────────────
+function CoverImagePicker({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState('');
+
+  const handlePick = () => fileInputRef.current?.click();
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setErr('');
+    const ext = file.name.split('.').pop();
+    const path = `covers/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from('blog-images').upload(path, file);
+    if (error) {
+      setErr('No se pudo subir la imagen: ' + error.message);
+    } else {
+      const { data } = supabase.storage.from('blog-images').getPublicUrl(path);
+      onChange(data.publicUrl);
+    }
+    setUploading(false);
+    e.target.value = '';
+  };
+
+  return (
+    <div>
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      {value ? (
+        <div className="relative group rounded-sm overflow-hidden border border-navy/15">
+          <img src={value} alt="Portada" className="w-full h-44 object-cover" />
+          <div className="absolute inset-0 bg-navy/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+            <button type="button" onClick={handlePick}
+              className="px-4 py-2 bg-white text-navy text-xs tracking-widest rounded-sm hover:bg-gold transition-colors">
+              CAMBIAR
+            </button>
+            <button type="button" onClick={() => onChange('')}
+              className="px-4 py-2 bg-white/90 text-red-600 text-xs tracking-widest rounded-sm hover:bg-white transition-colors">
+              QUITAR
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handlePick}
+          disabled={uploading}
+          className="w-full h-44 border-2 border-dashed border-navy/20 rounded-sm flex flex-col items-center justify-center gap-2 text-navy/40 hover:border-gold/50 hover:text-gold transition-colors disabled:opacity-60"
+        >
+          {uploading ? (
+            <>
+              <Loader2 size={24} className="animate-spin" />
+              <span className="text-xs tracking-widest">SUBIENDO...</span>
+            </>
+          ) : (
+            <>
+              <Upload size={24} />
+              <span className="text-xs tracking-widest">SUBIR IMAGEN DE PORTADA</span>
+            </>
+          )}
+        </button>
+      )}
+      {err && <p className="text-red-500 text-xs mt-2 flex items-center gap-1.5"><ImageOff size={12} />{err}</p>}
     </div>
   );
 }
@@ -113,26 +248,19 @@ function PostEditor({
   const handleSave = async () => {
     setSaving(true);
     setErr('');
-    try {
-      const payload = {
-        ...form,
-        reading_time: readingTime(form.content_es + form.content_en),
-      };
-      let error;
-      if (initial.id) {
-        ({ error } = await supabase.from('posts').update(payload).eq('id', initial.id));
-      } else {
-        ({ error } = await supabase.from('posts').insert(payload));
-      }
-      if (error) throw error;
-      onSave();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al guardar';
-      setErr(msg);
-      console.error('Save error:', err);
-    } finally {
-      setSaving(false);
+    const payload = {
+      ...form,
+      reading_time: readingTime(form.content_es + form.content_en),
+    };
+    let error;
+    if (initial.id) {
+      ({ error } = await supabase.from('posts').update(payload).eq('id', initial.id));
+    } else {
+      ({ error } = await supabase.from('posts').insert(payload));
     }
+    if (error) setErr(error.message);
+    else onSave();
+    setSaving(false);
   };
 
   const inputCls = 'w-full bg-white border border-navy/15 rounded-sm px-4 py-2.5 text-navy text-sm focus:outline-none focus:border-gold/60 transition-all';
@@ -161,8 +289,8 @@ function PostEditor({
               </div>
             </div>
             <div>
-              <label className={labelCls}>URL de imagen de portada</label>
-              <input className={inputCls} value={form.cover_url} onChange={e => set('cover_url', e.target.value)} placeholder="https://..." />
+              <label className={labelCls}>Imagen de portada</label>
+              <CoverImagePicker value={form.cover_url} onChange={(url) => set('cover_url', url)} />
             </div>
 
             {/* Language tabs */}
@@ -171,7 +299,7 @@ function PostEditor({
                 {(['es', 'en'] as const).map(l => (
                   <button key={l} onClick={() => setTab(l)}
                     className={`flex-1 py-3 text-xs tracking-widest uppercase transition-colors ${tab === l ? 'bg-navy text-gold' : 'bg-white text-navy/50 hover:bg-navy/5'}`}>
-                    {l === 'es' ? '🇪🇸 Español' : '🇬🇧 English'}
+                    {l === 'es' ? 'ES — Español' : 'EN — English'}
                   </button>
                 ))}
               </div>
@@ -187,9 +315,8 @@ function PostEditor({
                       <textarea className={inputCls} rows={2} value={form.excerpt_es} onChange={e => set('excerpt_es', e.target.value)} placeholder="Breve descripción (2-3 frases)" />
                     </div>
                     <div>
-                      <label className={labelCls}>Contenido HTML (ES)</label>
-                      <textarea className={`${inputCls} font-mono text-xs`} rows={12} value={form.content_es} onChange={e => set('content_es', e.target.value)} placeholder="<p>Escribe el contenido en HTML...</p>" />
-                      <p className="text-xs text-navy/35 mt-1">Puedes usar etiquetas HTML: &lt;h2&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;blockquote&gt;</p>
+                      <label className={labelCls}>Contenido (ES)</label>
+                      <RichTextEditor content={form.content_es} onChange={(html) => set('content_es', html)} placeholder="Escribe el artículo en español..." />
                     </div>
                   </>
                 ) : (
@@ -203,8 +330,8 @@ function PostEditor({
                       <textarea className={`${inputCls}`} rows={2} value={form.excerpt_en} onChange={e => set('excerpt_en', e.target.value)} placeholder="Brief description (2-3 sentences)" />
                     </div>
                     <div>
-                      <label className={labelCls}>HTML Content (EN)</label>
-                      <textarea className={`${inputCls} font-mono text-xs`} rows={12} value={form.content_en} onChange={e => set('content_en', e.target.value)} placeholder="<p>Write content in HTML...</p>" />
+                      <label className={labelCls}>Content (EN)</label>
+                      <RichTextEditor content={form.content_en} onChange={(html) => set('content_en', html)} placeholder="Write the article in English..." />
                     </div>
                   </>
                 )}
@@ -222,7 +349,7 @@ function PostEditor({
               <span className="text-sm text-navy/70">{form.published ? 'Publicado' : 'Borrador'}</span>
             </div>
 
-            {err && <p className="text-red-500 text-sm bg-red-50 border border-red-200 p-3 rounded-sm">{err}</p>}
+            {err && <p className="text-red-500 text-sm">{err}</p>}
 
             <div className="flex gap-3 pt-2">
               <button onClick={handleSave} disabled={saving}
@@ -230,12 +357,134 @@ function PostEditor({
                 <Save size={14} />
                 <span>{saving ? 'GUARDANDO...' : 'GUARDAR'}</span>
               </button>
-              <button onClick={onCancel} disabled={saving}
-                className="px-8 py-3 text-xs tracking-widest rounded-sm border border-navy/20 text-navy/60 hover:border-navy/40 transition-colors disabled:opacity-50">
+              <button onClick={onCancel}
+                className="px-8 py-3 text-xs tracking-widest rounded-sm border border-navy/20 text-navy/60 hover:border-navy/40 transition-colors">
                 CANCELAR
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MFA setup modal (activar verificación en dos pasos) ───────────────────
+function MfaSetup({ onClose, onEnabled }: { onClose: () => void; onEnabled: () => void }) {
+  const [step, setStep] = useState<'loading' | 'scan' | 'done'>('loading');
+  const [qr, setQr] = useState('');
+  const [factorId, setFactorId] = useState('');
+  const [code, setCode] = useState('');
+  const [err, setErr] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [existingFactors, setExistingFactors] = useState<{ id: string; status: string }[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      // Si ya hay un factor TOTP verificado, no hace falta enrolar de nuevo
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const verified = factors?.totp?.filter(f => f.status === 'verified') ?? [];
+      setExistingFactors(verified);
+      if (verified.length > 0) {
+        setStep('done');
+        return;
+      }
+
+      // Limpia cualquier factor TOTP a medio enrolar de un intento anterior
+      // (si no, Supabase rechaza el nuevo intento por nombre duplicado)
+      const unverified = factors?.totp?.filter(f => f.status !== 'verified') ?? [];
+      for (const f of unverified) {
+        await supabase.auth.mfa.unenroll({ factorId: f.id });
+      }
+
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
+      if (error) {
+        setErr(error.message);
+        return;
+      }
+      setQr(data.totp.qr_code);
+      setFactorId(data.id);
+      setStep('scan');
+    })();
+  }, []);
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVerifying(true);
+    setErr('');
+    const { data: challenge, error: chErr } = await supabase.auth.mfa.challenge({ factorId });
+    if (chErr) { setErr(chErr.message); setVerifying(false); return; }
+    const { error: verErr } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId: challenge.id,
+      code,
+    });
+    if (verErr) { setErr('Código incorrecto. Verifica la hora de tu teléfono e inténtalo de nuevo.'); setVerifying(false); return; }
+    setVerifying(false);
+    onEnabled();
+  };
+
+  const handleUnenroll = async () => {
+    if (!confirm('¿Desactivar la verificación en dos pasos? Esto reduce la seguridad de tu cuenta.')) return;
+    for (const f of existingFactors) {
+      await supabase.auth.mfa.unenroll({ factorId: f.id });
+    }
+    onEnabled();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-navy/80 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-sm shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-navy/10">
+          <h2 className="font-serif text-xl text-navy">Verificación en dos pasos</h2>
+          <button onClick={onClose} className="text-navy/40 hover:text-navy"><X size={18} /></button>
+        </div>
+
+        <div className="p-6">
+          {step === 'loading' && (
+            <div className="flex justify-center py-10">
+              <Loader2 className="animate-spin text-gold" size={28} />
+            </div>
+          )}
+
+          {step === 'scan' && (
+            <div className="space-y-5">
+              <p className="text-sm text-navy/60 leading-relaxed">
+                Escanea este código QR con Google Authenticator, Authy, o tu app autenticadora preferida.
+              </p>
+              <div className="flex justify-center bg-cream rounded-sm p-4">
+                <img src={qr} alt="Código QR para verificación en dos pasos" className="w-48 h-48" />
+              </div>
+              <form onSubmit={handleVerify} className="space-y-3">
+                <label className="block text-navy/50 text-xs tracking-widest uppercase">Código de 6 dígitos</label>
+                <input
+                  type="text" inputMode="numeric" autoFocus value={code}
+                  onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  required maxLength={6}
+                  className="w-full border border-navy/15 rounded-sm px-4 py-3 text-navy text-center text-2xl tracking-[0.3em] focus:outline-none focus:border-gold/60"
+                  placeholder="000000"
+                />
+                {err && <p className="text-red-500 text-xs">{err}</p>}
+                <button type="submit" disabled={verifying || code.length !== 6}
+                  className="btn-primary w-full py-3 text-xs tracking-[0.15em] rounded-sm disabled:opacity-50">
+                  <span>{verifying ? 'VERIFICANDO...' : 'ACTIVAR'}</span>
+                </button>
+              </form>
+            </div>
+          )}
+
+          {step === 'done' && (
+            <div className="text-center py-4 space-y-4">
+              <div className="w-14 h-14 mx-auto rounded-full bg-green-50 flex items-center justify-center">
+                <span className="text-green-600 text-2xl">✓</span>
+              </div>
+              <p className="text-navy/70 text-sm">La verificación en dos pasos ya está activa para tu cuenta.</p>
+              <button onClick={handleUnenroll}
+                className="text-red-500 text-xs tracking-widest hover:underline">
+                DESACTIVAR VERIFICACIÓN EN DOS PASOS
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -248,84 +497,30 @@ export default function AdminPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [editing, setEditing] = useState<Partial<Post> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const [showMfaSetup, setShowMfaSetup] = useState(false);
 
   useEffect(() => {
-    const initSession = async () => {
-      try {
-        const { data, error: err } = await supabase.auth.getSession();
-        if (err) throw err;
-        setSession(data.session);
-      } catch (err) {
-        console.error('Session init error:', err);
-        setSession(null);
-      }
-    };
-
-    initSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      if (event === 'SIGNED_OUT') {
-        setPosts([]);
-        setLoading(true);
-      }
-    });
-
-    return () => subscription?.unsubscribe();
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    supabase.auth.onAuthStateChange((_e, s) => setSession(s));
   }, []);
 
   const fetchPosts = async () => {
-    try {
-      setError('');
-      setLoading(true);
-      const { data, error: err } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (err) throw err;
-      setPosts(data ?? []);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al cargar artículos';
-      setError(msg);
-      console.error('Fetch posts error:', err);
-      setPosts([]);
-    } finally {
-      setLoading(false);
-    }
+    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    setPosts(data ?? []);
+    setLoading(false);
   };
 
   useEffect(() => { if (session) fetchPosts(); }, [session]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este artículo permanentemente?')) return;
-    try {
-      setError('');
-      const { error: err } = await supabase.from('posts').delete().eq('id', id);
-      if (err) throw err;
-      await fetchPosts();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al eliminar artículo';
-      setError(msg);
-      console.error('Delete error:', err);
-    }
+    await supabase.from('posts').delete().eq('id', id);
+    fetchPosts();
   };
 
   const togglePublished = async (post: Post) => {
-    try {
-      setError('');
-      const { error: err } = await supabase
-        .from('posts')
-        .update({ published: !post.published })
-        .eq('id', post.id);
-      if (err) throw err;
-      await fetchPosts();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al actualizar estado';
-      setError(msg);
-      console.error('Toggle published error:', err);
-    }
+    await supabase.from('posts').update({ published: !post.published }).eq('id', post.id);
+    fetchPosts();
   };
 
   if (!session) return <LoginForm onLogin={() => supabase.auth.getSession().then(({ data }) => setSession(data.session))} />;
@@ -335,11 +530,18 @@ export default function AdminPage() {
       {/* Top bar */}
       <div className="glass-navy border-b border-gold/20 px-6 py-4 flex items-center justify-between">
         <span className="font-serif text-xl tracking-[0.2em] text-white">TEXTUM <span className="text-gold/60 text-sm font-sans font-light tracking-widest">ADMIN</span></span>
-        <button onClick={() => supabase.auth.signOut()}
-          className="flex items-center gap-2 text-white/50 hover:text-white text-xs tracking-widest transition-colors">
-          <LogOut size={14} /> SALIR
-        </button>
+        <div className="flex items-center gap-5">
+          <button onClick={() => setShowMfaSetup(true)}
+            className="flex items-center gap-2 text-white/50 hover:text-gold text-xs tracking-widest transition-colors">
+            <ShieldCheck size={14} /> SEGURIDAD
+          </button>
+          <button onClick={() => supabase.auth.signOut()}
+            className="flex items-center gap-2 text-white/50 hover:text-white text-xs tracking-widest transition-colors">
+            <LogOut size={14} /> SALIR
+          </button>
+        </div>
       </div>
+
 
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="flex items-center justify-between mb-10">
@@ -350,12 +552,6 @@ export default function AdminPage() {
             <span>NUEVO ARTÍCULO</span>
           </button>
         </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-sm text-red-700 text-sm">
-            {error}
-          </div>
-        )}
 
         {loading ? (
           <div className="flex justify-center py-20">
@@ -409,6 +605,13 @@ export default function AdminPage() {
           initial={editing}
           onSave={() => { setEditing(null); fetchPosts(); }}
           onCancel={() => setEditing(null)}
+        />
+      )}
+
+      {showMfaSetup && (
+        <MfaSetup
+          onClose={() => setShowMfaSetup(false)}
+          onEnabled={() => setShowMfaSetup(false)}
         />
       )}
     </div>

@@ -65,8 +65,8 @@ export default function About() {
             <p className="text-base text-navy/70 leading-relaxed font-light">{ab.p2}</p>
 
             <div className="grid grid-cols-2 gap-4 pt-4">
-              {ab.stats.map((s) => (
-                <div key={s.label} className="border border-navy/10 p-4 rounded-sm bg-white/60 hover:border-gold/30 transition-colors">
+              {ab.stats.map((s, i) => (
+                <div key={i} className="border border-navy/10 p-4 rounded-sm bg-white/60 hover:border-gold/30 transition-colors">
                   <p className="font-serif text-3xl font-semibold text-navy">{s.n}</p>
                   <p className="text-xs text-navy/50 tracking-wide mt-1">{s.label}</p>
                 </div>
@@ -93,7 +93,7 @@ export default function About() {
               const isEven = idx % 2 === 0;
               return (
                 <div
-                  key={member.name}
+                  key={idx}
                   className="border border-navy/10 rounded-sm bg-white/60 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
                   <div className={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>

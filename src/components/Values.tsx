@@ -38,7 +38,7 @@ export default function Values() {
             const Icon = icons[idx];
             return (
               <div
-                key={item.label}
+                key={idx}
                 className="reveal bg-cream p-10 flex flex-col items-center text-center group hover:bg-navy transition-colors duration-500"
               >
                 <div className="mb-5 group-hover:[&_svg]:stroke-gold transition-all">

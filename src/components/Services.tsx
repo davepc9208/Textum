@@ -158,8 +158,8 @@ export default function Services() {
         </div>
 
         <div className="space-y-20">
-          {services.map((service) => (
-            <div key={service.title} className="reveal">
+          {services.map((service, sIdx) => (
+            <div key={sIdx} className="reveal">
               <div className="flex items-center gap-4 mb-8">
                 <div>
                   <h3 className="font-serif text-3xl font-light text-white">{service.title}</h3>
@@ -168,8 +168,8 @@ export default function Services() {
                 <div className="flex-1 h-px bg-gradient-to-r from-gold/30 to-transparent ml-4 hidden md:block" />
               </div>
               <div className="grid md:grid-cols-3 gap-6 stagger">
-                {service.tiers.map((tier) => (
-                  <TierCard key={tier.name} tier={tier} solicitar={s.solicitar} />
+                {service.tiers.map((tier, tIdx) => (
+                  <TierCard key={tIdx} tier={tier} solicitar={s.solicitar} />
                 ))}
               </div>
               {service.addon && <AddonCard addon={service.addon} solicitar={s.solicitar} />}

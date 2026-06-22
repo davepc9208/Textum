@@ -38,7 +38,7 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<PostPage />} />
-      <Route path="/admin" element={<AdminPage />} />
+      <Route path="/textum-redaccion-2026" element={<AdminPage />} />
     </Routes>
   );
 }
