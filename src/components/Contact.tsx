@@ -60,7 +60,7 @@ export default function Contact() {
               <div className="space-y-4">
                 {[
                   { icon: Mail, label: c.emailLabel, value: 'revedit917@gmail.com', href: 'mailto:revedit917@gmail.com' },
-                  { icon: Globe, label: c.webLabel, value: 'textumm.netlify.app', href: 'https://textumm.netlify.app/' },
+                  { icon: Globe, label: c.webLabel, value: 'mentoriatextum.com', href: 'https://mentoriatextum.com/' },
                 ].map((item) => {
                   const Icon = item.icon;
                   return (
@@ -107,7 +107,7 @@ export default function Contact() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Honeypot — invisible para usuarios, visible para bots */}
-                  <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none', tabIndex: -1 }}>
+                  <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}>
                     <input
                       type="text"
                       name="website"

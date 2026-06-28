@@ -2,6 +2,19 @@
   command = "npm run build"
   publish = "dist"
 
+[dev]
+  command = "npm run dev"
+  targetPort = 5173
+  port = 8888
+  autoLaunch = false
+
+# Sitemap dinámico (generado desde Supabase)
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/.netlify/functions/sitemap"
+  status = 200
+  force = true
+
 # SPA fallback: todas las rutas van a index.html
 [[redirects]]
   from = "/*"

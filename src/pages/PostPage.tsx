@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, Clock, ArrowLeft, X, ZoomIn } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, X } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
 import { useLang } from '../i18n/LangContext';
 import { useSEO, injectSchema, removeSchema } from '../hooks/useSEO';
@@ -156,7 +156,7 @@ export default function PostPage() {
           {/* Cover */}
           {post.cover_url && (
             <div className="relative h-72 md:h-96 overflow-hidden">
-              <img src={post.cover_url} alt={postTitle} className="w-full h-full object-cover" />
+              <img src={post.cover_url} alt={post.cover_alt ?? postTitle} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/20 to-transparent" />
             </div>
           )}

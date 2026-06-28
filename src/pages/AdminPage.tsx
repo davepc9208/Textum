@@ -38,7 +38,7 @@ const EMPTY: Omit<Post, 'id' | 'created_at'> = {
 };
 
 // ─── Login form (con soporte 2FA) ──────────────────────────────────────────
-function LoginForm({ onLogin }: { onLogin: () => void }) {
+function LoginForm({ onLogin, authError }: { onLogin: () => void; authError?: string }) {
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [err, setErr] = useState('');
@@ -146,6 +146,7 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
               placeholder="••••••••" />
           </div>
           {err && <p className="text-red-400 text-xs">{err}</p>}
+          {authError && <p className="text-red-400 text-xs">{authError}</p>}
           <button type="submit" disabled={loading}
             className="btn-primary w-full py-3 text-xs tracking-[0.15em] rounded-sm disabled:opacity-70">
             <span>{loading ? 'ENTRANDO...' : 'ENTRAR'}</span>
@@ -390,7 +391,7 @@ function PostEditor({
                 </label>
                 <input
                   className={inputCls}
-                  value={form.cover_alt}
+                  value={form.cover_alt ?? ''}
                   onChange={e => set('cover_alt', e.target.value)}
                   placeholder='Ej: "Infografía sobre estructura APA 7 para tesis universitaria en Ecuador"'
                   required
@@ -609,10 +610,13 @@ export default function AdminPage() {
   const [editing, setEditing] = useState<Partial<Post> | null>(null);
   const [loading, setLoading] = useState(true);
   const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchPosts = async () => {
@@ -621,7 +625,41 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  useEffect(() => { if (session) fetchPosts(); }, [session]);
+  useEffect(() => {
+    if (!session) {
+      setAuthorized(false);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setAuthorized(false);
+
+    (async () => {
+      const { data: isAdmin, error } = await supabase.rpc('is_admin');
+      if (cancelled) return;
+
+      if (error || !isAdmin) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setAuthorized(false);
+        setAuthError(
+          error
+            ? 'No se pudo verificar permisos. Ejecuta supabase_rls_admin.sql en Supabase.'
+            : 'Esta cuenta no tiene permisos de administrador.',
+        );
+        setLoading(false);
+        return;
+      }
+
+      setAuthError('');
+      setAuthorized(true);
+      await fetchPosts();
+    })();
+
+    return () => { cancelled = true; };
+  }, [session]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este artículo permanentemente?')) return;
@@ -634,7 +672,28 @@ export default function AdminPage() {
     fetchPosts();
   };
 
-  if (!session) return <LoginForm onLogin={() => supabase.auth.getSession().then(({ data }) => setSession(data.session))} />;
+  if (!session) {
+    return (
+      <LoginForm
+        authError={authError}
+        onLogin={() => {
+          setAuthError('');
+          supabase.auth.getSession().then(({ data }) => setSession(data.session));
+        }}
+      />
+    );
+  }
+
+  if (!authorized) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <svg className="animate-spin w-8 h-8 text-gold" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-cream">

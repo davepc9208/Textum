@@ -1,36 +1,22 @@
--- Esquema de referencia para TEXTUM (sincronizado con producción)
--- Ejecutar en Supabase → SQL Editor si partes de cero
+-- Ejecuta este script en Supabase → SQL Editor (proyecto ya existente)
+-- Restringe escritura del blog y storage solo a emails en public.admins
 
--- 1. Tabla de artículos del blog
-create table if not exists public.posts (
-  id           uuid primary key default gen_random_uuid(),
-  slug         text not null unique,
-  title_es     text not null default '',
-  title_en     text not null default '',
-  excerpt_es   text not null default '',
-  excerpt_en   text not null default '',
-  content_es   text not null default '',
-  content_en   text not null default '',
-  author       text not null default '',
-  cover_url    text not null default '',
-  cover_alt    text,
-  category     text,
-  published    boolean not null default false,
-  reading_time integer not null default 1,
-  created_at   timestamptz not null default now()
-);
-
--- 2. Administradores autorizados
+-- 1. Tabla de administradores (gestión manual por SQL)
 create table if not exists public.admins (
   email text primary key check (email ~* '^[^@]+@[^@]+\.[^@]+$')
 );
 
 alter table public.admins enable row level security;
+-- Sin políticas: solo el service role puede modificar admins desde el dashboard
 
 insert into public.admins (email)
 values ('revedit917@gmail.com')
 on conflict (email) do nothing;
 
+-- Añade más admins cuando lo necesites:
+-- insert into public.admins (email) values ('otro@email.com');
+
+-- 2. Función helper (security definer para leer admins con JWT del usuario)
 create or replace function public.is_admin()
 returns boolean
 language sql
@@ -48,42 +34,38 @@ $$;
 revoke all on function public.is_admin() from public;
 grant execute on function public.is_admin() to authenticated;
 
--- 3. Row Level Security — posts
-alter table public.posts enable row level security;
+-- 3. Posts — reemplazar política permisiva anterior
+drop policy if exists "Authenticated users have full access" on public.posts;
 
-create policy "Public can read published posts"
-  on public.posts for select
-  using (published = true);
-
+drop policy if exists "Admins can read all posts" on public.posts;
 create policy "Admins can read all posts"
   on public.posts for select
   to authenticated
   using (public.is_admin());
 
+drop policy if exists "Admins can insert posts" on public.posts;
 create policy "Admins can insert posts"
   on public.posts for insert
   to authenticated
   with check (public.is_admin());
 
+drop policy if exists "Admins can update posts" on public.posts;
 create policy "Admins can update posts"
   on public.posts for update
   to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Admins can delete posts" on public.posts;
 create policy "Admins can delete posts"
   on public.posts for delete
   to authenticated
   using (public.is_admin());
 
--- 4. Storage: bucket blog-images
-insert into storage.buckets (id, name, public)
-values ('blog-images', 'blog-images', true)
-on conflict (id) do nothing;
-
-create policy "Public read blog images"
-  on storage.objects for select
-  using (bucket_id = 'blog-images');
+-- 4. Storage — solo admins pueden subir/editar/borrar imágenes
+drop policy if exists "Authenticated upload blog images" on storage.objects;
+drop policy if exists "Authenticated update blog images" on storage.objects;
+drop policy if exists "Authenticated delete blog images" on storage.objects;
 
 create policy "Admins upload blog images"
   on storage.objects for insert

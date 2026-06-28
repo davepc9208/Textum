@@ -163,7 +163,7 @@ export default function BlogPage() {
                     <div className="relative md:w-1/2 h-64 md:h-auto overflow-hidden flex-shrink-0">
                       <img
                         src={featured.cover_url}
-                        alt={title(featured)}
+                        alt={featured.cover_alt ?? title(featured)}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent to-navy/20" />
@@ -218,7 +218,7 @@ export default function BlogPage() {
                       <div className="relative h-52 overflow-hidden">
                         <img
                           src={post.cover_url}
-                          alt={title(post)}
+                          alt={post.cover_alt ?? title(post)}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-navy/30 to-transparent" />

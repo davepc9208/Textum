@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -9,9 +9,21 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import BlogPage from './pages/BlogPage';
 import PostPage from './pages/PostPage';
-import AdminPage from './pages/AdminPage';
 import { useScrollReveal } from './hooks/useScrollReveal';
 import { useSEO, injectSchema, removeSchema } from './hooks/useSEO';
+
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-cream flex items-center justify-center">
+      <svg className="animate-spin w-8 h-8 text-gold" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    </div>
+  );
+}
 
 // ── Schema: Organización global ──────────────────────────────────────────────
 const ORG_SCHEMA = {
@@ -143,7 +155,14 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/blog" element={<BlogListPage />} />
       <Route path="/blog/:slug" element={<PostPage />} />
-      <Route path="/textum-redaccion-2026" element={<AdminPage />} />
+      <Route
+        path="/textum-redaccion-2026"
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <AdminPage />
+          </Suspense>
+        }
+      />
     </Routes>
   );
 }
