@@ -8,6 +8,7 @@ export default function Contact() {
   const f = c.form;
 
   const [form, setForm] = useState({ name: '', email: '', service: '', message: '' });
+  const [honeypot, setHoneypot] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,6 +19,8 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Honeypot: si el campo oculto tiene valor, es un bot
+    if (honeypot) return;
     setLoading(true);
     setError('');
     try {
@@ -103,6 +106,17 @@ export default function Contact() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Honeypot — invisible para usuarios, visible para bots */}
+                  <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none', tabIndex: -1 }}>
+                    <input
+                      type="text"
+                      name="website"
+                      value={honeypot}
+                      onChange={e => setHoneypot(e.target.value)}
+                      autoComplete="off"
+                      tabIndex={-1}
+                    />
+                  </div>
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-white/50 text-xs tracking-widest mb-2 uppercase">{f.nameLabel}</label>

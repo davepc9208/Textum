@@ -16,7 +16,9 @@ export type Post = {
   content_en: string;
   author: string;
   cover_url: string;
+  cover_alt: string | null;
   published: boolean;
   created_at: string;
   reading_time: number;
+  category: string | null;
 };

@@ -3,7 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   Bold, Italic, Heading2, List, ListOrdered, Quote,
   Link as LinkIcon, Image as ImageIcon, Undo, Redo, Loader2,
@@ -79,6 +79,15 @@ export default function RichTextEditor({
       },
     },
   });
+
+  // Sincroniza el contenido cuando cambia desde fuera (ej. cambio de pestaña ES↔EN)
+  useEffect(() => {
+    if (!editor) return;
+    const current = editor.getHTML();
+    if (current !== content) {
+      editor.commands.setContent(content, false);
+    }
+  }, [content, editor]);
 
   if (!editor) return null;
 

@@ -31,8 +31,10 @@ const EMPTY: Omit<Post, 'id' | 'created_at'> = {
   content_en: '',
   author: '',
   cover_url: '',
+  cover_alt: '',
   published: false,
   reading_time: 1,
+  category: null,
 };
 
 // ─── Login form (con soporte 2FA) ──────────────────────────────────────────
@@ -165,6 +167,21 @@ function CoverImagePicker({ value, onChange }: { value: string; onChange: (url: 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validación de formato
+    const allowed = ['image/webp', 'image/png'];
+    if (!allowed.includes(file.type)) {
+      setErr('Formato no permitido. Sube únicamente imágenes .webp o .png.');
+      e.target.value = '';
+      return;
+    }
+    // Validación de peso (300 KB)
+    if (file.size > 300 * 1024) {
+      setErr(`El archivo pesa ${(file.size / 1024).toFixed(0)} KB. El máximo recomendado es 300 KB. Comprímelo antes de subir.`);
+      e.target.value = '';
+      return;
+    }
+
     setUploading(true);
     setErr('');
     const ext = file.name.split('.').pop();
@@ -182,7 +199,7 @@ function CoverImagePicker({ value, onChange }: { value: string; onChange: (url: 
 
   return (
     <div>
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      <input ref={fileInputRef} type="file" accept="image/webp,image/png" className="hidden" onChange={handleFile} />
       {value ? (
         <div className="relative group rounded-sm overflow-hidden border border-navy/15">
           <img src={value} alt="Portada" className="w-full h-44 object-cover" />
@@ -236,6 +253,7 @@ function PostEditor({
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [tab, setTab] = useState<'es' | 'en'>('es');
+  const [preview, setPreview] = useState(false);
 
   const set = (k: keyof typeof EMPTY, v: string | boolean | number) =>
     setForm(f => ({ ...f, [k]: v }));
@@ -248,6 +266,25 @@ function PostEditor({
   const handleSave = async () => {
     setSaving(true);
     setErr('');
+
+    // Validaciones básicas
+    if (!form.slug) { setErr('El slug (URL) no puede estar vacío.'); setSaving(false); return; }
+    if (!form.title_es) { setErr('El título en español es obligatorio.'); setSaving(false); return; }
+    if (form.cover_url && !form.cover_alt) { setErr('El Texto Alternativo (Alt Text) de la imagen es obligatorio para el SEO.'); setSaving(false); return; }
+
+    // Comprobar slug duplicado
+    const { data: existing } = await supabase
+      .from('posts')
+      .select('id')
+      .eq('slug', form.slug)
+      .single();
+
+    if (existing && existing.id !== initial.id) {
+      setErr(`El slug "${form.slug}" ya está en uso por otro artículo. Elige uno diferente.`);
+      setSaving(false);
+      return;
+    }
+
     const payload = {
       ...form,
       reading_time: readingTime(form.content_es + form.content_en),
@@ -273,10 +310,48 @@ function PostEditor({
           {/* Header */}
           <div className="flex items-center justify-between px-8 py-5 border-b border-navy/10 bg-white">
             <h2 className="font-serif text-2xl text-navy">{initial.id ? 'Editar artículo' : 'Nuevo artículo'}</h2>
-            <button onClick={onCancel} className="text-navy/40 hover:text-navy transition-colors"><X size={20} /></button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setPreview(!preview)}
+                className={`flex items-center gap-2 px-4 py-2 text-xs tracking-widest rounded-sm border transition-colors ${
+                  preview
+                    ? 'bg-navy text-gold border-navy'
+                    : 'border-navy/20 text-navy/60 hover:border-gold/40 hover:text-navy'
+                }`}
+              >
+                <Eye size={14} />
+                {preview ? 'EDITAR' : 'VISTA PREVIA'}
+              </button>
+              <button onClick={onCancel} className="text-navy/40 hover:text-navy transition-colors"><X size={20} /></button>
+            </div>
           </div>
 
-          <div className="p-8 space-y-6">
+          {/* Preview panel */}
+          {preview ? (
+            <div className="p-8 bg-cream min-h-[400px]">
+              {form.cover_url && (
+                <img src={form.cover_url} alt="" className="w-full h-56 object-cover rounded-sm mb-6" />
+              )}
+              <p className="text-xs tracking-widest text-gold uppercase mb-2">{form.author}</p>
+              <h1 className="font-serif text-3xl font-light text-navy mb-4">
+                {tab === 'es' ? form.title_es : form.title_en}
+              </h1>
+              <p className="text-sm text-navy/60 italic mb-6 border-l-2 border-gold/40 pl-4">
+                {tab === 'es' ? form.excerpt_es : form.excerpt_en}
+              </p>
+              <div
+                className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:text-navy prose-p:text-navy/80 prose-a:text-gold prose-strong:text-navy prose-blockquote:border-gold"
+                dangerouslySetInnerHTML={{ __html: tab === 'es' ? form.content_es : form.content_en }}
+              />
+              <div className="mt-6 pt-4 border-t border-navy/10 flex items-center gap-2 text-xs text-navy/40">
+                <span className={`px-2 py-0.5 rounded-full border text-[10px] tracking-widest ${form.published ? 'text-green-700 border-green-200 bg-green-50' : 'text-navy/40 border-navy/15'}`}>
+                  {form.published ? 'PUBLICADO' : 'BORRADOR'}
+                </span>
+                <span>· {form.reading_time} min · {form.slug}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="p-8 space-y-6">
             {/* Shared fields */}
             <div className="grid sm:grid-cols-2 gap-5">
               <div>
@@ -288,9 +363,42 @@ function PostEditor({
                 <input className={inputCls} value={form.slug} onChange={e => set('slug', slugify(e.target.value))} placeholder="mi-articulo" />
               </div>
             </div>
+
+            {/* Category selector */}
+            <div>
+              <label className={labelCls}>Categoría</label>
+              <select
+                className={inputCls}
+                value={form.category ?? ''}
+                onChange={e => set('category', e.target.value || null as unknown as string)}
+              >
+                <option value="">Sin categoría</option>
+                <option value="filosofia-metodo">Filosofía y Método TEXTUM</option>
+                <option value="rigor-escritura">Rigor y Escritura Científica</option>
+                <option value="sustentacion-defensa">Sustentación y Defensa Oral</option>
+              </select>
+              <p className="text-xs text-navy/40 mt-1.5">Define en qué sección del blog aparecerá este artículo.</p>
+            </div>
+
             <div>
               <label className={labelCls}>Imagen de portada</label>
+              <p className="text-xs text-navy/40 mb-2">Formatos permitidos: .webp o .png optimizado · Peso máximo recomendado: 300 KB</p>
               <CoverImagePicker value={form.cover_url} onChange={(url) => set('cover_url', url)} />
+              <div className="mt-3">
+                <label className={labelCls}>
+                  Texto Alternativo — Alt Text <span className="text-red-400 ml-1">*</span>
+                </label>
+                <input
+                  className={inputCls}
+                  value={form.cover_alt}
+                  onChange={e => set('cover_alt', e.target.value)}
+                  placeholder='Ej: "Infografía sobre estructura APA 7 para tesis universitaria en Ecuador"'
+                  required
+                />
+                <p className="text-xs text-navy/40 mt-1.5">
+                  Describe la imagen en 8–12 palabras incluyendo palabras clave. Google usa este texto para indexar la imagen en búsquedas visuales.
+                </p>
+              </div>
             </div>
 
             {/* Language tabs */}
@@ -307,12 +415,13 @@ function PostEditor({
                 {tab === 'es' ? (
                   <>
                     <div>
-                      <label className={labelCls}>Título (ES)</label>
-                      <input className={inputCls} value={form.title_es} onChange={e => handleTitleEs(e.target.value)} placeholder="Título del artículo" />
+                      <label className={labelCls}>Título del Artículo o Guía Académica (ES)</label>
+                      <input className={inputCls} value={form.title_es} onChange={e => handleTitleEs(e.target.value)} placeholder='Ej: "Cómo estructurar la metodología de tu tesis..."' />
                     </div>
                     <div>
-                      <label className={labelCls}>Extracto (ES)</label>
-                      <textarea className={inputCls} rows={2} value={form.excerpt_es} onChange={e => set('excerpt_es', e.target.value)} placeholder="Breve descripción (2-3 frases)" />
+                      <label className={labelCls}>Resumen y Palabras Clave / Keywords (ES)</label>
+                      <textarea className={inputCls} rows={3} value={form.excerpt_es} onChange={e => set('excerpt_es', e.target.value)}
+                        placeholder="Escribe el resumen ejecutivo del artículo (2-3 frases) que servirá de gancho en la tarjeta y añade abajo de 3 a 5 palabras clave científicas separadas por comas." />
                     </div>
                     <div>
                       <label className={labelCls}>Contenido (ES)</label>
@@ -322,12 +431,13 @@ function PostEditor({
                 ) : (
                   <>
                     <div>
-                      <label className={labelCls}>Title (EN)</label>
-                      <input className={inputCls} value={form.title_en} onChange={e => set('title_en', e.target.value)} placeholder="Article title" />
+                      <label className={labelCls}>Article Title (English translation)</label>
+                      <input className={inputCls} value={form.title_en} onChange={e => set('title_en', e.target.value)} placeholder='E.g. "How to structure the methodology of your thesis..."' />
                     </div>
                     <div>
-                      <label className={labelCls}>Excerpt (EN)</label>
-                      <textarea className={`${inputCls}`} rows={2} value={form.excerpt_en} onChange={e => set('excerpt_en', e.target.value)} placeholder="Brief description (2-3 sentences)" />
+                      <label className={labelCls}>Abstract and Keywords (English)</label>
+                      <textarea className={`${inputCls}`} rows={3} value={form.excerpt_en} onChange={e => set('excerpt_en', e.target.value)}
+                        placeholder="Coloca aquí la traducción técnica del resumen y las palabras clave en inglés para mejorar la indización bilingüe de la plataforma." />
                     </div>
                     <div>
                       <label className={labelCls}>Content (EN)</label>
@@ -362,7 +472,8 @@ function PostEditor({
                 CANCELAR
               </button>
             </div>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -575,7 +686,7 @@ export default function AdminPage() {
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-serif text-navy truncate">{post.title_es}</p>
-                  <p className="text-xs text-navy/40 mt-0.5">{post.author} · {new Date(post.created_at).toLocaleDateString('es-ES')} · {post.reading_time} min</p>
+                  <p className="text-xs text-navy/40 mt-0.5">{post.author} · {new Date(post.created_at).toLocaleDateString('es-ES')} · {post.reading_time} min{post.category ? ` · ${post.category}` : ''}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className={`text-[10px] tracking-widest px-2 py-0.5 rounded-full border ${post.published ? 'text-green-700 border-green-200 bg-green-50' : 'text-navy/40 border-navy/15 bg-navy/5'}`}>

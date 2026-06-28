@@ -64,7 +64,7 @@ export default function About() {
             <p className="text-base text-navy/70 leading-relaxed font-light">{ab.p1}</p>
             <p className="text-base text-navy/70 leading-relaxed font-light">{ab.p2}</p>
 
-            <div className="grid grid-cols-2 gap-4 pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
               {ab.stats.map((s, i) => (
                 <div key={i} className="border border-navy/10 p-4 rounded-sm bg-white/60 hover:border-gold/30 transition-colors">
                   <p className="font-serif text-3xl font-semibold text-navy">{s.n}</p>
@@ -81,11 +81,12 @@ export default function About() {
 
         {/* Team members */}
         <div className="mt-24 reveal">
-          <div className="flex items-center gap-4 mb-10">
+          <div className="flex items-center gap-4 mb-6">
             <div className="w-12 h-px bg-gradient-to-r from-transparent to-gold/60" />
             <p className="text-xs tracking-[0.3em] text-gold uppercase">{ab.teamLabel}</p>
             <div className="flex-1 h-px bg-gradient-to-l from-transparent to-gold/60" />
           </div>
+          <p className="text-base text-navy/70 leading-relaxed font-light mb-10 max-w-2xl">{ab.teamBridge}</p>
 
           <div className="space-y-10">
             {ab.members.map((member, idx) => {
@@ -135,6 +136,9 @@ export default function About() {
                         <h3 className="font-serif text-2xl md:text-3xl font-light text-navy leading-snug">
                           {member.name}
                         </h3>
+                        {member.role && (
+                          <p className="text-xs tracking-[0.2em] text-gold uppercase mt-1">{member.role}</p>
+                        )}
                         <div className="flex items-center gap-2 mt-2">
                           <a
                             href={img.orcid}
@@ -149,7 +153,26 @@ export default function About() {
                       </div>
 
                       <div className="w-10 h-px bg-gold/50 mb-5" />
-                      <p className="text-base text-navy/70 leading-relaxed font-light">{member.bio}</p>
+                      {member.intro && (
+                        <p className="text-base text-navy font-medium leading-relaxed mb-4">{member.intro}</p>
+                      )}
+
+                      {/* Bullets con checkmarks */}
+                      {member.bullets && member.bullets.length > 0 && (
+                        <ul className="space-y-2 mb-4">
+                          {member.bullets.map((bullet, bi) => (
+                            <li key={bi} className="flex items-start gap-2.5">
+                              <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0 mt-0.5" fill="none">
+                                <circle cx="8" cy="8" r="7.5" stroke="#c9a84c" strokeOpacity="0.4" />
+                                <path d="M5 8l2 2 4-4" stroke="#c9a84c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                              <span className="text-sm text-navy/70 leading-snug">{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      <p className="text-sm text-navy/50 leading-relaxed font-light italic">{member.bio}</p>
 
                       <div className="flex flex-wrap gap-2 mt-6">
                         {member.tags.map((tag) => (
