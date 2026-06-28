@@ -59,7 +59,7 @@ export default function Contact() {
               <h3 className="font-serif text-2xl text-white mb-6">{c.directTitle}</h3>
               <div className="space-y-4">
                 {[
-                  { icon: Mail, label: c.emailLabel, value: 'revedit917@gmail.com', href: 'mailto:revedit917@gmail.com' },
+                  { icon: Mail, label: c.emailLabel, value: 'contacto@mentoriatextum.com', href: 'mailto:contacto@mentoriatextum.com' },
                   { icon: Globe, label: c.webLabel, value: 'mentoriatextum.com', href: 'https://mentoriatextum.com/' },
                 ].map((item) => {
                   const Icon = item.icon;

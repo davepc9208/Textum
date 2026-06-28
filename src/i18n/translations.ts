@@ -132,6 +132,8 @@ export const translations = {
     footer: {
       tagline: 'De la corrección al aprendizaje',
       desc: 'Mentoría académica personalizada que transforma la corrección en aprendizaje real y duradero. Especializadas en Ecuador y Perú.',
+      email: 'contacto@mentoriatextum.com',
+      web: 'mentoriatextum.com',
       navTitle: 'Navegación',
       contactTitle: 'Contacto',
       rights: 'Todos los derechos reservados.',
@@ -281,6 +283,8 @@ export const translations = {
     footer: {
       tagline: 'From correction to learning',
       desc: 'Personalised academic mentoring that transforms correction into real, lasting learning. Specialists for Ecuador and Peru.',
+      email: 'contacto@mentoriatextum.com',
+      web: 'mentoriatextum.com',
       navTitle: 'Navigation',
       contactTitle: 'Contact',
       rights: 'All rights reserved.',

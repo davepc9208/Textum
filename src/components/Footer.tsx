@@ -67,13 +67,13 @@ export default function Footer() {
           <div>
             <h4 className="text-xs tracking-[0.25em] text-gold/70 uppercase mb-5">{f.contactTitle}</h4>
             <div className="space-y-4">
-              <a href="mailto:revedit917@gmail.com" className="flex items-center gap-3 text-sm text-white/50 hover:text-gold transition-colors group">
+              <a href="mailto:contacto@mentoriatextum.com" className="flex items-center gap-3 text-sm text-white/50 hover:text-gold transition-colors group">
                 <Mail size={15} className="text-gold/50 group-hover:text-gold transition-colors" />
-                revedit917@gmail.com
+                contacto@mentoriatextum.com
               </a>
-              <a href="https://textumm.netlify.app/" className="flex items-center gap-3 text-sm text-white/50 hover:text-gold transition-colors group">
+              <a href="https://mentoriatextum.com/" className="flex items-center gap-3 text-sm text-white/50 hover:text-gold transition-colors group">
                 <Globe size={15} className="text-gold/50 group-hover:text-gold transition-colors" />
-                textumm.netlify.app
+                mentoriatextum.com
               </a>
               <div className="flex items-center gap-3 pt-2">
                 {socialLinks.map((s) => {
