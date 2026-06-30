@@ -30,7 +30,7 @@ export async function onRequestPost(context) {
         'Authorization': `Bearer ${env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'TEXTUM Mentoría <hola@mentoriatextum.com>',
+        from: 'TEXTUM Mentoría <contacto@mentoriatextum.com>',
         to: 'revedit917@gmail.com',
         reply_to: email,
         subject: `Nuevo mensaje de contacto: ${name}`,
