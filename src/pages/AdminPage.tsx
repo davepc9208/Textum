@@ -31,14 +31,13 @@ const EMPTY: Omit<Post, 'id' | 'created_at'> = {
   content_en: '',
   author: '',
   cover_url: '',
-  cover_alt: '',
   published: false,
   reading_time: 1,
   category: null,
 };
 
 // ─── Login form (con soporte 2FA) ──────────────────────────────────────────
-function LoginForm({ onLogin, authError }: { onLogin: () => void; authError?: string }) {
+function LoginForm({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [err, setErr] = useState('');
@@ -146,7 +145,6 @@ function LoginForm({ onLogin, authError }: { onLogin: () => void; authError?: st
               placeholder="••••••••" />
           </div>
           {err && <p className="text-red-400 text-xs">{err}</p>}
-          {authError && <p className="text-red-400 text-xs">{authError}</p>}
           <button type="submit" disabled={loading}
             className="btn-primary w-full py-3 text-xs tracking-[0.15em] rounded-sm disabled:opacity-70">
             <span>{loading ? 'ENTRANDO...' : 'ENTRAR'}</span>
@@ -250,11 +248,54 @@ function PostEditor({
   onSave: () => void;
   onCancel: () => void;
 }) {
-  const [form, setForm] = useState({ ...EMPTY, ...initial });
+  const draftKey = `textum_draft_${initial.id ?? 'new'}`;
+
+  const [form, setForm] = useState(() => {
+    // Intenta restaurar un borrador guardado en este navegador
+    try {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...EMPTY, ...initial, ...parsed };
+      }
+    } catch {
+      // ignorar errores de parseo
+    }
+    return { ...EMPTY, ...initial };
+  });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [tab, setTab] = useState<'es' | 'en'>('es');
   const [preview, setPreview] = useState(false);
+  const [hasDraft, setHasDraft] = useState(() => !!localStorage.getItem(draftKey));
+
+  // Autoguardado: cada vez que cambia el formulario, lo guarda en localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(draftKey, JSON.stringify(form));
+      setHasDraft(true);
+    } catch {
+      // localStorage lleno o no disponible — ignorar silenciosamente
+    }
+  }, [form, draftKey]);
+
+  // Avisa antes de cerrar/recargar la pestaña si hay cambios sin guardar
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(draftKey);
+    } catch {
+      // ignorar
+    }
+  };
 
   const set = (k: keyof typeof EMPTY, v: string | boolean | number) =>
     setForm(f => ({ ...f, [k]: v }));
@@ -271,7 +312,6 @@ function PostEditor({
     // Validaciones básicas
     if (!form.slug) { setErr('El slug (URL) no puede estar vacío.'); setSaving(false); return; }
     if (!form.title_es) { setErr('El título en español es obligatorio.'); setSaving(false); return; }
-    if (form.cover_url && !form.cover_alt) { setErr('El Texto Alternativo (Alt Text) de la imagen es obligatorio para el SEO.'); setSaving(false); return; }
 
     // Comprobar slug duplicado
     const { data: existing } = await supabase
@@ -297,7 +337,10 @@ function PostEditor({
       ({ error } = await supabase.from('posts').insert(payload));
     }
     if (error) setErr(error.message);
-    else onSave();
+    else {
+      clearDraft();
+      onSave();
+    }
     setSaving(false);
   };
 
@@ -308,6 +351,25 @@ function PostEditor({
     <div className="fixed inset-0 bg-navy/80 backdrop-blur-sm z-50 overflow-y-auto">
       <div className="max-w-4xl mx-auto my-8 px-4">
         <div className="bg-cream rounded-sm shadow-2xl overflow-hidden">
+          {hasDraft && (
+            <div className="bg-gold/10 border-b border-gold/30 px-8 py-2.5 flex items-center justify-between">
+              <p className="text-xs text-navy/60">
+                📝 Borrador autoguardado en este navegador. Tus cambios se guardan automáticamente mientras escribes.
+              </p>
+              <button
+                onClick={() => {
+                  if (window.confirm('¿Descartar el borrador guardado?')) {
+                    clearDraft();
+                    setForm({ ...EMPTY, ...initial });
+                    setHasDraft(false);
+                  }
+                }}
+                className="text-xs text-navy/40 hover:text-red-500 transition-colors underline flex-shrink-0 ml-4"
+              >
+                Descartar borrador
+              </button>
+            </div>
+          )}
           {/* Header */}
           <div className="flex items-center justify-between px-8 py-5 border-b border-navy/10 bg-white">
             <h2 className="font-serif text-2xl text-navy">{initial.id ? 'Editar artículo' : 'Nuevo artículo'}</h2>
@@ -323,7 +385,14 @@ function PostEditor({
                 <Eye size={14} />
                 {preview ? 'EDITAR' : 'VISTA PREVIA'}
               </button>
-              <button onClick={onCancel} className="text-navy/40 hover:text-navy transition-colors"><X size={20} /></button>
+              <button
+                onClick={() => {
+                  if (window.confirm('¿Salir sin guardar? Tu borrador quedará guardado en este navegador y podrás continuarlo después.')) {
+                    onCancel();
+                  }
+                }}
+                className="text-navy/40 hover:text-navy transition-colors"
+              ><X size={20} /></button>
             </div>
           </div>
 
@@ -385,21 +454,6 @@ function PostEditor({
               <label className={labelCls}>Imagen de portada</label>
               <p className="text-xs text-navy/40 mb-2">Formatos permitidos: .webp o .png optimizado · Peso máximo recomendado: 300 KB</p>
               <CoverImagePicker value={form.cover_url} onChange={(url) => set('cover_url', url)} />
-              <div className="mt-3">
-                <label className={labelCls}>
-                  Texto Alternativo — Alt Text <span className="text-red-400 ml-1">*</span>
-                </label>
-                <input
-                  className={inputCls}
-                  value={form.cover_alt ?? ''}
-                  onChange={e => set('cover_alt', e.target.value)}
-                  placeholder='Ej: "Infografía sobre estructura APA 7 para tesis universitaria en Ecuador"'
-                  required
-                />
-                <p className="text-xs text-navy/40 mt-1.5">
-                  Describe la imagen en 8–12 palabras incluyendo palabras clave. Google usa este texto para indexar la imagen en búsquedas visuales.
-                </p>
-              </div>
             </div>
 
             {/* Language tabs */}
@@ -610,13 +664,10 @@ export default function AdminPage() {
   const [editing, setEditing] = useState<Partial<Post> | null>(null);
   const [loading, setLoading] = useState(true);
   const [showMfaSetup, setShowMfaSetup] = useState(false);
-  const [authError, setAuthError] = useState('');
-  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => subscription.unsubscribe();
+    supabase.auth.onAuthStateChange((_e, s) => setSession(s));
   }, []);
 
   const fetchPosts = async () => {
@@ -625,41 +676,7 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    if (!session) {
-      setAuthorized(false);
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-    setAuthorized(false);
-
-    (async () => {
-      const { data: isAdmin, error } = await supabase.rpc('is_admin');
-      if (cancelled) return;
-
-      if (error || !isAdmin) {
-        await supabase.auth.signOut();
-        setSession(null);
-        setAuthorized(false);
-        setAuthError(
-          error
-            ? 'No se pudo verificar permisos. Ejecuta supabase_rls_admin.sql en Supabase.'
-            : 'Esta cuenta no tiene permisos de administrador.',
-        );
-        setLoading(false);
-        return;
-      }
-
-      setAuthError('');
-      setAuthorized(true);
-      await fetchPosts();
-    })();
-
-    return () => { cancelled = true; };
-  }, [session]);
+  useEffect(() => { if (session) fetchPosts(); }, [session]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este artículo permanentemente?')) return;
@@ -672,28 +689,7 @@ export default function AdminPage() {
     fetchPosts();
   };
 
-  if (!session) {
-    return (
-      <LoginForm
-        authError={authError}
-        onLogin={() => {
-          setAuthError('');
-          supabase.auth.getSession().then(({ data }) => setSession(data.session));
-        }}
-      />
-    );
-  }
-
-  if (!authorized) {
-    return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <svg className="animate-spin w-8 h-8 text-gold" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      </div>
-    );
-  }
+  if (!session) return <LoginForm onLogin={() => supabase.auth.getSession().then(({ data }) => setSession(data.session))} />;
 
   return (
     <div className="min-h-screen bg-cream">
