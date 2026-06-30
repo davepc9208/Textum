@@ -1,3 +1,5 @@
+import typography from '@tailwindcss/typography'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
@@ -24,11 +26,11 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       animation: {
-        'float': 'floatOrb 8s ease-in-out infinite',
-        'shimmer': 'shimmer 4s linear infinite',
-        'gradient': 'gradientShift 12s ease infinite',
+        float: 'floatOrb 8s ease-in-out infinite',
+        shimmer: 'shimmer 4s linear infinite',
+        gradient: 'gradientShift 12s ease infinite',
       },
     },
   },
-  plugins: [],
+  plugins: [typography],
 };
