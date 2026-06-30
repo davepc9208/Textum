@@ -13,9 +13,10 @@ interface SEOProps {
   };
   lang?: 'es' | 'en';
   noindex?: boolean;
+  keywords?: string;
 }
 
-const SITE_URL = 'https://mentoriatextum.com'; // ← actualiza cuando tengas dominio
+const SITE_URL = 'https://mentoriatextum.com';
 const DEFAULT_IMAGE = `${SITE_URL}/og-default.png`;
 
 export function useSEO({
@@ -27,6 +28,7 @@ export function useSEO({
   articleMeta,
   lang = 'es',
   noindex = false,
+  keywords,
 }: SEOProps) {
   useEffect(() => {
     // Title
@@ -65,6 +67,7 @@ export function useSEO({
     // Standard meta
     setMeta('name', 'description', description);
     setMeta('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow');
+    if (keywords) setMeta('name', 'keywords', keywords);
 
     // Canonical
     setLink('canonical', canonicalUrl);
@@ -108,7 +111,7 @@ export function useSEO({
     return () => {
       document.title = 'TEXTUM — Mentoría Académica';
     };
-  }, [title, description, canonical, ogImage, ogType, lang, noindex, articleMeta]);
+  }, [title, description, canonical, ogImage, ogType, lang, noindex, articleMeta, keywords]);
 }
 
 // ── JSON-LD Schema helpers ──────────────────────────────────────────────────

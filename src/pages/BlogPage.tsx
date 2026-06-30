@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
 import { useLang } from '../i18n/LangContext';
+import { useSEO } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -76,6 +77,23 @@ export default function BlogPage() {
   const rest = filtered.slice(1);
 
   const activeCategoryData = categories.find(c => c.key === activeCategory) ?? null;
+
+  // SEO dinámico — cambia según el filtro de categoría activo
+  useSEO({
+    title: activeCategoryData
+      ? `${activeCategoryData.label} | Blog TEXTUM Mentoría Académica`
+      : (lang === 'es'
+          ? 'Blog Académico | Artículos sobre Investigación y Redacción Científica — TEXTUM'
+          : 'Academic Blog | Research and Scientific Writing Articles — TEXTUM'),
+    description: activeCategoryData
+      ? activeCategoryData.desc.replace(/[«»]/g, '').slice(0, 155)
+      : (lang === 'es'
+          ? 'Lee artículos y guías escritas por nuestras doctoras sobre redacción académica, metodología de investigación, APA 7 y cómo defender tu tesis con éxito.'
+          : 'Read articles and guides written by our doctors on academic writing, research methodology, APA 7 and how to successfully defend your thesis.'),
+    canonical: activeCategory ? `/blog?categoria=${activeCategory}` : '/blog',
+    ogType: 'website',
+    lang,
+  });
 
   return (
     <div className="min-h-screen bg-cream">
