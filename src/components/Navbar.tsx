@@ -100,12 +100,15 @@ export default function Navbar() {
           {/* Language toggle */}
           <button
             onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-sm border border-gold/30 text-gold text-xs tracking-[0.12em] hover:bg-gold/10 transition-all duration-200"
+            className="relative flex items-center px-1 py-1 rounded-full border border-gold/30 text-xs tracking-[0.1em] hover:border-gold/50 transition-colors duration-200"
             aria-label="Switch language"
           >
-            <span className={lang === 'es' ? 'opacity-100 font-semibold' : 'opacity-50'}>ES</span>
-            <span className="text-gold/30">|</span>
-            <span className={lang === 'en' ? 'opacity-100 font-semibold' : 'opacity-50'}>EN</span>
+            <span
+              className="absolute top-1 bottom-1 w-8 rounded-full bg-gold transition-transform duration-300 ease-out"
+              style={{ transform: lang === 'es' ? 'translateX(0%)' : 'translateX(100%)' }}
+            />
+            <span className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'es' ? 'text-navy font-semibold' : 'text-gold/60'}`}>ES</span>
+            <span className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'en' ? 'text-navy font-semibold' : 'text-gold/60'}`}>EN</span>
           </button>
 
           {/* CTA */}
@@ -155,11 +158,14 @@ export default function Navbar() {
           {/* Language toggle mobile */}
           <button
             onClick={() => { setLang(lang === 'es' ? 'en' : 'es'); setOpen(false); }}
-            className="flex items-center gap-2 px-3 py-2 rounded-sm border border-gold/30 text-gold text-xs tracking-[0.12em] hover:bg-gold/10 transition-all w-fit"
+            className="relative flex items-center px-1 py-1 rounded-full border border-gold/30 text-xs tracking-[0.1em] hover:border-gold/50 transition-colors duration-200 w-fit"
           >
-            <span className={lang === 'es' ? 'font-semibold' : 'opacity-50'}>ES</span>
-            <span className="text-gold/30">|</span>
-            <span className={lang === 'en' ? 'font-semibold' : 'opacity-50'}>EN</span>
+            <span
+              className="absolute top-1 bottom-1 w-8 rounded-full bg-gold transition-transform duration-300 ease-out"
+              style={{ transform: lang === 'es' ? 'translateX(0%)' : 'translateX(100%)' }}
+            />
+            <span className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'es' ? 'text-navy font-semibold' : 'text-gold/60'}`}>ES</span>
+            <span className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'en' ? 'text-navy font-semibold' : 'text-gold/60'}`}>EN</span>
           </button>
 
           <a
