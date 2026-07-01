@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset 
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+>
+
+  <url>
+    <loc>undefined/es</loc>
+    
+    <xhtml:link rel="alternate" hreflang="es" href="undefined/es/" />
+    <xhtml:link rel="alternate" hreflang="en" href="undefined/en/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="undefined/es/" />
+  
+  </url>
+  <url>
+    <loc>undefined/es/blog</loc>
+    
+    <xhtml:link rel="alternate" hreflang="es" href="undefined/es/blog" />
+    <xhtml:link rel="alternate" hreflang="en" href="undefined/en/blog" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="undefined/es/blog" />
+  
+  </url>
+  <url>
+    <loc>undefined/es/contacto</loc>
+    
+    <xhtml:link rel="alternate" hreflang="es" href="undefined/es/contacto" />
+    <xhtml:link rel="alternate" hreflang="en" href="undefined/en/contacto" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="undefined/es/contacto" />
+  
+  </url>
+  <url>
+    <loc>undefined/es/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional</loc>
+    
+    <xhtml:link rel="alternate" hreflang="es" href="undefined/es/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional" />
+    <xhtml:link rel="alternate" hreflang="en" href="undefined/en/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="undefined/es/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional" />
+  
+  </url>
+  <url>
+    <loc>undefined/es/blog/mentoria-academica-vs-correccion-tradicional</loc>
+    
+    <xhtml:link rel="alternate" hreflang="es" href="undefined/es/blog/mentoria-academica-vs-correccion-tradicional" />
+    <xhtml:link rel="alternate" hreflang="en" href="undefined/en/blog/mentoria-academica-vs-correccion-tradicional" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="undefined/es/blog/mentoria-academica-vs-correccion-tradicional" />
+  
+  </url>
+</urlset>
