@@ -26,8 +26,11 @@ export default function Hero() {
     type Particle = { x: number; y: number; vx: number; vy: number; r: number; alpha: number };
     let particles: Particle[] = [];
 
+    const isMobile = window.innerWidth < 768;
+    const PARTICLE_COUNT = isMobile ? 40 : 80;
+
     function initParticles() {
-      particles = Array.from({ length: 80 }, () => ({
+      particles = Array.from({ length: PARTICLE_COUNT }, () => ({
         x: Math.random() * W,
         y: Math.random() * H,
         vx: (Math.random() - 0.5) * 0.3,
@@ -69,13 +72,13 @@ export default function Hero() {
   }, []);
 
   return (
-    <section id="inicio" className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden gradient-bg">
+    <section id="inicio" className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden gradient-bg" style={{ maxWidth: '100vw' }}>
       <div className="orb orb-gold w-[600px] h-[600px] top-[-100px] right-[-100px]" style={{ animationDelay: '0s' }} />
       <div className="orb orb-navy w-[500px] h-[500px] bottom-[-80px] left-[-80px]" style={{ animationDelay: '3s' }} />
       <div className="orb orb-gold w-[300px] h-[300px] top-[40%] left-[15%]" style={{ animationDelay: '1.5s', opacity: 0.1 }} />
       <canvas ref={canvasRef} className="particles absolute inset-0" />
 
-      <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-4xl">
+      <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-4xl w-full overflow-hidden">
         <div className="mb-6 flex flex-col items-center gap-2 animate-[fadeInDown_1s_ease_0.2s_both]">
           <div className="w-px h-8 bg-gradient-to-b from-transparent to-gold/60" />
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -86,7 +89,7 @@ export default function Hero() {
           <div className="w-px h-4 bg-gradient-to-b from-gold/60 to-transparent" />
         </div>
 
-        <h1 className="font-serif text-8xl md:text-[9rem] lg:text-[11rem] font-light tracking-[0.25em] text-white mb-0 leading-none animate-[fadeInUp_1s_ease_0.4s_both]">
+        <h1 className="font-serif text-5xl sm:text-7xl md:text-[9rem] lg:text-[11rem] font-light tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.25em] text-white mb-0 leading-none animate-[fadeInUp_1s_ease_0.4s_both] w-full text-center">
           TEXTUM
         </h1>
 
@@ -98,10 +101,10 @@ export default function Hero() {
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
         </div>
 
-        <p className="font-serif italic text-2xl md:text-3xl font-light text-white/85 tracking-wide mb-3 animate-[fadeInUp_1s_ease_0.9s_both]">
+        <p className="font-serif italic text-lg sm:text-2xl md:text-3xl font-light text-white/85 tracking-normal md:tracking-wide mb-3 animate-[fadeInUp_1s_ease_0.9s_both] max-w-xs sm:max-w-lg md:max-w-2xl">
           {t.hero.tagline}
         </p>
-        <p className="text-xs md:text-sm tracking-[0.3em] text-gold/80 font-light uppercase mb-12 animate-[fadeIn_1s_ease_1s_both]">
+        <p className="text-xs md:text-sm tracking-[0.15em] md:tracking-[0.3em] text-gold/80 font-light uppercase mb-12 animate-[fadeIn_1s_ease_1s_both] max-w-xs sm:max-w-md md:max-w-xl text-center">
           {t.hero.sub}
         </p>
 
