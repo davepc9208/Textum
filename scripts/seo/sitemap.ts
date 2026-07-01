@@ -47,4 +47,5 @@ export async function generateSitemaps() {
   }
 
   console.log("🗺️ sitemaps ES/EN generados");
+  console.log("SITE_URL:", SITE_URL);
 }
