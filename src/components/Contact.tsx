@@ -119,21 +119,21 @@ export default function Contact() {
                   </div>
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-white/50 text-xs tracking-widest mb-2 uppercase">{f.nameLabel}</label>
+                      <label className="block text-white/70 text-xs tracking-widest mb-2 uppercase">{f.nameLabel}</label>
                       <input type="text" name="name" value={form.name} onChange={handleChange} required
                         placeholder={f.namePlaceholder}
                         className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all" />
                     </div>
                     <div>
-                      <label className="block text-white/50 text-xs tracking-widest mb-2 uppercase">{f.emailLabel}</label>
+                      <label className="block text-white/70 text-xs tracking-widest mb-2 uppercase">{f.emailLabel}</label>
                       <input type="email" name="email" value={form.email} onChange={handleChange} required
                         placeholder={f.emailPlaceholder}
                         className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-white/50 text-xs tracking-widest mb-2 uppercase">{f.serviceLabel}</label>
-                    <select name="service" value={form.service} onChange={handleChange}
+                    <label htmlFor="service-select" className="block text-white/70 text-xs tracking-widest mb-2 uppercase">{f.serviceLabel}</label>
+                    <select id="service-select" name="service" value={form.service} onChange={handleChange}
                       className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm focus:outline-none focus:border-gold/50 transition-all appearance-none cursor-pointer"
                       style={{ background: 'rgba(13,31,60,0.8)' }}>
                       <option value="" className="bg-navy">{f.servicePlaceholder}</option>
@@ -143,7 +143,7 @@ export default function Contact() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-white/50 text-xs tracking-widest mb-2 uppercase">{f.messageLabel}</label>
+                    <label className="block text-white/70 text-xs tracking-widest mb-2 uppercase">{f.messageLabel}</label>
                     <textarea name="message" value={form.message} onChange={handleChange} required rows={5}
                       placeholder={f.messagePlaceholder}
                       className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all resize-none" />

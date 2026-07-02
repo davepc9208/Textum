@@ -37,7 +37,7 @@ const ORG_SCHEMA = {
   address: { '@type': 'PostalAddress', addressCountry: 'EC' },
   contactPoint: {
     '@type': 'ContactPoint',
-    email: 'contacto@mentoriatextum.com',
+    email: 'revedit917@gmail.com',
     contactType: 'customer support',
     availableLanguage: ['Spanish', 'English'],
   },
@@ -80,78 +80,7 @@ const SERVICES_SCHEMA = {
   ],
 };
 
-// ── Schema: FAQ ──────────────────────────────────────────────────────────────
-const FAQ_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {
-      '@type': 'Question',
-      name: '¿Qué es el Examen Complexivo?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'El Examen Complexivo es una modalidad de titulación universitaria en Ecuador y Perú que consiste en la elaboración y defensa oral de un ensayo académico ante un tribunal. TEXTUM ofrece mentoría especializada para prepararlo con éxito.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: '¿Cuánto cuesta la mentoría para el Examen Complexivo?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'TEXTUM ofrece tres planes: Básico (150 USD), Avanzado (200 USD) y Mentoría Premium (250 USD). También existe el servicio de Co-creación Intensiva desde cero por 300 USD.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: '¿Ayudan a publicar artículos científicos en revistas indexadas?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Sí. TEXTUM ofrece mentoría para Artículo Científico con planes desde 250 USD, incluyendo revisión IMRyD, formato APA/Vancouver, simulación de revisión por pares y acompañamiento hasta la aceptación en revistas Scopus o Latindex.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: '¿Las sesiones son presenciales u online?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Todas las sesiones de mentoría TEXTUM son 100% online por videollamada, lo que permite atender estudiantes en Ecuador, Perú y cualquier país hispanohablante.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: '¿Cómo reservo una sesión de mentoría gratuita?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Puedes reservar tu sesión de diagnóstico gratuita desde el formulario de contacto en mentoriatextum.com o escribiendo directamente a contacto@mentoriatextum.com.',
-      },
-    },
-  ],
-};
-
-// ── Schema: Personas (doctoras) ──────────────────────────────────────────────
-const PERSONS_SCHEMA = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: 'Vilma María Pérez Viñas',
-    jobTitle: 'Doctora en Ciencias Pedagógicas — Mentora Principal de Investigación',
-    url: 'https://orcid.org/0000-0003-3041-096X',
-    sameAs: 'https://orcid.org/0000-0003-3041-096X',
-    worksFor: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica' },
-    knowsAbout: ['Redacción académica', 'Didáctica de la Lengua Inglesa', 'Investigación científica', 'Traducción'],
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: 'Yadyra de la Caridad Piñera Concepción',
-    jobTitle: 'Doctora en Ciencias Pedagógicas — Mentora Principal de Estructura',
-    url: 'https://orcid.org/0000-0002-8947-1364',
-    sameAs: 'https://orcid.org/0000-0002-8947-1364',
-    worksFor: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica' },
-    award: 'Premio Nacional de Investigación Científica, El Salvador, 2025',
-    knowsAbout: ['Didáctica del Español', 'Artículos científicos', 'Asesoría de tesis', 'Publicaciones académicas'],
-  },
-];
+// ── Schema: Blog (Blog) ──────────────────────────────────────────────────────
 const BLOG_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'Blog',
@@ -183,32 +112,37 @@ function HomePage() {
   useEffect(() => {
     injectSchema(ORG_SCHEMA, 'schema-org');
     injectSchema(SERVICES_SCHEMA, 'schema-services');
-    injectSchema(FAQ_SCHEMA, 'schema-faq');
-    injectSchema(PERSONS_SCHEMA[0], 'schema-person-vilma');
-    injectSchema(PERSONS_SCHEMA[1], 'schema-person-yadyra');
     return () => {
       removeSchema('schema-org');
       removeSchema('schema-services');
-      removeSchema('schema-faq');
-      removeSchema('schema-person-vilma');
-      removeSchema('schema-person-yadyra');
     };
   }, []);
 
   return (
     <div className="relative">
       <Navbar />
-      <Hero />
-      <About />
-      <Services />
-      <Values />
-      <Contact />
+      <main>
+        <Hero />
+        <About />
+        <Services />
+        <Values />
+        <Contact />
+      </main>
       <Footer />
     </div>
   );
 }
 
 function BlogListPage() {
+  useSEO({
+    title: 'Blog Académico | Artículos sobre Investigación y Redacción Científica — TEXTUM',
+    description:
+      'Lee artículos y guías escritas por nuestras doctoras sobre redacción académica, metodología de investigación, APA 7 y cómo defender tu tesis con éxito.',
+    canonical: '/blog',
+    ogType: 'website',
+    lang: 'es',
+  });
+
   useEffect(() => {
     injectSchema(BLOG_SCHEMA, 'schema-blog');
     return () => removeSchema('schema-blog');

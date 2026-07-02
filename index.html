@@ -8,7 +8,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
 
-    <!-- SEO base (sobreescrito dinámicamente por useSEO en cada ruta) -->
+    <!-- SEO base -->
     <title>TEXTUM — Mentoría Académica | Ecuador y Perú</title>
     <meta name="description" content="Mentoría académica personalizada para Examen Complexivo y Artículo Científico. Doctoras expertas en Ecuador y Perú. Reserva tu sesión gratis." />
     <meta name="robots" content="index, follow" />
@@ -35,21 +35,31 @@
     <meta name="twitter:description" content="Mentoría académica personalizada para Examen Complexivo y Artículo Científico en Ecuador y Perú." />
     <meta name="twitter:image" content="https://mentoriatextum.com/og-default.png" />
 
-    <!-- Preconnect para fuentes (mejora LCP) -->
+    <!-- Theme color -->
+    <meta name="theme-color" content="#0d1f3c" />
+
+    <!--
+      FUENTES — Estrategia no bloqueante:
+      1. preconnect solo a los 2 orígenes esenciales (antes eran 3, PageSpeed penalizaba)
+      2. La hoja de fuentes se carga con rel=preload + onload trick para no bloquear render
+      3. <noscript> como fallback para navegadores sin JS
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- Fuentes: display=swap + subset latin para reducir peso -->
+    <!-- Carga no bloqueante de fuentes -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap&subset=latin"
-      rel="stylesheet"
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
-
-    <!-- Preconnect a Supabase (carga de posts del blog) -->
-    <link rel="preconnect" href="https://supabase.co" />
-
-    <!-- Theme color (barra del navegador en móvil) -->
-    <meta name="theme-color" content="#0d1f3c" />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
+      />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>

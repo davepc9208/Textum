@@ -72,13 +72,13 @@ export default function Hero() {
   }, []);
 
   return (
-    <section id="inicio" className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden gradient-bg" style={{ maxWidth: '100vw' }}>
+    <section id="inicio" className="relative min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center overflow-hidden gradient-bg" style={{ maxWidth: '100vw' }}>
       <div className="orb orb-gold w-[600px] h-[600px] top-[-100px] right-[-100px]" style={{ animationDelay: '0s' }} />
       <div className="orb orb-navy w-[500px] h-[500px] bottom-[-80px] left-[-80px]" style={{ animationDelay: '3s' }} />
       <div className="orb orb-gold w-[300px] h-[300px] top-[40%] left-[15%]" style={{ animationDelay: '1.5s', opacity: 0.1 }} />
       <canvas ref={canvasRef} className="particles absolute inset-0" />
 
-      <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-4xl w-full overflow-hidden">
+      <div className="relative z-10 flex flex-col items-center text-center px-6 pt-8 pb-8 max-w-4xl w-full overflow-visible">
         <div className="mb-6 flex flex-col items-center gap-2 animate-[fadeInDown_1s_ease_0.2s_both]">
           <div className="w-px h-8 bg-gradient-to-b from-transparent to-gold/60" />
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -89,7 +89,7 @@ export default function Hero() {
           <div className="w-px h-4 bg-gradient-to-b from-gold/60 to-transparent" />
         </div>
 
-        <h1 className="font-serif text-5xl sm:text-7xl md:text-[9rem] lg:text-[11rem] font-light tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.25em] text-white mb-0 leading-none animate-[fadeInUp_1s_ease_0.4s_both] w-full text-center">
+        <h1 className="font-serif text-[clamp(3.25rem,10vw,10rem)] font-light tracking-[0.06em] sm:tracking-[0.12em] md:tracking-[0.2em] lg:tracking-[0.24em] text-white mb-0 leading-[0.85] animate-[fadeInUp_1s_ease_0.4s_both] w-full text-center whitespace-nowrap">
           TEXTUM
         </h1>
 
