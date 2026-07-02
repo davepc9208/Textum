@@ -6,6 +6,8 @@ import { useLang } from '../i18n/LangContext';
 import { useSEO, injectSchema, removeSchema } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import ShareButtons from '../components/ShareButtons';
+import ShareCard from '../components/ShareCard';
 
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
   useEffect(() => {
@@ -170,17 +172,42 @@ export default function PostPage() {
             </Link>
 
             {/* Meta */}
-            <div className="flex flex-wrap items-center gap-4 mb-6 text-navy/50 text-sm">
-              <span className="flex items-center gap-1.5">
-                <Calendar size={13} />
-                {new Date(post.created_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Clock size={13} />
-                {post.reading_time} {b.minRead}
-              </span>
-              <span className="text-gold font-medium">{b.by} {post.author}</span>
-            </div>
+<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-8">
+
+  <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
+
+    <span className="flex items-center gap-1.5">
+      <Calendar size={13} />
+      {new Date(post.created_at).toLocaleDateString(
+        lang === "es" ? "es-ES" : "en-GB",
+        {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }
+      )}
+    </span>
+
+    <span className="flex items-center gap-1.5">
+      <Clock size={13} />
+      {post.reading_time} {b.minRead}
+    </span>
+
+    <span className="text-gold font-medium">
+      {b.by} {post.author}
+    </span>
+
+  </div>
+
+  <ShareButtons
+    title={postTitle}
+  />
+
+</div>
+
+</div>
 
             {/* Title */}
             <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-8">{postTitle}</h1>
@@ -210,6 +237,10 @@ export default function PostPage() {
             {lightbox && (
               <Lightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
             )}
+
+            <ShareCard
+  title={postTitle}
+/>
 
             {/* Back link bottom */}
             <div className="mt-16 pt-8 border-t border-navy/10">
