@@ -53,7 +53,7 @@ const servicesEs: Service[] = [
       name: 'Mentoría de Co-creación Intensiva', price: '300 USD',
       priceNote: 'estructura estándar de hasta 25 págs. o similar',
       label: 'RECOMENDADO SI EMPIEZAS DESDE CERO',
-      desc: 'Ideal para estudiantes que se enfrentan a plazos exigentes o sufren bloqueos al escribir. Te acompañamos en la co-estructuración, pulimos la redacción y guiamos metodológicamente la escritura de tu ensayo en sesiones semanales junto a nuestras investigadoras doctoradas.',
+      desc: 'Perfecto para estudiantes con plazos ajustados o que no saben cómo empezar su Examen Complexivo. Trabajamos contigo paso a paso: co‑estructuramos tu proyecto, elevamos la calidad de tu redacción y te guiamos metodológicamente en sesiones semanales dinámicas con nuestras investigadoras.',
       features: ['Estructuración guiada desde la primera página', 'Plan de investigación, diseño metodológico y andamiaje', 'Redacción asistida y tutoría académica semanal', 'Desarrollo completo del esquema (Introducción, Teoría, Propuesta, Conclusiones)', 'Acompañamiento de Máxima Exigencia para asegurar tu aprendizaje activo'],
     },
   },
@@ -63,57 +63,57 @@ const servicesEs: Service[] = [
     tiers: [
       {
         name: 'Básico', price: '250 USD', priceNote: 'adaptado a las normas de extensión de la revista elegida', highlight: false,
-        tagline: 'Ideal para manuscritos listos para envío con correcciones de forma.',
-        features: ['Corrección de estilo', 'Adaptación de formato integral (márgenes, tablas)', 'Auditoría de citas (APA/Vancouver)', 'Verificación de Keywords', 'Ajuste de Resumen/Abstract', 'Informe técnico'],
+        tagline: 'Ideal para manuscritos listos para envío que requieren correcciones de forma.',
+        features: ['Corrección de estilo', 'Adaptación integral de formato (márgenes, tablas)', 'Auditoría de citas (APA/Vancouver)', 'Verificación de palabras clave', 'Ajuste de Resumen/Abstract', 'Informe técnico'],
       },
       {
         name: 'Avanzado', price: '350 USD', priceNote: 'adaptado a las normas de extensión de la revista elegida', highlight: true, badge: 'Más elegido',
-        tagline: 'Ideal para investigadores que quieren maximizar su tasa de aceptación.',
+        tagline: 'Ideal para investigadores que buscan maximizar su tasa de aceptación.',
         features: ['Todo lo del Plan Básico', 'Informe pedagógico personalizado', '1 sesión en vivo', 'Revisión profunda IMRyD', 'Auditoría de coherencia del Resumen', 'Optimización visual de gráficos'],
       },
       {
         name: 'Mentoría Premium', price: '500 USD', priceNote: 'adaptado a las normas de extensión de la revista elegida', highlight: false,
         tagline: 'Cobertura total: acompañamiento hasta la aceptación final del manuscrito.',
-        features: ['Todo lo del Plan Avanzado', 'Dos sesiones 1:1 (60 min)', 'Mentoría de reestructuración formato universidad → revista', 'Simulación real de revisión por pares', 'Co-elaboración de respuestas al comité editorial', 'Cobertura total hasta la aceptación final'],
+        features: ['Todo lo del Plan Avanzado', 'Dos sesiones 1:1 (60 min)', 'Mentoría de reestructuración: formato universidad → revista', 'Simulación real de revisión por pares', 'Co-elaboración de respuestas al comité editorial', 'Cobertura total hasta la aceptación final'],
       },
     ],
     addon: {
       name: 'Mentoría de Co-creación Científica', price: '600 USD',
       priceNote: 'adaptado a las normas de extensión de la revista elegida',
       label: 'RECOMENDADO PARA DOCENTES E INVESTIGADORES',
-      desc: 'Ideal para profesionales de la educación y ciencias sociales que necesitan publicar bajo plazos exigentes o sufren bloqueos al escribir. Te acompañamos en la co-estructuración, pulimos la redacción y guiamos metodológicamente la escritura de tu manuscrito bajo estándares internacionales Scopus o Latindex.',
-      features: ['Auditoría metodológica adaptada al factor de impacto', 'Guía exhaustiva en la redacción de la estructura IMRyD', 'Co-elaboración y optimización técnica del Abstract y título', 'Auditoría completa y estructuración de referencias', 'Sesiones 1:1 que garantizan tu aprendizaje activo y apropiación metodológica'],
+      desc: 'Ideal para profesionales de la educación y de las ciencias sociales que necesitan publicar bajo plazos exigentes o experimentan bloqueos al escribir. Te acompañamos en la co estructuración del manuscrito, perfeccionamos la redacción y guiamos metodológicamente tu escritura bajo estándares internacionales Scopus o Latindex.',
+      features: ['Auditoría metodológica adaptada al factor de impacto', 'Co elaboración y optimización técnica del resumen y del título', 'Sesiones 1:1 que garantizan tu aprendizaje activo y apropiación metodológica', 'Guía exhaustiva en la redacción de la estructura IMRyD', 'Auditoría completa y estructuración de referencias'],
     },
   },
 ];
 
 const servicesEn: Service[] = [
   {
-    title: 'Comprehensive Exam',
+    title: 'Degree Completion Comprehensive Exam ',
     subtitle: 'Your graduation, with real support',
     tiers: [
       {
         name: 'Basic', price: '150 USD', priceNote: 'standard structure (e.g. 25 pages or similar)', highlight: false,
-        tagline: 'Ideal for final reviews of structure and APA 7 format.',
-        features: ['Style correction (spelling, grammar and syntax)', 'Full APA 7 format alignment (citations and references)', 'Coherence review: diagnosis → proposal', 'Brief technical report of frequent errors'],
+        tagline: 'Ideal for final reviews of structure and APA 7 formatting.',
+        features: ['Style correction (spelling, grammar and syntax)', 'Full APA 7 formatting alignment (in text citations and reference list)', 'Coherence review: diagnosis → proposal', 'Brief technical report on frequent errors'],
       },
       {
         name: 'Advanced', price: '200 USD', priceNote: 'standard structure (e.g. 25 pages or similar)', highlight: true, badge: 'Most popular',
         tagline: 'Ideal for those who want to understand and fix their mistakes before defending.',
-        features: ['In-depth style correction (spelling, grammar and syntax)', 'Full APA 7 format alignment (citations and references)', 'Methodological review: internal consistency of the project', 'Personalised pedagogical report explaining the cause of each error', '1 live mentoring session to resolve doubts'],
+        features: ['In-depth style correction (spelling, grammar and syntax)', 'Full APA 7 format alignment (citations and references)', 'Methodological review: internal consistency of the project', 'Personalized pedagogical report explaining the cause of each error', '1 live mentoring session to resolve questions'],
       },
       {
         name: 'Premium Mentoring', price: '250 USD', priceNote: 'standard structure (e.g. 25 pages or similar)', highlight: false,
-        tagline: 'Full coverage: continuous review and adjustments until your graduation is approved.',
-        features: ['Everything in Advanced', 'Panel simulation (sample questions + model answers)', 'Two 1:1 sessions (60 min each: draft + oral defence)', 'Support until approval (unlimited email/WhatsApp)', 'Satisfaction guarantee: we review until you are satisfied'],
+        tagline: 'Full coverage: continuous review and adjustments until your degree project is approved.',
+        features: ['Everything included in the Advanced', 'Defense Committee Simulation (sample questions + model answers)', 'Two 1:1 sessions (60 min each: draft + oral defense)', 'Support until approval (unlimited email/WhatsApp assistance)', 'Satisfaction guarantee: we review until you are satisfied'],
       },
     ],
     addon: {
       name: 'Intensive Co-creation Mentoring', price: '300 USD',
       priceNote: 'standard structure up to 25 pages or similar',
       label: 'RECOMMENDED IF YOU ARE STARTING FROM SCRATCH',
-      desc: 'Ideal for students facing tight deadlines or writing blocks. We guide you through co-structuring, refine the writing and provide methodological coaching in weekly sessions with our doctoral researchers.',
-      features: ['Guided structuring from the very first page', 'Research plan, methodological design and scaffolding', 'Assisted writing and weekly academic tutoring', 'Full outline development (Introduction, Theory, Proposal, Conclusions)', 'Maximum-rigour accompaniment to ensure your active learning'],
+      desc: 'Designed for students who need fast, expert support to complete their Degree Completion Comprehensive Exam. If you’re dealing with tight deadlines or feeling blocked, our PhD level researchers help you co build your structure, elevate your writing, and shape your exam with solid methodological guidance through engaging weekly sessions.',
+      features: ['Guided structuring from the very first page', 'Research plan, methodological design, and expert scaffolding support', 'Guided writing and weekly academic mentoring', 'Full development of the Degree Completion Comprehensive Exam framework (Introduction, Theory, Proposal, Conclusions)', 'High Demand Support to ensure active, consistent progress throughout the entire process.'],
     },
   },
   {
@@ -121,27 +121,27 @@ const servicesEn: Service[] = [
     subtitle: 'Your gateway to indexed publication',
     tiers: [
       {
-        name: 'Basic', price: '250 USD', priceNote: 'adapted to the word-count norms of your chosen journal', highlight: false,
-        tagline: 'Ideal for manuscripts ready for submission with formal corrections.',
-        features: ['Style correction', 'Full format adaptation (margins, tables)', 'Citation audit (APA/Vancouver)', 'Keyword verification', 'Abstract adjustment', 'Technical report'],
+        name: 'Basic', price: '250 USD', priceNote: 'adapted to the length requirements of the selected journal', highlight: false,
+        tagline: 'Ideal for submission‑ready manuscripts that require formal adjustments.',
+        features: ['Style correction', 'Full formatting adjustment (margins, tables)', 'Citation audit (APA/Vancouver)', 'Keyword verification', 'Abstract adjustment', 'Technical report'],
       },
       {
-        name: 'Advanced', price: '350 USD', priceNote: 'adapted to the word-count norms of your chosen journal', highlight: true, badge: 'Most popular',
-        tagline: 'Ideal for researchers who want to maximise their acceptance rate.',
-        features: ['Everything in Basic', 'Personalised pedagogical report', '1 live session', 'In-depth IMRaD review', 'Abstract coherence audit', 'Visual optimisation of figures'],
+        name: 'Advanced', price: '350 USD', priceNote: 'adapted to the length requirements of the selected journal', highlight: true, badge: 'Most popular',
+        tagline: 'Ideal for researchers aiming to maximize their acceptance rate.',
+        features: ['Everything included in the Basic Plan', 'Personalised pedagogical report', '1 live session', 'In-depth IMRaD review', 'Coherence audit of the Abstract', 'Visual optimization of figures and graphics'],
       },
       {
-        name: 'Premium Mentoring', price: '500 USD', priceNote: 'adapted to the word-count norms of your chosen journal', highlight: false,
+        name: 'Premium Mentoring', price: '500 USD', priceNote: 'adapted to the length requirements of your chosen journal', highlight: false,
         tagline: 'Full coverage: support until the final acceptance of your manuscript.',
         features: ['Everything in Advanced', 'Two 1:1 sessions (60 min)', 'Restructuring mentoring: university format → journal format', 'Real peer-review simulation', 'Co-drafting of responses to the editorial committee', 'Full coverage until final acceptance'],
       },
     ],
     addon: {
       name: 'Scientific Co-creation Mentoring', price: '600 USD',
-      priceNote: 'adapted to the word-count norms of your chosen journal',
-      label: 'RECOMMENDED FOR TEACHERS AND RESEARCHERS',
-      desc: 'Ideal for education and social science professionals who need to publish under tight deadlines or face writing blocks. We guide co-structuring, refine the writing and provide methodological coaching under Scopus or Latindex international standards.',
-      features: ['Methodological audit adapted to the impact factor', 'Comprehensive guidance on writing the IMRaD structure', 'Co-drafting and technical optimisation of the Abstract and title', 'Complete audit and structuring of references', '1:1 sessions to guarantee your active learning and methodological ownership'],
+      priceNote: 'adapted to the length requirements of your chosen journal',
+      label: 'RECOMMENDED FOR EDUCATORS AND RESEARCHERS',
+      desc: 'Ideal for professionals in education and the social sciences who need to publish under tight deadlines or struggle with writing blocks. We support you in the co structuring of your manuscript, refine your writing, and provide methodological guidance aligned with international Scopus or Latindex standards.',
+      features: ['Methodological audit tailored to the journal’s impact factor', 'Comprehensive guidance in IMRaD structure writing', 'Co-creation and technical optimization of the Abstract and title', 'Full audit and structuring of references', '1 on 1 sessions that ensure active learning and methodological mastery'],
     },
   },
 ];
@@ -285,20 +285,20 @@ export default function Services() {
               <div className="lg:w-80 flex-shrink-0 p-8 border-b lg:border-b-0 lg:border-r border-white/10 flex flex-col justify-between bg-gold/5">
                 <div>
                   <span className="inline-block text-[10px] tracking-[0.2em] uppercase text-gold border border-gold/50 px-2.5 py-1 rounded-full mb-4">
-                    {lang === 'es' ? 'EL PASO FINAL HACIA TU TÍTULO' : 'THE FINAL STEP TO YOUR DEGREE'}
+                    {lang === 'es' ? 'EL PASO FINAL HACIA TU TÍTULO' : 'THE FINAL STEP TOWARD YOUR DEGREE'}
                   </span>
                   <h3 className="font-serif text-2xl font-light text-white leading-snug mb-2">
-                    {lang === 'es' ? 'Mentoría de Oratoria Académica y Defensa Oral' : 'Academic Oral Defence Mentoring'}
+                    {lang === 'es' ? 'Mentoría de Oratoria Académica y Defensa Oral' : 'Academic Public Speaking and Oral Defence Mentoring'}
                   </h3>
                   <p className="text-xs text-white/45 italic leading-relaxed mb-4">
                     {lang === 'es'
                       ? 'Co-elaboración de tu presentación y discurso ante el tribunal'
-                      : 'Co-development of your presentation and speech before the panel'}
+                      : 'Co‑creation of your presentation and oral defense delivery'}
                   </p>
                   <p className="text-xs text-white/55 leading-relaxed">
                     {lang === 'es'
-                      ? 'Un excelente documento no sirve de nada si te bloqueas ante los jurados. Te guiamos en la co-elaboración de tu material visual y entrenamos tu discurso para que defiendas tu investigación con total elocuencia y domines las preguntas del tribunal.'
-                      : "An excellent document means nothing if you freeze before the panel. We guide you in co-developing your visual material and train your delivery so you defend your research with full eloquence and master the panel's questions."}
+                      ? 'Un excelente documento no sirve de nada si te bloqueas frente al tribunal. Te guiamos en la co-elaboración de tu material visual y entrenamos tu discurso para que defiendas tu investigación con total elocuencia y domines las preguntas del tribunal.'
+                      : "An excellent document means little if you freeze in front of the committee. We guide you through the co‑creation of your visual materials and coach your delivery so you can defend your research with full eloquence and confidently navigate every question from the committee."}
                   </p>
                 </div>
                 <div className="mt-6">
@@ -306,26 +306,26 @@ export default function Services() {
                   <p className="text-xs text-white/35 mt-1">
                     {lang === 'es'
                       ? 'Válido para examen complexivo o proyectos de titulación'
-                      : 'Valid for comprehensive exam or graduation projects'}
+                      : 'Valid for Degree Completion Comprehensive Exam or Graduation Projects'}
                   </p>
                   <a href="#contacto" className="mt-4 block text-center text-xs tracking-[0.15em] py-3 rounded-sm bg-gold text-navy font-semibold hover:bg-gold-light transition-all duration-200">
-                    {lang === 'es' ? 'ASEGURAR MI DEFENSA ORAL' : 'SECURE MY ORAL DEFENCE'}
+                    {lang === 'es' ? 'ASEGURAR MI DEFENSA ORAL' : 'BOOK MY ORAL DEFENSE MENTORING'}
                   </a>
                 </div>
               </div>
               <ul className="flex-1 p-8 grid sm:grid-cols-2 gap-x-8 gap-y-4 content-start">
                 {(lang === 'es' ? [
-                  'Estructuración estratégica del guion y discurso de apertura.',
-                  'Guía y optimización visual de diapositivas bajo estándares universitarios.',
-                  'Entrenamiento de control de nervios, lenguaje corporal y voz.',
+                  'Estructuración estratégica del guion y del discurso de apertura.',
+                  'Optimización visual de diapositivas bajo estándares universitarios.',
+                  'Entrenamiento en control de nervios, lenguaje corporal y manejo de la voz.',
                   'Banco simulado de preguntas difíciles según tu universidad.',
-                  'Mentoría en vivo 1-a-1 de simulación real con correcciones inmediatas.',
+                  'Mentoría 1-a-1 en vivo de simulación real con correcciones inmediatas.',
                 ] : [
-                  'Strategic structuring of the script and opening speech.',
-                  'Visual guidance and optimisation of slides to university standards.',
-                  'Training in nerves control, body language and voice projection.',
-                  'Simulated bank of difficult questions specific to your university.',
-                  'Live 1-to-1 real-simulation mentoring with immediate corrections.',
+                  'Strategic structuring of your script and opening statement.',
+                  'Visual optimization of slides aligned with university standards.',
+                  'Training in nerve control, body language, and vocal delivery.',
+                  'Simulated bank of difficult questions tailored to your university.',
+                  'Live 1 on 1 mentoring with real time simulation and immediate feedback.',
                 ]).map((f, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm leading-snug">
                     <Check size={14} strokeWidth={2.5} className="mt-0.5 flex-shrink-0 text-gold" />
