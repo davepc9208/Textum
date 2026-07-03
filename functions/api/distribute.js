@@ -76,7 +76,10 @@ async function pingSitemap() {
   }
 }
 
-export default async (request, env) => {
+// Cloudflare Pages Function — onRequest handles all HTTP methods
+export async function onRequest(context) {
+  const { request, env } = context;
+
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json',
@@ -99,7 +102,7 @@ export default async (request, env) => {
     );
   }
 
-  const apiKey = env?.GEMINI_API_KEY ?? process.env?.GEMINI_API_KEY;
+  const apiKey = env.GEMINI_API_KEY;
 
   if (!apiKey) {
     return new Response(
@@ -152,8 +155,4 @@ export default async (request, env) => {
   }
 
   return new Response(JSON.stringify(results), { status: 200, headers: corsHeaders });
-};
-
-export const config = {
-  path: '/api/distribute',
-};
+}
