@@ -1,8 +1,10 @@
+// AdminPage.tsx
 import { useState, useEffect, useRef } from 'react';
 import { supabase, Post } from '../lib/supabase';
 import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, ShieldCheck } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import RichTextEditor from '../components/RichTextEditor';
+import AdminDistribute from '../components/AdminDistribute';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function slugify(str: string) {
@@ -31,6 +33,7 @@ const EMPTY: Omit<Post, 'id' | 'created_at'> = {
   content_en: '',
   author: '',
   cover_url: '',
+  cover_alt: '',
   published: false,
   reading_time: 1,
   category: null,
@@ -60,8 +63,6 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
       return;
     }
 
-    // ¿La cuenta tiene 2FA activado? Si sí, el nivel de sesión actual (aal1)
-    // no es suficiente todavía y hay que pedir el código de la app autenticadora.
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
       const { data: factors } = await supabase.auth.mfa.listFactors();
@@ -167,14 +168,12 @@ function CoverImagePicker({ value, onChange }: { value: string; onChange: (url: 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validación de formato
     const allowed = ['image/webp', 'image/png'];
     if (!allowed.includes(file.type)) {
       setErr('Formato no permitido. Sube únicamente imágenes .webp o .png.');
       e.target.value = '';
       return;
     }
-    // Validación de peso (300 KB)
     if (file.size > 300 * 1024) {
       setErr(`El archivo pesa ${(file.size / 1024).toFixed(0)} KB. El máximo recomendado es 300 KB. Comprímelo antes de subir.`);
       e.target.value = '';
@@ -251,7 +250,6 @@ function PostEditor({
   const draftKey = `textum_draft_${initial.id ?? 'new'}`;
 
   const [form, setForm] = useState(() => {
-    // Intenta restaurar un borrador guardado en este navegador
     try {
       const saved = localStorage.getItem(draftKey);
       if (saved) {
@@ -269,7 +267,6 @@ function PostEditor({
   const [preview, setPreview] = useState(false);
   const [hasDraft, setHasDraft] = useState(() => !!localStorage.getItem(draftKey));
 
-  // Autoguardado: cada vez que cambia el formulario, lo guarda en localStorage
   useEffect(() => {
     try {
       localStorage.setItem(draftKey, JSON.stringify(form));
@@ -279,7 +276,6 @@ function PostEditor({
     }
   }, [form, draftKey]);
 
-  // Avisa antes de cerrar/recargar la pestaña si hay cambios sin guardar
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -309,11 +305,9 @@ function PostEditor({
     setSaving(true);
     setErr('');
 
-    // Validaciones básicas
     if (!form.slug) { setErr('El slug (URL) no puede estar vacío.'); setSaving(false); return; }
     if (!form.title_es) { setErr('El título en español es obligatorio.'); setSaving(false); return; }
 
-    // Comprobar slug duplicado
     const { data: existing } = await supabase
       .from('posts')
       .select('id')
@@ -370,7 +364,6 @@ function PostEditor({
               </button>
             </div>
           )}
-          {/* Header */}
           <div className="flex items-center justify-between px-8 py-5 border-b border-navy/10 bg-white">
             <h2 className="font-serif text-2xl text-navy">{initial.id ? 'Editar artículo' : 'Nuevo artículo'}</h2>
             <div className="flex items-center gap-3">
@@ -396,7 +389,6 @@ function PostEditor({
             </div>
           </div>
 
-          {/* Preview panel */}
           {preview ? (
             <div className="p-8 bg-cream min-h-[400px]">
               {form.cover_url && (
@@ -422,7 +414,6 @@ function PostEditor({
             </div>
           ) : (
             <div className="p-8 space-y-6">
-            {/* Shared fields */}
             <div className="grid sm:grid-cols-2 gap-5">
               <div>
                 <label className={labelCls}>Autora</label>
@@ -434,7 +425,6 @@ function PostEditor({
               </div>
             </div>
 
-            {/* Category selector */}
             <div>
               <label className={labelCls}>Categoría</label>
               <select
@@ -456,7 +446,6 @@ function PostEditor({
               <CoverImagePicker value={form.cover_url} onChange={(url) => set('cover_url', url)} />
             </div>
 
-            {/* Language tabs */}
             <div className="border border-navy/10 rounded-sm overflow-hidden">
               <div className="flex border-b border-navy/10">
                 {(['es', 'en'] as const).map(l => (
@@ -503,7 +492,6 @@ function PostEditor({
               </div>
             </div>
 
-            {/* Published toggle */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => set('published', !form.published)}
@@ -535,7 +523,7 @@ function PostEditor({
   );
 }
 
-// ─── MFA setup modal (activar verificación en dos pasos) ───────────────────
+// ─── MFA setup modal ────────────────────────────────────────────────────────
 function MfaSetup({ onClose, onEnabled }: { onClose: () => void; onEnabled: () => void }) {
   const [step, setStep] = useState<'loading' | 'scan' | 'done'>('loading');
   const [qr, setQr] = useState('');
@@ -547,18 +535,15 @@ function MfaSetup({ onClose, onEnabled }: { onClose: () => void; onEnabled: () =
 
   useEffect(() => {
     (async () => {
-      // Si ya hay un factor TOTP verificado, no hace falta enrolar de nuevo
       const { data: factors } = await supabase.auth.mfa.listFactors();
-      const verified = factors?.totp?.filter(f => f.status === 'verified') ?? [];
+      const verified = factors?.totp?.filter((f: { status: string }) => f.status === 'verified') ?? [];
       setExistingFactors(verified);
       if (verified.length > 0) {
         setStep('done');
         return;
       }
 
-      // Limpia cualquier factor TOTP a medio enrolar de un intento anterior
-      // (si no, Supabase rechaza el nuevo intento por nombre duplicado)
-      const unverified = factors?.totp?.filter(f => f.status !== 'verified') ?? [];
+      const unverified = factors?.totp?.filter((f: { status: string }) => f.status !== 'verified') ?? [];
       for (const f of unverified) {
         await supabase.auth.mfa.unenroll({ factorId: f.id });
       }
@@ -657,6 +642,35 @@ function MfaSetup({ onClose, onEnabled }: { onClose: () => void; onEnabled: () =
   );
 }
 
+// ─── Modal para distribuir ────────────────────────────────────────────────────
+function DistributeModal({
+  post,
+  onClose,
+  onPublishSuccess,
+}: {
+  post: Post;
+  onClose: () => void;
+  onPublishSuccess: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-navy/80 backdrop-blur-sm z-50 overflow-y-auto">
+      <div className="max-w-3xl mx-auto my-8 px-4">
+        <div className="bg-navy/95 border border-gold/20 rounded-sm shadow-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gold/20">
+            <h2 className="font-serif text-xl text-white">Publicar y distribuir</h2>
+            <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+              <X size={20} />
+            </button>
+          </div>
+          <div className="p-6">
+            <AdminDistribute post={post} onPublishSuccess={onPublishSuccess} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main admin panel ─────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
@@ -664,6 +678,7 @@ export default function AdminPage() {
   const [editing, setEditing] = useState<Partial<Post> | null>(null);
   const [loading, setLoading] = useState(true);
   const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const [distributingPost, setDistributingPost] = useState<Post | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -693,7 +708,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Top bar */}
       <div className="glass-navy border-b border-gold/20 px-6 py-4 flex items-center justify-between">
         <span className="font-serif text-xl tracking-[0.2em] text-white">TEXTUM <span className="text-gold/60 text-sm font-sans font-light tracking-widest">ADMIN</span></span>
         <div className="flex items-center gap-5">
@@ -707,7 +721,6 @@ export default function AdminPage() {
           </button>
         </div>
       </div>
-
 
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="flex items-center justify-between mb-10">
@@ -737,7 +750,7 @@ export default function AdminPage() {
               <div key={post.id}
                 className="bg-white border border-navy/8 rounded-sm px-6 py-4 flex items-center gap-4 hover:border-gold/20 transition-colors">
                 {post.cover_url && (
-                  <img src={post.cover_url} alt="" className="w-14 h-14 object-cover rounded-sm flex-shrink-0" />
+                  <img src={post.cover_url} alt={post.cover_alt || post.title_es} className="w-14 h-14 object-cover rounded-sm flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-serif text-navy truncate">{post.title_es}</p>
@@ -754,6 +767,12 @@ export default function AdminPage() {
                   <button onClick={() => setEditing(post)}
                     className="px-3 py-1.5 text-xs border border-navy/15 rounded-sm text-navy/60 hover:border-gold/40 hover:text-navy transition-colors">
                     Editar
+                  </button>
+                  <button
+                    onClick={() => setDistributingPost(post)}
+                    className="px-3 py-1.5 text-xs border border-gold/30 rounded-sm text-gold hover:bg-gold hover:text-navy transition-colors"
+                  >
+                    📤 DISTRIBUIR
                   </button>
                   <button onClick={() => handleDelete(post.id)}
                     className="p-2 text-red-400/60 hover:text-red-500 transition-colors">
@@ -778,6 +797,14 @@ export default function AdminPage() {
         <MfaSetup
           onClose={() => setShowMfaSetup(false)}
           onEnabled={() => setShowMfaSetup(false)}
+        />
+      )}
+
+      {distributingPost && (
+        <DistributeModal
+          post={distributingPost}
+          onClose={() => setDistributingPost(null)}
+          onPublishSuccess={fetchPosts}
         />
       )}
     </div>
