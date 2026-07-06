@@ -94,7 +94,7 @@ export default function PostPage() {
     title: `${postTitle} — TEXTUM Mentoría Académica`,
     description: postExcerpt.slice(0, 155),
     canonical: `/blog/${post.slug}`,
-    ogImage: post.cover_url || undefined,
+    ogImage: post.cover_url,
     ogType: 'article',
     articleMeta: {
       publishedTime: post.created_at,
@@ -116,7 +116,7 @@ export default function PostPage() {
       '@type': 'Article',
       headline: postTitle,
       description: postExcerpt.slice(0, 155),
-      image: post.cover_url || undefined,
+      image: post.cover_url,
       datePublished: post.created_at,
       author: {
         '@type': 'Person',

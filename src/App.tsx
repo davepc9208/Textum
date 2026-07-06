@@ -33,7 +33,7 @@ const ORG_SCHEMA = {
   url: 'https://mentoriatextum.com',
   logo: 'https://mentoriatextum.com/favicon.svg',
   description:
-    'Mentoría académica personalizada para estudiantes universitarios y de posgrado en Ecuador y Perú. Especialistas en Examen Complexivo y Artículo Científico.',
+    'Mentoría académica personalizada para estudiantes universitarios y de posgrado. Especialistas en Examen Complexivo y Artículo Científico.',
   address: { '@type': 'PostalAddress', addressCountry: 'EC' },
   contactPoint: {
     '@type': 'ContactPoint',
@@ -103,7 +103,7 @@ function HomePage() {
   useSEO({
     title: 'TEXTUM — Mentoría Académica | Examen Complexivo y Artículo Científico',
     description:
-      'Mentoría académica personalizada para estudiantes universitarios en Ecuador y Perú. Especialistas en Examen Complexivo, Artículo Científico y Defensa Oral. Reserva tu sesión gratis.',
+      'Mentoría académica personalizada para estudiantes universitarios. Especialistas en Examen Complexivo, Artículo Científico y Defensa Oral. Reserva tu sesión gratis.',
     canonical: '/',
     ogType: 'website',
     lang: 'es',
