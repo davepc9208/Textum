@@ -67,30 +67,21 @@ export async function onRequest(context) {
   const slug = params.slug;
 
   if (!slug) {
-    // Redirigir a la app React si no hay slug
-    return new Response(null, {
-      status: 302,
-      headers: { 'Location': '/blog' },
-    });
+    // Sin slug, no hacer nada - dejar que Cloudflare sirva index.html
+    return;
   }
 
-  // Si NO es un bot, redirigir a React
+  // Si NO es un bot, NO hacer nada - dejar que Cloudflare Pages sirva React
   if (!isBot(userAgent)) {
-    return new Response(null, {
-      status: 302,
-      headers: { 'Location': url.pathname + url.search },
-    });
+    return;
   }
 
   // Para bots: obtener datos y servir HTML con metadatos
   try {
     const apiKey = env.VITE_SUPABASE_ANON_KEY;
     if (!apiKey) {
-      // Sin API key, redirigir igualmente
-      return new Response(null, {
-        status: 302,
-        headers: { 'Location': url.pathname },
-      });
+      // Sin API key, no hacer nada
+      return;
     }
 
     const post = await fetchPost(slug, apiKey);
@@ -131,10 +122,11 @@ export async function onRequest(context) {
   <meta name="twitter:description" content="${escapeHtml(description)}">
   <meta name="twitter:image" content="${image}">
   <link rel="canonical" href="https://mentoriatextum.com/blog/${slug}">
-  <meta http-equiv="refresh" content="0;url=/blog/${slug}">
 </head>
 <body>
-  <p>Cargando artículo...</p>
+  <noscript>
+    <meta http-equiv="refresh" content="0;url=/blog/${slug}">
+  </noscript>
 </body>
 </html>`;
 
@@ -147,10 +139,7 @@ export async function onRequest(context) {
     });
   } catch (error) {
     console.error('Error:', error.message);
-    // En caso de error, redirigir a React
-    return new Response(null, {
-      status: 302,
-      headers: { 'Location': url.pathname },
-    });
+    // En caso de error, no hacer nada - dejar que React maneje
+    return;
   }
 }
