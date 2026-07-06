@@ -1,7 +1,7 @@
 /**
  * Cloudflare Pages Function - Blog SEO para bots únicamente
  * Solo intercepta requests de bots (Facebook, Twitter, WhatsApp, LinkedIn)
- * Los usuarios normales acceden directamente a la app React
+ * Los usuarios normales son redireccionados a la app React
  */
 
 const SUPABASE_URL = 'https://didxrqnhnxbhskdazkzz.supabase.co';
@@ -17,11 +17,13 @@ const BOT_USER_AGENTS = [
   'googlebot',
   'bingbot',
   'Bingbot',
+  'bbot',
+  'Crawl',
 ];
 
 function isBot(userAgent) {
   if (!userAgent) return false;
-  return BOT_USER_AGENTS.some(bot => userAgent.includes(bot));
+  return BOT_USER_AGENTS.some(bot => userAgent.toLowerCase().includes(bot.toLowerCase()));
 }
 
 async function fetchPost(slug, apiKey) {
@@ -60,26 +62,39 @@ function escapeHtml(text) {
 
 export async function onRequest(context) {
   const { request, params, env } = context;
+  const url = new URL(request.url);
   const userAgent = request.headers.get('user-agent') || '';
-
-  // Si no es un bot, dejar que React maneje la ruta normalmente
-  if (!isBot(userAgent)) {
-    return new Response(null, { status: 404 });
-  }
-
   const slug = params.slug;
+
   if (!slug) {
-    return new Response(null, { status: 404 });
+    // Redirigir a la app React si no hay slug
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': '/blog' },
+    });
   }
 
+  // Si NO es un bot, redirigir a React
+  if (!isBot(userAgent)) {
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': url.pathname + url.search },
+    });
+  }
+
+  // Para bots: obtener datos y servir HTML con metadatos
   try {
     const apiKey = env.VITE_SUPABASE_ANON_KEY;
     if (!apiKey) {
-      return new Response(null, { status: 404 });
+      // Sin API key, redirigir igualmente
+      return new Response(null, {
+        status: 302,
+        headers: { 'Location': url.pathname },
+      });
     }
 
     const post = await fetchPost(slug, apiKey);
-    const lang = new URL(request.url).searchParams.get('lang') || 'es';
+    const lang = url.searchParams.get('lang') || 'es';
 
     let title = 'Artículo — TEXTUM Mentoría Académica';
     let description = 'Artículo académico del blog de TEXTUM';
@@ -116,12 +131,10 @@ export async function onRequest(context) {
   <meta name="twitter:description" content="${escapeHtml(description)}">
   <meta name="twitter:image" content="${image}">
   <link rel="canonical" href="https://mentoriatextum.com/blog/${slug}">
+  <meta http-equiv="refresh" content="0;url=/blog/${slug}">
 </head>
 <body>
-  <p>Redireccionando...</p>
-  <script>
-    window.location.href = '/blog/${slug}';
-  </script>
+  <p>Cargando artículo...</p>
 </body>
 </html>`;
 
@@ -134,6 +147,10 @@ export async function onRequest(context) {
     });
   } catch (error) {
     console.error('Error:', error.message);
-    return new Response(null, { status: 404 });
+    // En caso de error, redirigir a React
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': url.pathname },
+    });
   }
 }
