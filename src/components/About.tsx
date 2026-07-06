@@ -3,12 +3,14 @@ import { useLang } from '../i18n/LangContext';
 const memberImages = [
   {
     src: '/WhatsApp_Image_2026-06-15_at_11.19.28.jpeg',
+    srcWebp: '/WhatsApp_Image_2026-06-15_at_11.19.28.webp',
     alt: 'Vilma María Pérez Viñas',
     orcid: 'https://orcid.org/0000-0003-3041-096X',
     orcidId: '0000-0003-3041-096X',
   },
   {
     src: '/Yadyra_Pinera_Concepcion.png',
+    srcWebp: '/Yadyra_Pinera_Concepcion.webp',
     alt: 'Yadyra de la Caridad Piñera Concepción',
     orcid: 'https://orcid.org/0000-0002-8947-1364',
     orcidId: '0000-0002-8947-1364',
@@ -38,8 +40,13 @@ export default function About() {
           <div className="reveal-left relative">
             <div className="relative rounded-sm overflow-hidden aspect-[4/5] shadow-2xl">
               <img
-                src="https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=800"
+                src="https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=600&h=750&fit=crop"
+                srcSet="https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&fit=crop 400w,
+                        https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=600&h=750&fit=crop 600w,
+                        https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=800&h=1000&fit=crop 800w"
+                sizes="(max-width: 768px) 100vw, 50vw"
                 alt="Redacción y mentoría académica"
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-navy/60 via-transparent to-transparent" />
@@ -107,11 +114,18 @@ export default function About() {
                         object-position: top garantiza que la cara siempre sea visible.
                       */}
                       <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full min-h-[320px] overflow-hidden">
-                        <img
-                          src={img.src}
-                          alt={img.alt}
-                          className="absolute inset-0 w-full h-full object-cover object-top"
-                        />
+                        <picture>
+                          <source 
+                            srcSet={img.srcWebp}
+                            type="image/webp"
+                          />
+                          <img
+                            src={img.src}
+                            alt={img.alt}
+                            loading="lazy"
+                            className="absolute inset-0 w-full h-full object-cover object-top"
+                          />
+                        </picture>
                         {/* subtle overlay */}
                         <div className={`absolute inset-0 ${isEven ? 'bg-gradient-to-r' : 'bg-gradient-to-l'} from-transparent via-transparent to-white/10 hidden md:block`} />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/10 md:hidden" />
