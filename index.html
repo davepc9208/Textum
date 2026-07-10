@@ -9,55 +9,60 @@
     <link rel="apple-touch-icon" href="/favicon.svg" />
 
     <!-- SEO base -->
-    <title>TEXTUM — Mentoría Académica</title>
-    <meta name="description" content="Mentoría académica personalizada para Examen Complexivo y Artículo Científico. Doctoras expertas. Reserva tu sesión gratis." />
+    <title>TEXTUM — Mentoría Académica Internacional</title>
+    <meta name="description" content="Programas de mentoría académica para titulación, publicación científica y defensa oral. Rigor metodológico, uso ético de IA. Diagnóstico gratuito." />
     <meta name="robots" content="index, follow" />
     <meta name="author" content="TEXTUM — Mentoría Académica" />
-    <meta name="keywords" content="mentoría académica, examen complexivo, artículo científico, tesis, APA 7, redacción académica, defensa oral" />
+    <meta name="keywords" content="mentoría académica, titulación, artículo científico, tesis, APA 7, redacción académica, defensa oral, publicación científica" />
 
     <!-- Canonical base -->
     <link rel="canonical" href="https://mentoriatextum.com/" />
 
-    <!-- Open Graph base -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="TEXTUM — Mentoría Académica" />
-    <meta property="og:title" content="TEXTUM — Mentoría Académica" />
-    <meta property="og:description" content="Mentoría académica personalizada para Examen Complexivo y Artículo Científico. Doctoras expertas. Reserva tu sesión gratis." />
-    <meta property="og:url" content="https://mentoriatextum.com/" />
-    <meta property="og:image" content="https://mentoriatextum.com/og-default.png" />
-    <meta property="og:image:width" content="1200" />
+    <!-- Open Graph -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:site_name"   content="TEXTUM — Mentoría Académica" />
+    <meta property="og:title"       content="TEXTUM — Mentoría Académica Internacional" />
+    <meta property="og:description" content="Programas de mentoría académica para titulación, publicación científica y defensa oral. Diagnóstico gratuito." />
+    <meta property="og:url"         content="https://mentoriatextum.com/" />
+    <meta property="og:image"       content="https://mentoriatextum.com/og-default.png" />
+    <meta property="og:image:width"  content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:locale" content="es_ES" />
+    <meta property="og:locale"      content="es_ES" />
 
-    <!-- Twitter Card base -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="TEXTUM — Mentoría Académica" />
-    <meta name="twitter:description" content="Mentoría académica personalizada para Examen Complexivo y Artículo Científico." />
-    <meta name="twitter:image" content="https://mentoriatextum.com/og-default.png" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="TEXTUM — Mentoría Académica Internacional" />
+    <meta name="twitter:description" content="Programas de mentoría académica para titulación, publicación científica y defensa oral." />
+    <meta name="twitter:image"       content="https://mentoriatextum.com/og-default.png" />
 
-    <!-- Theme color -->
+    <!-- Theme -->
     <meta name="theme-color" content="#0d1f3c" />
 
     <!--
-      FUENTES — Estrategia no bloqueante:
-      1. preconnect solo a los 2 orígenes esenciales (antes eran 3, PageSpeed penalizaba)
-      2. La hoja de fuentes se carga con rel=preload + onload trick para no bloquear render
-      3. <noscript> como fallback para navegadores sin JS
+      FUENTES — estrategia de máximo rendimiento:
+      1. preconnect a los 2 orígenes de fuentes
+      2. preconnect a ipapi.co y pexels (candidatos identificados por PageSpeed)
+      3. preload del CSS de fuentes como stylesheet diferido (no bloquea render)
+      4. Solo 3 variantes de Cormorant: 300, 400 italic, 600 (elimina 300 y 1,300)
     -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- Carga no bloqueante de fuentes -->
+    <!-- Preconnect a terceros identificados por PageSpeed como candidatos -->
+    <link rel="preconnect" href="https://ipapi.co" />
+    <link rel="preconnect" href="https://images.pexels.com" />
+
+    <!-- Fuentes reducidas: solo las variantes realmente usadas -->
     <link
       rel="preload"
       as="style"
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Inter:wght@300;400;500&display=swap"
       onload="this.onload=null;this.rel='stylesheet'"
     />
     <noscript>
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Inter:wght@300;400;500&display=swap"
       />
     </noscript>
   </head>

@@ -139,7 +139,7 @@ export default function Contact() {
                   {/* Título del formulario */}
                   <div className="pb-2 border-b border-white/8">
                     <h3 className="font-serif text-xl text-white mb-1">{f.formTitle}</h3>
-                    <p className="text-white/35 text-xs font-light leading-relaxed">{f.formIntro}</p>
+                    <p className="text-white/50 text-xs font-light leading-relaxed">{f.formIntro}</p>
                   </div>
 
                   {/* Fila 1: Nombre + Email */}
@@ -259,7 +259,7 @@ export default function Contact() {
                   )}
 
                   {/* Nota legal */}
-                  <p className="text-white/20 text-[10px] leading-relaxed font-light">{f.legalNote}</p>
+                  <p className="text-white/35 text-[10px] leading-relaxed font-light">{f.legalNote}</p>
 
                   {/* Submit */}
                   <button

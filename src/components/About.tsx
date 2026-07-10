@@ -62,17 +62,22 @@ export default function About() {
       <div className="max-w-6xl mx-auto">
         {/* Main two-column block */}
         <div className="grid md:grid-cols-2 gap-16 items-center">
-          {/* Image */}
+          {/* Image - IMAGEN PRINCIPAL CON CAMBIOS DE RENDIMIENTO */}
           <div className="reveal-left relative">
             <div className="relative rounded-sm overflow-hidden aspect-[4/5] shadow-2xl">
               <img
                 src="https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=600&h=750&fit=crop"
-                srcSet="https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&fit=crop 400w,
-                        https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=600&h=750&fit=crop 600w,
-                        https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=800&h=1000&fit=crop 800w"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                srcSet="
+                  https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=300&h=375&fit=crop 300w,
+                  https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=500&h=625&fit=crop 500w,
+                  https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=700&h=875&fit=crop 700w
+                "
+                sizes="(max-width: 480px) 300px, (max-width: 768px) 100vw, 50vw"
                 alt="Redacción y mentoría académica"
-                loading="lazy"
+                loading="eager"
+                fetchPriority="high"
+                width={600}
+                height={750}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-navy/60 via-transparent to-transparent" />

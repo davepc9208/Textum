@@ -49,11 +49,12 @@ body {
   border: 1px solid rgba(201, 168, 76, 0.2);
 }
 
-/* Animated gradient background */
+/* Animated gradient background - CON will-change añadido */
 .gradient-bg {
   background: linear-gradient(135deg, #0d1f3c 0%, #1a3160 40%, #0d1f3c 70%, #162a50 100%);
   background-size: 400% 400%;
   animation: gradientShift 12s ease infinite;
+  will-change: background-position;
 }
 
 @keyframes gradientShift {
@@ -141,23 +142,31 @@ body {
 .stagger > *:nth-child(4) { transition-delay: 300ms; }
 .stagger > *:nth-child(5) { transition-delay: 400ms; }
 
-/* Gold shimmer text */
+/* Gold shimmer text - VERSIÓN OPTIMIZADA (sin shimmer en mobile) */
 .text-gold {
   color: #c9a84c;
 }
 
+/* Gradiente estático — sin animación por defecto (mejor rendimiento en mobile) */
 .text-gold-gradient {
-  background: linear-gradient(135deg, #c9a84c 0%, #e2c06e 50%, #c9a84c 100%);
-  background-size: 200% auto;
+  background: linear-gradient(135deg, #c9a84c 0%, #e2c06e 45%, #c9a84c 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: shimmer 4s linear infinite;
 }
 
-@keyframes shimmer {
-  0%   { background-position: 0% center; }
-  100% { background-position: 200% center; }
+/* Shimmer activo SOLO en desktop (1024px+) y si el usuario no prefiere menos movimiento */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .text-gold-gradient {
+    background-size: 200% auto;
+    animation: shimmer 4s linear infinite;
+    will-change: transform;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
 }
 
 /* Particle canvas overlay */
@@ -254,7 +263,6 @@ canvas.particles {
 
 /* ════════════════════════════════════════════════════════
    TRANSICIÓN DE IDIOMA — Cortina dorada
-   Añadir al final de src/index.css
    ════════════════════════════════════════════════════════ */
 
 .lang-sweep-overlay {

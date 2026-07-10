@@ -1,11 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Usar con `netlify dev` para probar el formulario de contacto en local
     proxy: {
       '/api/contact': {
         target: 'http://localhost:8888',
@@ -16,17 +14,22 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          supabase: ['@supabase/supabase-js'],
-          tiptap: [
-            '@tiptap/react',
-            '@tiptap/starter-kit',
-            '@tiptap/extension-image',
-            '@tiptap/extension-link',
-            '@tiptap/extension-placeholder',
-          ],
+        manualChunks(id) {
+          // Supabase — solo cuando se necesita (blog, admin)
+          if (id.includes('@supabase')) return 'supabase';
+
+          // Tiptap — SOLO en el chunk del admin, nunca en el bundle inicial
+          if (
+            id.includes('@tiptap') ||
+            id.includes('prosemirror')
+          ) return 'tiptap';
+
+          // React ecosystem — vendor estable
+          if (id.includes('react-dom') || id.includes('react-router')) return 'react-vendor';
         },
       },
     },
+    // Aumentar el aviso de chunk size para no confundir warnings con errores
+    chunkSizeWarningLimit: 600,
   },
 });

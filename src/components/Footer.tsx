@@ -90,7 +90,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 text-xs text-white/25 tracking-wide">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 text-xs text-white/40 tracking-wide">
           <p>© {new Date().getFullYear()} TEXTUM — Mentoría Académica. {f.rights}</p>
           <p className="text-gold/30">{f.designed}</p>
         </div>
