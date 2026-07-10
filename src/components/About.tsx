@@ -17,11 +17,37 @@ const memberImages = [
   },
 ];
 
+// Badges de estándares académicos por miembro
+const memberStandards = [
+  // Vilma — APA 7, Latindex, Bologna
+  [
+    { code: 'APA 7',    cls: 'bg-navy/8 text-navy/55 border-navy/15' },
+    { code: 'Latindex', cls: 'bg-navy/8 text-navy/55 border-navy/15' },
+    { code: 'Bologna',  cls: 'bg-blue-50 text-blue-600 border-blue-200' },
+  ],
+  // Yadyra — Scopus, ANECA, IMRyD
+  [
+    { code: 'Scopus',   cls: 'bg-navy/8 text-navy/55 border-navy/15' },
+    { code: 'ANECA',    cls: 'bg-blue-50 text-blue-600 border-blue-200' },
+    { code: 'IMRyD',    cls: 'bg-navy/8 text-navy/55 border-navy/15' },
+  ],
+];
+
 const OrcidSVG = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.369 4.378c.525 0 .947.431.947.947s-.422.947-.947.947a.95.95 0 0 1-.947-.947c0-.525.422-.947.947-.947zm-.722 3.038h1.444v10.041H6.647V7.416zm3.562 0h3.9c3.712 0 5.344 2.653 5.344 5.025 0 2.578-2.016 5.016-5.325 5.016h-3.919V7.416zm1.444 1.303v7.444h2.297c3.272 0 3.872-2.862 3.872-3.722 0-2.016-1.284-3.722-3.862-3.722h-2.307z"/>
   </svg>
 );
+
+function AwardIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+      stroke="#c9a84c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="6"/>
+      <path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/>
+    </svg>
+  );
+}
 
 export default function About() {
   const { t } = useLang();
@@ -98,6 +124,7 @@ export default function About() {
           <div className="space-y-10">
             {ab.members.map((member, idx) => {
               const img = memberImages[idx];
+              const standards = memberStandards[idx];
               const isEven = idx % 2 === 0;
               return (
                 <div
@@ -107,18 +134,9 @@ export default function About() {
                   <div className={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
                     {/* ── Photo ── */}
                     <div className="relative md:w-64 flex-shrink-0">
-                      {/*
-                        FIX: En móvil usábamos h-72 fijo con object-cover lo que recortaba
-                        las fotos agresivamente. Ahora usamos aspect-ratio para mantener
-                        proporciones correctas tanto en móvil (3/4) como en desktop (auto).
-                        object-position: top garantiza que la cara siempre sea visible.
-                      */}
                       <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full min-h-[320px] overflow-hidden">
                         <picture>
-                          <source 
-                            srcSet={img.srcWebp}
-                            type="image/webp"
-                          />
+                          <source srcSet={img.srcWebp} type="image/webp" />
                           <img
                             src={img.src}
                             alt={img.alt}
@@ -126,7 +144,6 @@ export default function About() {
                             className="absolute inset-0 w-full h-full object-cover object-top"
                           />
                         </picture>
-                        {/* subtle overlay */}
                         <div className={`absolute inset-0 ${isEven ? 'bg-gradient-to-r' : 'bg-gradient-to-l'} from-transparent via-transparent to-white/10 hidden md:block`} />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/10 md:hidden" />
                       </div>
@@ -153,7 +170,9 @@ export default function About() {
                         {member.role && (
                           <p className="text-xs tracking-[0.2em] text-gold uppercase mt-1">{member.role}</p>
                         )}
-                        <div className="flex items-center gap-2 mt-2">
+
+                        {/* ORCID + badges de estándares europeos */}
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
                           <a
                             href={img.orcid}
                             target="_blank"
@@ -163,15 +182,24 @@ export default function About() {
                             <OrcidSVG />
                             {img.orcidId}
                           </a>
+                          {standards.map((std) => (
+                            <span
+                              key={std.code}
+                              className={`inline-flex items-center text-[10px] tracking-[0.12em] font-medium px-2 py-0.5 rounded-full border ${std.cls}`}
+                            >
+                              {std.code}
+                            </span>
+                          ))}
                         </div>
                       </div>
 
                       <div className="w-10 h-px bg-gold/50 mb-5" />
+
                       {member.intro && (
                         <p className="text-base text-navy font-medium leading-relaxed mb-4">{member.intro}</p>
                       )}
 
-                      {/* Bullets con checkmarks */}
+                      {/* Bullets */}
                       {member.bullets && member.bullets.length > 0 && (
                         <ul className="space-y-2 mb-4">
                           {member.bullets.map((bullet, bi) => (
@@ -188,6 +216,7 @@ export default function About() {
 
                       <p className="text-sm text-navy/50 leading-relaxed font-light italic">{member.bio}</p>
 
+                      {/* Tags de especialidad */}
                       <div className="flex flex-wrap gap-2 mt-6">
                         {member.tags.map((tag) => (
                           <span key={tag} className="text-[11px] tracking-wide text-navy/60 border border-navy/15 px-3 py-1 rounded-full bg-white/80">
@@ -195,6 +224,16 @@ export default function About() {
                           </span>
                         ))}
                       </div>
+
+                      {/* Premio Nacional — solo Yadyra (idx 1) */}
+                      {idx === 1 && (
+                        <div className="mt-5 inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-gold/10 border border-gold/30 self-start">
+                          <AwardIcon />
+                          <span className="text-[11px] text-gold/80 font-medium tracking-wide">
+                            Premio Nacional de Investigación Científica · El Salvador 2025
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -1,9 +1,14 @@
+// src/components/Hero.tsx
+// Rediseño: TEXTUM grande restaurado como elemento central
+// H1 semántico invisible para SEO · CTAs proporcionales y con estilo
+
 import { useEffect, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLang } from '../i18n/LangContext';
 
 export default function Hero() {
   const { t } = useLang();
+  const h = t.hero;
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -25,7 +30,6 @@ export default function Hero() {
 
     type Particle = { x: number; y: number; vx: number; vy: number; r: number; alpha: number };
     let particles: Particle[] = [];
-
     const isMobile = window.innerWidth < 768;
     const PARTICLE_COUNT = isMobile ? 40 : 80;
 
@@ -72,16 +76,23 @@ export default function Hero() {
   }, []);
 
   return (
-    <section id="inicio" className="relative min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center overflow-hidden gradient-bg" style={{ maxWidth: '100vw' }}>
+    <section
+      id="inicio"
+      className="relative min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center overflow-hidden gradient-bg"
+      style={{ maxWidth: '100vw' }}
+    >
+      {/* Orbs */}
       <div className="orb orb-gold w-[600px] h-[600px] top-[-100px] right-[-100px]" style={{ animationDelay: '0s' }} />
       <div className="orb orb-navy w-[500px] h-[500px] bottom-[-80px] left-[-80px]" style={{ animationDelay: '3s' }} />
       <div className="orb orb-gold w-[300px] h-[300px] top-[40%] left-[15%]" style={{ animationDelay: '1.5s', opacity: 0.1 }} />
       <canvas ref={canvasRef} className="particles absolute inset-0" />
 
-      <div className="relative z-10 flex flex-col items-center text-center px-6 pt-8 pb-8 max-w-4xl w-full overflow-visible">
-        <div className="mb-6 flex flex-col items-center gap-2 animate-[fadeInDown_1s_ease_0.2s_both]">
+      <div className="relative z-10 flex flex-col items-center text-center px-6 pt-8 pb-8 max-w-5xl w-full">
+
+        {/* Ornamento superior */}
+        <div className="mb-5 flex flex-col items-center gap-2 animate-[fadeInDown_1s_ease_0.2s_both]">
           <div className="w-px h-8 bg-gradient-to-b from-transparent to-gold/60" />
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
             <path d="M12 2L9 9H15L12 2Z" fill="#c9a84c" opacity="0.9" />
             <path d="M9 9L7 18H12H17L15 9H9Z" stroke="#c9a84c" strokeWidth="1" fill="none" />
             <path d="M10 18L12 22L14 18" stroke="#c9a84c" strokeWidth="1" />
@@ -89,11 +100,24 @@ export default function Hero() {
           <div className="w-px h-4 bg-gradient-to-b from-gold/60 to-transparent" />
         </div>
 
-        <h1 className="font-serif text-[clamp(3.25rem,10vw,10rem)] font-light tracking-[0.06em] sm:tracking-[0.12em] md:tracking-[0.2em] lg:tracking-[0.24em] text-white mb-0 leading-[0.85] animate-[fadeInUp_1s_ease_0.4s_both] w-full text-center whitespace-nowrap">
-          TEXTUM
-        </h1>
+        {/* Eyebrow */}
+        <p className="text-[11px] tracking-[0.35em] text-gold/70 uppercase mb-4 animate-[fadeIn_1s_ease_0.3s_both]">
+          {h.eyebrow}
+        </p>
 
-        <div className="flex items-center gap-4 my-5 w-full max-w-sm animate-[fadeIn_1s_ease_0.8s_both]">
+        {/* TEXTUM — protagonista, igual que antes */}
+        {/* H1 semántico oculto visualmente para SEO */}
+        <h1 className="sr-only">{h.tagline}</h1>
+
+        <p
+          aria-hidden="true"
+          className="font-serif text-[clamp(3.5rem,12vw,10rem)] font-light tracking-[0.06em] sm:tracking-[0.12em] md:tracking-[0.2em] lg:tracking-[0.24em] text-white mb-0 leading-[0.85] animate-[fadeInUp_1s_ease_0.4s_both] w-full text-center whitespace-nowrap select-none"
+        >
+          TEXTUM
+        </p>
+
+        {/* Divisor dorado */}
+        <div className="flex items-center gap-4 my-5 w-full max-w-sm animate-[fadeIn_1s_ease_0.6s_both]">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
           <svg width="10" height="10" viewBox="0 0 10 10">
             <rect x="5" y="0" width="7" height="7" transform="rotate(45 5 5)" fill="#c9a84c" />
@@ -101,28 +125,37 @@ export default function Hero() {
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
         </div>
 
-        <p className="font-serif italic text-lg sm:text-2xl md:text-3xl font-light text-white/85 tracking-normal md:tracking-wide mb-3 animate-[fadeInUp_1s_ease_0.9s_both] max-w-xs sm:max-w-lg md:max-w-2xl">
-          {t.hero.tagline}
-        </p>
-        <p className="text-xs md:text-sm tracking-[0.15em] md:tracking-[0.3em] text-gold/80 font-light uppercase mb-12 animate-[fadeIn_1s_ease_1s_both] max-w-xs sm:max-w-md md:max-w-xl text-center">
-          {t.hero.sub}
+        {/* Párrafo principal — serif italic */}
+        <p className="font-serif italic text-lg sm:text-xl md:text-2xl font-light text-white/85 leading-relaxed mb-3 animate-[fadeInUp_1s_ease_0.7s_both] max-w-2xl">
+          {h.sub}
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 animate-[fadeInUp_1s_ease_1.1s_both]">
-          <a href="#servicios" className="btn-primary px-10 py-4 text-sm tracking-[0.15em] rounded-sm">
-            <span>{t.hero.cta1}</span>
+        {/* Párrafo secundario */}
+        <p className="text-xs md:text-sm text-gold/60 font-light leading-relaxed mb-10 animate-[fadeIn_1s_ease_0.8s_both] max-w-xl">
+          {h.subSecondary}
+        </p>
+
+        {/* CTA único — centrado */}
+        <div className="flex flex-col items-center gap-2 animate-[fadeInUp_1s_ease_0.9s_both]">
+          <a
+            href="#contacto"
+            className="btn-primary px-12 py-4 text-xs tracking-[0.18em] rounded-sm"
+          >
+            <span>{h.cta1}</span>
           </a>
-          <a href="#contacto" className="px-10 py-4 text-sm tracking-[0.15em] text-white border border-white/30 rounded-sm hover:border-gold/60 hover:text-gold transition-all duration-300 backdrop-blur-sm bg-white/5">
-            {t.hero.cta2}
-          </a>
+          <p className="text-white/30 text-[10px] tracking-wide font-light max-w-[260px] text-center leading-snug mt-1">
+            {h.cta1Micro}
+          </p>
         </div>
       </div>
 
+      {/* Scroll indicator */}
       <div className="absolute bottom-10 flex flex-col items-center gap-2 scroll-indicator">
-        <span className="text-white/40 text-xs tracking-[0.2em] uppercase">{t.hero.scroll}</span>
+        <span className="text-white/40 text-xs tracking-[0.2em] uppercase">{h.scroll}</span>
         <ChevronDown size={18} className="text-gold/60" />
       </div>
 
+      {/* Wave */}
       <div className="absolute bottom-0 left-0 right-0 h-24 overflow-hidden">
         <svg viewBox="0 0 1440 96" preserveAspectRatio="none" className="w-full h-full">
           <path d="M0,96 C360,0 1080,96 1440,0 L1440,96 L0,96Z" fill="#faf7f2" />
@@ -131,8 +164,8 @@ export default function Hero() {
 
       <style>{`
         @keyframes fadeInDown { from { opacity:0; transform:translateY(-20px);} to{opacity:1;transform:translateY(0);}}
-        @keyframes fadeInUp { from{opacity:0;transform:translateY(25px);}to{opacity:1;transform:translateY(0);}}
-        @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+        @keyframes fadeInUp   { from { opacity:0; transform:translateY(25px); } to{opacity:1;transform:translateY(0);}}
+        @keyframes fadeIn     { from { opacity:0; }                             to{opacity:1;}}
       `}</style>
     </section>
   );
