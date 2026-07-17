@@ -12,7 +12,7 @@ const content = {
     intro: 'TEXTUM no es únicamente una mentoría académica. Es una escuela de pensamiento que integra principios, metodologías y recursos para fortalecer la autonomía intelectual, el rigor científico y la formación de investigadores.',
     collections: [
       {
-        icon: '⭐',
+        icon: '◈',
         name: 'Principios TEXTUM',
         desc: 'La filosofía que orienta nuestra manera de investigar, escribir, argumentar y acompañar procesos académicos desde una perspectiva ética y formativa.',
         cta_es: 'Conocer los Principios TEXTUM',
@@ -28,7 +28,7 @@ const content = {
         href: '#metodo',
       },
       {
-        icon: '◉',
+        icon: '◈',
         name: 'Enfoque Investigativo Integral',
         desc: 'Una visión del proceso académico que articula diagnóstico, arquitectura metodológica, escritura científica, publicación y defensa como etapas conectadas de un mismo recorrido.',
         cta_es: 'Descubrir el enfoque',
@@ -44,7 +44,7 @@ const content = {
     intro: 'TEXTUM is not merely academic mentoring. It is a school of thought that integrates principles, methodologies and resources to strengthen intellectual autonomy, scientific rigour and researcher development.',
     collections: [
       {
-        icon: '⭐',
+        icon: '◈',
         name: 'TEXTUM Principles',
         desc: 'The philosophy that guides our way of researching, writing, arguing and supporting academic processes from an ethical and formative perspective.',
         cta_es: 'Conocer los Principios TEXTUM',
@@ -60,7 +60,7 @@ const content = {
         href: '#metodo',
       },
       {
-        icon: '◉',
+        icon: '◈',
         name: 'Integral Research Approach',
         desc: 'A vision of the academic process that articulates diagnosis, methodological architecture, scientific writing, publication and defence as connected stages of a single journey.',
         cta_es: 'Descubrir el enfoque',
