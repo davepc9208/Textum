@@ -1,16 +1,40 @@
 // src/components/Hero.tsx
-// Canvas reducido en mobile, pausado cuando no visible (Page Visibility API)
+// FIX ANDROID: canvas de partículas desactivado en dispositivos de baja gama.
+// Criterios para desactivar:
+//   - navigator.hardwareConcurrency <= 4 (menos de 4 núcleos)
+//   - navigator.connection?.saveData === true (modo ahorro de datos)
+//   - navigator.connection?.effectiveType === '2g' | 'slow-2g' (conexión lenta)
+// En esos casos se muestra un fondo estático en lugar del canvas animado.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLang } from '../i18n/LangContext';
+
+// Detecta si el dispositivo puede manejar el canvas de partículas sin lag
+function canRunCanvas(): boolean {
+  if (typeof navigator === 'undefined') return true;
+
+  // Menos de 4 núcleos → dispositivo de baja gama
+  const cores = navigator.hardwareConcurrency ?? 4;
+  if (cores <= 2) return false;
+
+  // Modo ahorro de datos o conexión muy lenta
+  const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (conn?.saveData) return false;
+  if (conn?.effectiveType === '2g' || conn?.effectiveType === 'slow-2g') return false;
+
+  return true;
+}
 
 export default function Hero() {
   const { t } = useLang();
   const h = t.hero;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [showCanvas] = useState(() => canRunCanvas());
 
   useEffect(() => {
+    if (!showCanvas) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const context = canvas.getContext('2d');
@@ -30,11 +54,9 @@ export default function Hero() {
     type Particle = { x: number; y: number; vx: number; vy: number; r: number; alpha: number };
     let particles: Particle[] = [];
 
-    // Mobile: 25 partículas (antes 40), desktop: 55 (antes 80)
-    // Menos partículas = menos comparaciones O(n²) por frame
     const isMobile = window.innerWidth < 768;
-    const PARTICLE_COUNT = isMobile ? 25 : 55;
-    // En mobile no dibujamos líneas de conexión (costosas)
+    // FIX ANDROID: reducido a 20 en mobile (antes 25) para garantizar 60fps
+    const PARTICLE_COUNT = isMobile ? 20 : 55;
     const DRAW_LINES = !isMobile;
 
     function initParticles() {
@@ -85,7 +107,6 @@ export default function Hero() {
       raf = requestAnimationFrame(draw);
     }
 
-    // Pausar cuando la pestaña no es visible (ahorra CPU/batería)
     const onVisibility = () => {
       paused = document.hidden;
       if (!paused) raf = requestAnimationFrame(draw);
@@ -99,7 +120,7 @@ export default function Hero() {
       window.removeEventListener('resize', onResize);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, []);
+  }, [showCanvas]);
 
   return (
     <section
@@ -110,7 +131,11 @@ export default function Hero() {
       <div className="orb orb-gold w-[600px] h-[600px] top-[-100px] right-[-100px]" style={{ animationDelay: '0s' }} />
       <div className="orb orb-navy w-[500px] h-[500px] bottom-[-80px] left-[-80px]" style={{ animationDelay: '3s' }} />
       <div className="orb orb-gold w-[300px] h-[300px] top-[40%] left-[15%]" style={{ animationDelay: '1.5s', opacity: 0.1 }} />
-      <canvas ref={canvasRef} className="particles absolute inset-0" />
+
+      {/* Canvas solo si el dispositivo puede manejarlo */}
+      {showCanvas && (
+        <canvas ref={canvasRef} className="particles absolute inset-0" />
+      )}
 
       <div className="relative z-10 flex flex-col items-center text-center px-6 pt-8 pb-8 max-w-5xl w-full">
 
@@ -160,9 +185,16 @@ export default function Hero() {
           {h.subSecondary}
         </p>
 
-        {/* CTA único centrado */}
+        {/* CTA */}
         <div className="flex flex-col items-center gap-2 animate-[fadeInUp_1s_ease_0.9s_both]">
-          <a href="#contacto" className="btn-primary px-12 py-4 text-xs tracking-[0.18em] rounded-sm">
+          <a
+            href="#contacto"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className="btn-primary px-12 py-4 text-xs tracking-[0.18em] rounded-sm touch-manipulation"
+          >
             <span>{h.cta1}</span>
           </a>
           <p className="text-white/30 text-[10px] tracking-wide font-light max-w-[260px] text-center leading-snug mt-1">
