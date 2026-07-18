@@ -12,7 +12,9 @@
   --cream-dark: #f0ebe1;
 }
 
-* {
+/* FIX ANDROID: scroll-behavior en * bloquea anclas en Android Chrome.
+   Solo debe aplicarse en html. */
+html {
   scroll-behavior: smooth;
 }
 
@@ -49,7 +51,7 @@ body {
   border: 1px solid rgba(201, 168, 76, 0.2);
 }
 
-/* Animated gradient background - CON will-change añadido */
+/* Animated gradient background */
 .gradient-bg {
   background: linear-gradient(135deg, #0d1f3c 0%, #1a3160 40%, #0d1f3c 70%, #162a50 100%);
   background-size: 400% 400%;
@@ -142,12 +144,12 @@ body {
 .stagger > *:nth-child(4) { transition-delay: 300ms; }
 .stagger > *:nth-child(5) { transition-delay: 400ms; }
 
-/* Gold shimmer text - VERSIÓN OPTIMIZADA (sin shimmer en mobile) */
+/* Gold shimmer text */
 .text-gold {
   color: #c9a84c;
 }
 
-/* Gradiente estático — sin animación por defecto (mejor rendimiento en mobile) */
+/* Gradiente estático por defecto (mejor rendimiento en mobile) */
 .text-gold-gradient {
   background: linear-gradient(135deg, #c9a84c 0%, #e2c06e 45%, #c9a84c 100%);
   -webkit-background-clip: text;
@@ -155,7 +157,7 @@ body {
   background-clip: text;
 }
 
-/* Shimmer activo SOLO en desktop (1024px+) y si el usuario no prefiere menos movimiento */
+/* Shimmer activo SOLO en desktop */
 @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
   .text-gold-gradient {
     background-size: 200% auto;
@@ -217,7 +219,9 @@ canvas.particles {
   width: 100%;
 }
 
-/* Button pulse */
+/* Button styles
+   FIX ANDROID: pointer-events:none en ::before evita que el pseudo-elemento
+   intercepte el tap en Android antes de que llegue al elemento real. */
 .btn-primary {
   position: relative;
   overflow: hidden;
@@ -226,6 +230,8 @@ canvas.particles {
   font-weight: 600;
   letter-spacing: 0.08em;
   transition: transform 0.2s ease, box-shadow 0.3s ease;
+  /* FIX ANDROID: elimina delay de 300ms del doble-tap-zoom */
+  touch-action: manipulation;
 }
 
 .btn-primary::before {
@@ -235,6 +241,8 @@ canvas.particles {
   background: linear-gradient(135deg, #e2c06e, #c9a84c);
   opacity: 0;
   transition: opacity 0.3s ease;
+  /* FIX ANDROID: el pseudo-elemento no debe interceptar eventos de toque */
+  pointer-events: none;
 }
 
 .btn-primary:hover {
@@ -269,7 +277,8 @@ canvas.particles {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  pointer-events: none;
+  /* FIX ANDROID: asegurar que el overlay nunca bloquee interacciones */
+  pointer-events: none !important;
   overflow: hidden;
 }
 
@@ -291,6 +300,7 @@ canvas.particles {
   );
   transform: translateX(-100%);
   animation: langSweep 700ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  pointer-events: none;
 }
 
 .lang-sweep-curtain::after {
@@ -304,18 +314,13 @@ canvas.particles {
   transform: translate(-50%, -50%) rotate(45deg);
   opacity: 0;
   animation: langSweepDiamond 700ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  pointer-events: none;
 }
 
 @keyframes langSweep {
-  0% {
-    transform: translateX(-100%);
-  }
-  50% {
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+  0%   { transform: translateX(-100%); }
+  50%  { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
 }
 
 @keyframes langSweepDiamond {
@@ -333,7 +338,6 @@ canvas.particles {
   }
 }
 
-/* Respeta accesibilidad: usuarios que prefieren menos movimiento */
 @media (prefers-reduced-motion: reduce) {
   .lang-sweep-curtain {
     animation-duration: 300ms;

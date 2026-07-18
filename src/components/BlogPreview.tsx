@@ -1,9 +1,14 @@
 // src/components/BlogPreview.tsx
 // Bloque del blog en homepage — intro + 3 categorías + CTA
 // Ubicación en App.tsx: entre ColeccionesTextum y Contact
+//
+// FIX ANDROID: eliminados elementos navegables anidados (<Link> dentro de <Link>).
+// Cada card es ahora un div. Solo el botón CTA inferior es el elemento de navegación.
+// El href="#metodo" de ColeccionesTextum era un <a> anidado dentro del <Link> del card
+// causando que en Android el tap cayera en el elemento equivocado y disparara scroll.
 
 import { useLang } from '../i18n/LangContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const content = {
   es: {
@@ -17,22 +22,26 @@ const content = {
         label: 'Filosofía y Método TEXTUM',
         desc: 'Principios de la metodología TEXTUM, arquitectura metodológica, pensamiento crítico y diseño de investigaciones.',
         topics: ['Arquitectura metodológica', 'Pensamiento crítico', 'Diseño de investigaciones'],
+        to: '/blog?categoria=filosofia-metodo',
       },
       {
         key: 'rigor-escritura',
         label: 'Rigor y Escritura Científica',
         desc: 'Redacción académica, normas APA, Vancouver e IEEE, artículos científicos, revisión metodológica y publicación.',
         topics: ['Redacción académica', 'Normas APA 7', 'Publicación científica'],
+        to: '/blog?categoria=rigor-escritura',
       },
       {
         key: 'sustentacion-defensa',
         label: 'Sustentación y Defensa Oral',
         desc: 'Preparación de defensa, diseño de presentaciones, comunicación científica y oratoria académica.',
         topics: ['Preparación de defensa', 'Oratoria académica', 'Preguntas del tribunal'],
+        to: '/blog?categoria=sustentacion-defensa',
       },
     ],
     cta: 'Explorar el Blog TEXTUM',
     ctaSub: 'Artículos y recursos escritos por nuestras doctoras',
+    ctaCategory: 'Ver artículos →',
   },
   en: {
     eyebrow: 'TEXTUM Blog',
@@ -45,28 +54,33 @@ const content = {
         label: 'TEXTUM Philosophy & Method',
         desc: 'Principles of TEXTUM methodology, methodological architecture, critical thinking and research design.',
         topics: ['Methodological architecture', 'Critical thinking', 'Research design'],
+        to: '/blog?categoria=filosofia-metodo',
       },
       {
         key: 'rigor-escritura',
         label: 'Rigour & Scientific Writing',
         desc: 'Academic writing, APA, Vancouver and IEEE standards, scientific articles, methodological review and publication.',
         topics: ['Academic writing', 'APA 7 standards', 'Scientific publication'],
+        to: '/blog?categoria=rigor-escritura',
       },
       {
         key: 'sustentacion-defensa',
         label: 'Defence & Oral Presentation',
         desc: 'Defence preparation, presentation design, scientific communication and academic oratory.',
         topics: ['Defence preparation', 'Academic oratory', 'Panel questions'],
+        to: '/blog?categoria=sustentacion-defensa',
       },
     ],
     cta: 'Explore the TEXTUM Blog',
     ctaSub: 'Articles and resources written by our doctoral researchers',
+    ctaCategory: 'View articles →',
   },
 };
 
 export default function BlogPreview() {
   const { lang } = useLang();
   const c = content[lang];
+  const navigate = useNavigate();
 
   return (
     <section id="blog-preview" className="section-navy py-24 px-6 relative overflow-hidden">
@@ -85,19 +99,20 @@ export default function BlogPreview() {
           </p>
         </div>
 
-        {/* Categorías */}
+        {/* Categorías — FIX: cada card es un div, no un Link.
+            El único elemento navegable es el botón inferior.
+            Esto evita el problema de tap ambiguo en Android Chrome. */}
         <div className="grid md:grid-cols-3 gap-6 stagger">
           {c.categories.map((cat, i) => (
-            <Link
+            <div
               key={i}
-              to={`/blog?categoria=${cat.key}`}
               className="reveal group glass-navy border border-white/10 rounded-sm p-8 hover:border-gold/30 transition-all duration-300 flex flex-col"
             >
-              {/* Línea */}
+              {/* Línea decorativa */}
               <div className="w-8 h-px bg-gold/30 mb-5 group-hover:w-14 transition-all duration-300" />
 
               {/* Nombre */}
-              <h3 className="font-serif text-lg font-light text-white mb-3 leading-snug group-hover:text-gold transition-colors duration-200">
+              <h3 className="font-serif text-lg font-light text-white mb-3 leading-snug">
                 {cat.label}
               </h3>
 
@@ -107,30 +122,49 @@ export default function BlogPreview() {
               </p>
 
               {/* Topics */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-6">
                 {cat.topics.map(t => (
                   <span key={t} className="text-[10px] tracking-wide text-gold/50 border border-gold/20 px-2.5 py-1 rounded-full">
                     {t}
                   </span>
                 ))}
               </div>
-            </Link>
+
+              {/* CTA — único elemento de navegación en el card.
+                  Usamos button + navigate para máxima compatibilidad en Android. */}
+              <button
+                type="button"
+                onClick={() => navigate(cat.to)}
+                className="
+                  inline-flex items-center gap-2
+                  text-xs tracking-[0.15em] text-gold
+                  border border-gold/30 px-4 py-2.5 rounded-sm
+                  hover:bg-gold hover:text-navy
+                  active:bg-gold active:text-navy
+                  transition-all duration-200 self-start
+                  touch-manipulation
+                "
+              >
+                {c.ctaCategory}
+              </button>
+            </div>
           ))}
         </div>
 
-        {/* CTA */}
+        {/* CTA principal — button + navigate en lugar de Link anidado */}
         <div className="text-center mt-12 reveal">
-          <Link
-            to="/blog"
-            className="inline-flex flex-col items-center gap-1 group"
-          >
-            <span className="btn-primary px-10 py-4 text-xs tracking-[0.18em] rounded-sm">
-              {c.cta}
-            </span>
+          <div className="inline-flex flex-col items-center gap-1">
+            <button
+              type="button"
+              onClick={() => navigate('/blog')}
+              className="btn-primary px-10 py-4 text-xs tracking-[0.18em] rounded-sm touch-manipulation"
+            >
+              <span>{c.cta}</span>
+            </button>
             <span className="text-white/30 text-[10px] tracking-wide font-light mt-1">
               {c.ctaSub}
             </span>
-          </Link>
+          </div>
         </div>
 
       </div>

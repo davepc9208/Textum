@@ -1,7 +1,10 @@
 // src/components/Navbar.tsx
 // Navegación ampliada según TEXTUM_NEW_PROPUESTA.docx
-// Inicio · Método · Programas · Colecciones · Blog · Equipo · Contacto
-// "Diagnóstico académico" como botón sticky (StickyDiagnosis), no en menú
+//
+// FIX ANDROID: handleAnchorClick ahora usa scrollIntoView() directamente
+// en lugar de depender del comportamiento nativo de href="#section".
+// En Android Chrome el href="#section" sobre elementos React a veces no
+// registra el tap o navega incorrectamente. scrollIntoView es más confiable.
 
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
@@ -16,7 +19,6 @@ export default function Navbar() {
   const location                = useLocation();
   const isHome                  = location.pathname === '/';
 
-  // Anchors del homepage
   const anchorLinks = [
     { href: '#inicio',      label: t.nav.inicio },
     { href: '#metodo',      label: lang === 'es' ? 'Método'      : 'Method'      },
@@ -48,9 +50,33 @@ export default function Navbar() {
     return () => observer.disconnect();
   }, [isHome]);
 
-  const handleAnchorClick = (href: string) => {
+  // FIX ANDROID: en lugar de href="#section" nativo (poco fiable en Android Chrome),
+  // usamos scrollIntoView() directamente. Si no estamos en home, redirigimos
+  // con window.location.href que es más fiable que React Router para anclas cross-page.
+  const handleAnchorClick = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
     setOpen(false);
-    if (!isHome) window.location.href = '/' + href;
+
+    const id = href.replace('#', '');
+
+    if (isHome) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      window.location.href = '/' + href;
+    }
+  };
+
+  // Helper para el CTA "Diagnóstico" que siempre apunta a #contacto
+  const handleContactoCta = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isHome) {
+      document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.location.href = '/#contacto';
+    }
   };
 
   return (
@@ -77,8 +103,8 @@ export default function Navbar() {
             <li key={l.href}>
               <a
                 href={isHome ? l.href : '/' + l.href}
-                onClick={() => handleAnchorClick(l.href)}
-                className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 ${
+                onClick={(e) => handleAnchorClick(e, l.href)}
+                className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
                   isHome && active === l.href.slice(1)
                     ? 'text-gold active'
                     : 'text-white/80 hover:text-white'
@@ -92,7 +118,7 @@ export default function Navbar() {
           <li>
             <Link
               to="/blog"
-              className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 ${
+              className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
                 location.pathname.startsWith('/blog') ? 'text-gold active' : 'text-white/80 hover:text-white'
               }`}
             >
@@ -101,12 +127,12 @@ export default function Navbar() {
           </li>
         </ul>
 
-        {/* Derecha: idioma + CTA diagnóstico */}
+        {/* Derecha: idioma + CTA */}
         <div className="hidden lg:flex items-center gap-3">
           {/* Toggle idioma */}
           <button
             onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
-            className="relative flex items-center px-1 py-1 rounded-full border border-gold/30 text-xs tracking-[0.1em] hover:border-gold/50 transition-colors duration-200"
+            className="relative flex items-center px-1 py-1 rounded-full border border-gold/30 text-xs tracking-[0.1em] hover:border-gold/50 transition-colors duration-200 touch-manipulation"
             aria-label="Switch language"
           >
             <span
@@ -120,7 +146,8 @@ export default function Navbar() {
           {/* CTA */}
           <a
             href={isHome ? '#contacto' : '/#contacto'}
-            className="btn-primary px-5 py-2.5 text-[11px] tracking-[0.12em] rounded-sm"
+            onClick={handleContactoCta}
+            className="btn-primary px-5 py-2.5 text-[11px] tracking-[0.12em] rounded-sm touch-manipulation"
           >
             <span>{lang === 'es' ? 'DIAGNÓSTICO GRATIS' : 'FREE DIAGNOSIS'}</span>
           </a>
@@ -129,7 +156,7 @@ export default function Navbar() {
         {/* Mobile toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="lg:hidden text-white p-2"
+          className="lg:hidden text-white p-2 touch-manipulation"
           aria-label="Menu"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
@@ -140,13 +167,13 @@ export default function Navbar() {
       <div className={`lg:hidden overflow-hidden transition-all duration-400 ${
         open ? 'max-h-[36rem] opacity-100' : 'max-h-0 opacity-0'
       }`}>
-        <div className="glass-navy border-t border-gold/20 px-6 py-5 flex flex-col gap-4">
+        <div className="glass-navy border-t border-gold/20 px-6 py-5 flex flex-col gap-1">
           {anchorLinks.map((l) => (
             <a
               key={l.href}
               href={isHome ? l.href : '/' + l.href}
-              onClick={() => setOpen(false)}
-              className="text-white/80 text-sm tracking-widest py-1 hover:text-gold transition-colors"
+              onClick={(e) => handleAnchorClick(e, l.href)}
+              className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation"
             >
               {l.label.toUpperCase()}
             </a>
@@ -154,17 +181,17 @@ export default function Navbar() {
           <Link
             to="/blog"
             onClick={() => setOpen(false)}
-            className="text-white/80 text-sm tracking-widest py-1 hover:text-gold transition-colors"
+            className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation"
           >
             {t.nav.blog.toUpperCase()}
           </Link>
 
-          <div className="h-px bg-white/10 my-1" />
+          <div className="h-px bg-white/10 my-2" />
 
           {/* Toggle idioma mobile */}
           <button
             onClick={() => { setLang(lang === 'es' ? 'en' : 'es'); setOpen(false); }}
-            className="relative flex items-center px-1 py-1 rounded-full border border-gold/30 text-xs tracking-[0.1em] w-fit"
+            className="relative flex items-center px-1 py-1 rounded-full border border-gold/30 text-xs tracking-[0.1em] w-fit touch-manipulation"
           >
             <span
               className="absolute top-1 bottom-1 w-8 rounded-full bg-gold transition-transform duration-300 ease-out"
@@ -176,8 +203,8 @@ export default function Navbar() {
 
           <a
             href={isHome ? '#contacto' : '/#contacto'}
-            onClick={() => setOpen(false)}
-            className="btn-primary text-center px-6 py-3 text-xs tracking-widest rounded-sm mt-1"
+            onClick={(e) => { handleContactoCta(e); setOpen(false); }}
+            className="btn-primary text-center px-6 py-3 text-xs tracking-widest rounded-sm mt-2 touch-manipulation"
           >
             <span>{lang === 'es' ? 'DIAGNÓSTICO GRATIS' : 'FREE DIAGNOSIS'}</span>
           </a>

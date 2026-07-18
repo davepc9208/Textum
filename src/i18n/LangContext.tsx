@@ -11,7 +11,7 @@ interface LangContextType {
 const LangContext = createContext<LangContextType | null>(null);
 
 // Duración total del barrido (debe coincidir con el keyframe en index.css)
-const SWEEP_MS = 700;
+const SWEEP_MS = 800; // FIX ANDROID: 100ms extra para que Android complete la animación
 // Momento en que cambiamos el contenido (cuando la cortina cubre toda la pantalla)
 const CONTENT_SWAP_MS = 350;
 
@@ -37,7 +37,14 @@ export function LangProvider({ children }: { children: ReactNode }) {
     <LangContext.Provider value={{ lang, setLang, t, isTransitioning }}>
       {children}
       {isTransitioning && (
-        <div className="lang-sweep-overlay" aria-hidden="true">
+        // FIX ANDROID: pointer-events:none también como inline style por si
+        // el CSS no carga correctamente en algún build de Cloudflare.
+        // Así el overlay nunca puede bloquear toques en ningún dispositivo.
+        <div
+          className="lang-sweep-overlay"
+          aria-hidden="true"
+          style={{ pointerEvents: 'none' }}
+        >
           <div className="lang-sweep-curtain" />
         </div>
       )}
