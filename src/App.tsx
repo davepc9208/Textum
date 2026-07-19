@@ -1,4 +1,6 @@
 // src/App.tsx — orden definitivo según TEXTUM_NEW_PROPUESTA.docx
+// Fix: BlogListPage useSEO ahora usa el lang activo del contexto
+// Fix: BackToTop añadido a HomePage
 
 import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
@@ -16,10 +18,12 @@ import Values            from './components/Values';
 import Contact           from './components/Contact';
 import Footer            from './components/Footer';
 import StickyDiagnosis   from './components/StickyDiagnosis';
+import BackToTop         from './components/BackToTop';
 import BlogPage          from './pages/BlogPage';
 import PostPage          from './pages/PostPage';
 import { useScrollReveal } from './hooks/useScrollReveal';
 import { useSEO, injectSchema, removeSchema } from './hooks/useSEO';
+import { useLang } from './i18n/LangContext';
 
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 
@@ -82,14 +86,19 @@ const BLOG_SCHEMA = {
 };
 
 function HomePage() {
+  const { lang } = useLang();
   useScrollReveal();
 
   useSEO({
-    title: 'TEXTUM — Mentoría Académica Internacional | Titulación, Publicación y Defensa',
-    description: 'Programas de mentoría académica para titulación, publicación científica y defensa oral. Rigor metodológico, uso ético de IA, estándares internacionales. Diagnóstico gratuito.',
+    title: lang === 'es'
+      ? 'TEXTUM — Mentoría Académica Internacional | Titulación, Publicación y Defensa'
+      : 'TEXTUM — International Academic Mentoring | Degree Projects, Publication & Defence',
+    description: lang === 'es'
+      ? 'Programas de mentoría académica para titulación, publicación científica y defensa oral. Rigor metodológico, uso ético de IA, estándares internacionales. Diagnóstico gratuito.'
+      : 'Academic mentoring programmes for degree projects, scientific publication and oral defence. Methodological rigour, ethical AI use, international standards. Free diagnosis.',
     canonical: '/',
     ogType: 'website',
-    lang: 'es',
+    lang,
   });
 
   useEffect(() => {
@@ -129,19 +138,27 @@ function HomePage() {
         <Contact />
       </main>
       <Footer />
-      {/* Botón sticky — fuera del flujo de secciones */}
+      {/* Botones flotantes — fuera del flujo de secciones */}
       <StickyDiagnosis />
+      <BackToTop />
     </div>
   );
 }
 
+// Fix: useLang() para que el SEO del blog respete el idioma activo
 function BlogListPage() {
+  const { lang } = useLang();
+
   useSEO({
-    title: 'Blog Académico | Artículos sobre Investigación y Redacción Científica — TEXTUM',
-    description: 'Lee artículos y guías escritas por nuestras doctoras sobre redacción académica, metodología de investigación, APA 7 y cómo defender tu tesis con éxito.',
+    title: lang === 'es'
+      ? 'Blog Académico | Artículos sobre Investigación y Redacción Científica — TEXTUM'
+      : 'Academic Blog | Research and Scientific Writing Articles — TEXTUM',
+    description: lang === 'es'
+      ? 'Lee artículos y guías escritas por nuestras doctoras sobre redacción académica, metodología de investigación, APA 7 y cómo defender tu tesis con éxito.'
+      : 'Read articles and guides written by our doctors on academic writing, research methodology, APA 7 and how to successfully defend your thesis.',
     canonical: '/blog',
     ogType: 'website',
-    lang: 'es',
+    lang,
   });
 
   useEffect(() => {

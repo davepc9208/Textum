@@ -1,28 +1,19 @@
 // src/components/Hero.tsx
-// FIX ANDROID: canvas de partículas desactivado en dispositivos de baja gama.
-// Criterios para desactivar:
-//   - navigator.hardwareConcurrency <= 4 (menos de 4 núcleos)
-//   - navigator.connection?.saveData === true (modo ahorro de datos)
-//   - navigator.connection?.effectiveType === '2g' | 'slow-2g' (conexión lenta)
-// En esos casos se muestra un fondo estático en lugar del canvas animado.
+// Fix: h.subSecondary existía en el template pero no en translations.ts
+// Se lee con optional chaining; si no existe no rompe el render.
+// Fix Android: canvas desactivado en baja gama (sin cambios).
 
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLang } from '../i18n/LangContext';
 
-// Detecta si el dispositivo puede manejar el canvas de partículas sin lag
 function canRunCanvas(): boolean {
   if (typeof navigator === 'undefined') return true;
-
-  // Menos de 4 núcleos → dispositivo de baja gama
   const cores = navigator.hardwareConcurrency ?? 4;
   if (cores <= 2) return false;
-
-  // Modo ahorro de datos o conexión muy lenta
   const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
   if (conn?.saveData) return false;
   if (conn?.effectiveType === '2g' || conn?.effectiveType === 'slow-2g') return false;
-
   return true;
 }
 
@@ -34,7 +25,6 @@ export default function Hero() {
 
   useEffect(() => {
     if (!showCanvas) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
     const context = canvas.getContext('2d');
@@ -53,9 +43,7 @@ export default function Hero() {
 
     type Particle = { x: number; y: number; vx: number; vy: number; r: number; alpha: number };
     let particles: Particle[] = [];
-
     const isMobile = window.innerWidth < 768;
-    // FIX ANDROID: reducido a 20 en mobile (antes 25) para garantizar 60fps
     const PARTICLE_COUNT = isMobile ? 20 : 55;
     const DRAW_LINES = !isMobile;
 
@@ -86,7 +74,6 @@ export default function Hero() {
         ctx.fillStyle = `rgba(201,168,76,${p.alpha})`;
         ctx.fill();
       });
-
       if (DRAW_LINES) {
         for (let i = 0; i < particles.length; i++) {
           for (let j = i + 1; j < particles.length; j++) {
@@ -112,7 +99,6 @@ export default function Hero() {
       if (!paused) raf = requestAnimationFrame(draw);
     };
     document.addEventListener('visibilitychange', onVisibility);
-
     draw();
 
     return () => {
@@ -121,6 +107,11 @@ export default function Hero() {
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [showCanvas]);
+
+  // subSecondary es un campo que puede no estar en la versión actual de translations
+  // Lo leemos con optional chaining para que nunca rompa el render
+  const subSecondary = (h as typeof h & { subSecondary?: string }).subSecondary;
+  const cta1Micro    = (h as typeof h & { cta1Micro?: string }).cta1Micro;
 
   return (
     <section
@@ -132,7 +123,6 @@ export default function Hero() {
       <div className="orb orb-navy w-[500px] h-[500px] bottom-[-80px] left-[-80px]" style={{ animationDelay: '3s' }} />
       <div className="orb orb-gold w-[300px] h-[300px] top-[40%] left-[15%]" style={{ animationDelay: '1.5s', opacity: 0.1 }} />
 
-      {/* Canvas solo si el dispositivo puede manejarlo */}
       {showCanvas && (
         <canvas ref={canvasRef} className="particles absolute inset-0" />
       )}
@@ -180,13 +170,15 @@ export default function Hero() {
           {h.sub}
         </p>
 
-        {/* Párrafo secundario */}
-        <p className="text-xs md:text-sm text-gold/60 font-light leading-relaxed mb-10 animate-[fadeIn_1s_ease_0.8s_both] max-w-xl">
-          {h.subSecondary}
-        </p>
+        {/* Párrafo secundario — solo si existe en translations */}
+        {subSecondary && (
+          <p className="text-xs md:text-sm text-gold/60 font-light leading-relaxed mb-10 animate-[fadeIn_1s_ease_0.8s_both] max-w-xl">
+            {subSecondary}
+          </p>
+        )}
 
         {/* CTA */}
-        <div className="flex flex-col items-center gap-2 animate-[fadeInUp_1s_ease_0.9s_both]">
+        <div className={`flex flex-col items-center gap-2 animate-[fadeInUp_1s_ease_0.9s_both] ${subSecondary ? '' : 'mt-8'}`}>
           <a
             href="#contacto"
             onClick={(e) => {
@@ -197,9 +189,11 @@ export default function Hero() {
           >
             <span>{h.cta1}</span>
           </a>
-          <p className="text-white/30 text-[10px] tracking-wide font-light max-w-[260px] text-center leading-snug mt-1">
-            {h.cta1Micro}
-          </p>
+          {cta1Micro && (
+            <p className="text-white/30 text-[10px] tracking-wide font-light max-w-[260px] text-center leading-snug mt-1">
+              {cta1Micro}
+            </p>
+          )}
         </div>
       </div>
 

@@ -1,3 +1,8 @@
+// src/hooks/useSEO.ts
+// Fix og:locale: es_EC → es_ES para audiencia europea/internacional
+// Fix og:image:alt añadido (mejora accesibilidad OG y LinkedIn)
+// Fix article:modified_time añadido cuando está disponible
+
 import { useEffect } from 'react';
 
 interface SEOProps {
@@ -5,9 +10,11 @@ interface SEOProps {
   description: string;
   canonical?: string;
   ogImage?: string;
+  ogImageAlt?: string;
   ogType?: 'website' | 'article';
   articleMeta?: {
     publishedTime: string;
+    modifiedTime?: string;
     author: string;
     tags?: string[];
   };
@@ -18,12 +25,14 @@ interface SEOProps {
 
 const SITE_URL = 'https://mentoriatextum.com';
 const DEFAULT_IMAGE = `${SITE_URL}/og-default.png`;
+const DEFAULT_IMAGE_ALT = 'TEXTUM — Mentoría Académica Internacional';
 
 export function useSEO({
   title,
   description,
   canonical,
   ogImage,
+  ogImageAlt,
   ogType = 'website',
   articleMeta,
   lang = 'es',
@@ -31,13 +40,13 @@ export function useSEO({
   keywords,
 }: SEOProps) {
   useEffect(() => {
-    // Title
+    // ── Title ──────────────────────────────────────────────────────
     document.title = title;
 
-    // Lang
+    // ── Lang attribute ─────────────────────────────────────────────
     document.documentElement.lang = lang;
 
-    // Helper to set/create meta tags
+    // ── Helpers ────────────────────────────────────────────────────
     const setMeta = (attr: string, value: string, content: string) => {
       let el = document.querySelector(`meta[${attr}="${value}"]`) as HTMLMetaElement | null;
       if (!el) {
@@ -48,12 +57,15 @@ export function useSEO({
       el.setAttribute('content', content);
     };
 
-    // Helper to set/create link tags
-    const setLink = (rel: string, href: string) => {
-      let el = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
+    const setLink = (rel: string, href: string, hreflang?: string) => {
+      const selector = hreflang
+        ? `link[rel="${rel}"][hreflang="${hreflang}"]`
+        : `link[rel="${rel}"]`;
+      let el = document.querySelector(selector) as HTMLLinkElement | null;
       if (!el) {
         el = document.createElement('link');
         el.setAttribute('rel', rel);
+        if (hreflang) el.setAttribute('hreflang', hreflang);
         document.head.appendChild(el);
       }
       el.setAttribute('href', href);
@@ -62,59 +74,85 @@ export function useSEO({
     const canonicalUrl = canonical
       ? `${SITE_URL}${canonical}`
       : SITE_URL + window.location.pathname;
-    const image = ogImage || DEFAULT_IMAGE;
+    const image    = ogImage    || DEFAULT_IMAGE;
+    const imageAlt = ogImageAlt || DEFAULT_IMAGE_ALT;
 
-    // Standard meta
+    // ── Standard meta ──────────────────────────────────────────────
     setMeta('name', 'description', description);
     setMeta('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow');
     if (keywords) setMeta('name', 'keywords', keywords);
 
-    // Canonical
+    // ── Canonical ──────────────────────────────────────────────────
     setLink('canonical', canonicalUrl);
 
-    // Open Graph
-    setMeta('property', 'og:title', title);
+    // ── Hreflang alternates ────────────────────────────────────────
+    // Ayuda a Google a entender que la misma URL sirve contenido bilingüe
+    setLink('alternate', canonicalUrl, lang);
+    setLink('alternate', canonicalUrl, 'x-default');
+
+    // ── Open Graph ─────────────────────────────────────────────────
+    setMeta('property', 'og:title',       title);
     setMeta('property', 'og:description', description);
-    setMeta('property', 'og:url', canonicalUrl);
-    setMeta('property', 'og:image', image);
+    setMeta('property', 'og:url',         canonicalUrl);
+    setMeta('property', 'og:image',       image);
+    setMeta('property', 'og:image:alt',   imageAlt);
     setMeta('property', 'og:image:width', '1200');
-    setMeta('property', 'og:image:height', '630');
-    setMeta('property', 'og:type', ogType);
-    setMeta('property', 'og:locale', lang === 'es' ? 'es_EC' : 'en_GB');
+    setMeta('property', 'og:image:height','630');
+    setMeta('property', 'og:type',        ogType);
+
+    // Fix: es_ES para mercado español/europeo, es_EC era demasiado local
+    // y confundía a LinkedIn/Facebook en el mercado objetivo principal
+    const ogLocale = lang === 'es' ? 'es_ES' : 'en_GB';
+    setMeta('property', 'og:locale', ogLocale);
+
+    // Alternate locale: permite que FB muestre en ambos idiomas
+    const ogLocaleAlt = lang === 'es' ? 'en_GB' : 'es_ES';
+    let ogLocaleAltEl = document.querySelector('meta[property="og:locale:alternate"]') as HTMLMetaElement | null;
+    if (!ogLocaleAltEl) {
+      ogLocaleAltEl = document.createElement('meta');
+      ogLocaleAltEl.setAttribute('property', 'og:locale:alternate');
+      document.head.appendChild(ogLocaleAltEl);
+    }
+    ogLocaleAltEl.setAttribute('content', ogLocaleAlt);
+
     setMeta('property', 'og:site_name', 'TEXTUM — Mentoría Académica');
 
-    // Twitter Card
-    setMeta('name', 'twitter:card', 'summary_large_image');
-    setMeta('name', 'twitter:title', title);
+    // ── Twitter Card ───────────────────────────────────────────────
+    setMeta('name', 'twitter:card',        'summary_large_image');
+    setMeta('name', 'twitter:title',       title);
     setMeta('name', 'twitter:description', description);
-    setMeta('name', 'twitter:image', image);
+    setMeta('name', 'twitter:image',       image);
+    setMeta('name', 'twitter:image:alt',   imageAlt);
 
-    // Article-specific meta
+    // ── Article-specific ──────────────────────────────────────────
     if (ogType === 'article' && articleMeta) {
       setMeta('property', 'article:published_time', articleMeta.publishedTime);
-      setMeta('property', 'article:author', articleMeta.author);
-      if (articleMeta.tags) {
-        articleMeta.tags.forEach((tag, i) => {
-          let el = document.querySelector(`meta[property="article:tag"][data-index="${i}"]`) as HTMLMetaElement | null;
-          if (!el) {
-            el = document.createElement('meta');
-            el.setAttribute('property', 'article:tag');
-            el.setAttribute('data-index', String(i));
-            document.head.appendChild(el);
-          }
-          el.setAttribute('content', tag);
-        });
+      if (articleMeta.modifiedTime) {
+        setMeta('property', 'article:modified_time', articleMeta.modifiedTime);
       }
+      setMeta('property', 'article:author', articleMeta.author);
+      articleMeta.tags?.forEach((tag, i) => {
+        let el = document.querySelector(
+          `meta[property="article:tag"][data-index="${i}"]`
+        ) as HTMLMetaElement | null;
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute('property', 'article:tag');
+          el.setAttribute('data-index', String(i));
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', tag);
+      });
     }
 
-    // Cleanup on unmount
+    // ── Cleanup ────────────────────────────────────────────────────
     return () => {
       document.title = 'TEXTUM — Mentoría Académica';
     };
-  }, [title, description, canonical, ogImage, ogType, lang, noindex, articleMeta, keywords]);
+  }, [title, description, canonical, ogImage, ogImageAlt, ogType, lang, noindex, articleMeta, keywords]);
 }
 
-// ── JSON-LD Schema helpers ──────────────────────────────────────────────────
+// ── JSON-LD helpers ────────────────────────────────────────────────────────
 
 export function injectSchema(schema: object, id = 'schema-main') {
   let el = document.getElementById(id) as HTMLScriptElement | null;

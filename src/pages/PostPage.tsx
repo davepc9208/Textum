@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ShareButtons from '../components/ShareButtons';
 import ShareCard from '../components/ShareCard';
+import BackToTop from '../components/BackToTop';
 
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
   useEffect(() => {
@@ -62,7 +63,6 @@ export default function PostPage() {
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
-    // Add cursor and zoom hint to all images in content
     el.querySelectorAll('img').forEach(img => {
       img.style.cursor = 'zoom-in';
       img.title = 'Clic para ampliar';
@@ -85,9 +85,9 @@ export default function PostPage() {
       });
   }, [slug]);
 
-  const postTitle = post ? (lang === 'es' ? post.title_es : post.title_en) : '';
+  const postTitle  = post ? (lang === 'es' ? post.title_es  : post.title_en)  : '';
   const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
-  const content = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
+  const content    = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
 
   // SEO dinámico por artículo
   useSEO(post ? {
@@ -95,6 +95,7 @@ export default function PostPage() {
     description: postExcerpt.slice(0, 155),
     canonical: `/blog/${post.slug}`,
     ogImage: post.cover_url,
+    ogImageAlt: post.cover_alt ?? postTitle,
     ogType: 'article',
     articleMeta: {
       publishedTime: post.created_at,
@@ -132,7 +133,7 @@ export default function PostPage() {
         '@id': `https://mentoriatextum.com/blog/${post.slug}`,
       },
       timeRequired: `PT${post.reading_time}M`,
-      inLanguage: lang === 'es' ? 'es-EC' : 'en-GB',
+      inLanguage: lang === 'es' ? 'es-ES' : 'en-GB',
     };
     injectSchema(schema, 'schema-article');
     return () => removeSchema('schema-article');
@@ -159,58 +160,50 @@ export default function PostPage() {
           {/* Cover */}
           {post.cover_url && (
             <div className="relative h-72 md:h-96 overflow-hidden">
-              <img src={post.cover_url} alt={post.cover_alt ?? postTitle} className="w-full h-full object-cover" />
+              <img
+                src={post.cover_url}
+                alt={post.cover_alt ?? postTitle}
+                className="w-full h-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/20 to-transparent" />
             </div>
           )}
 
           <div className="max-w-3xl mx-auto px-6 py-16">
             {/* Back */}
-            <Link to="/blog" className="inline-flex items-center gap-2 text-gold text-sm mb-10 hover:gap-3 transition-all duration-200">
+            <Link
+              to="/blog"
+              className="inline-flex items-center gap-2 text-gold text-sm mb-10 hover:gap-3 transition-all duration-200"
+            >
               <ArrowLeft size={14} />
               {b.backToBlog}
             </Link>
 
-            {/* Meta */}
-<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-8">
-
-  <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
-
-    <span className="flex items-center gap-1.5">
-      <Calendar size={13} />
-      {new Date(post.created_at).toLocaleDateString(
-        lang === "es" ? "es-ES" : "en-GB",
-        {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }
-      )}
-    </span>
-
-    <span className="flex items-center gap-1.5">
-      <Clock size={13} />
-      {post.reading_time} {b.minRead}
-    </span>
-
-    <span className="text-gold font-medium">
-      {b.by} {post.author}
-    </span>
-
-  </div>
-
-  <ShareButtons
-    title={postTitle}
-  />
-
-</div>
-
-</div>
+            {/* Meta — fix: un solo contenedor, sin divs duplicados */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+              <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
+                <span className="flex items-center gap-1.5">
+                  <Calendar size={13} />
+                  {new Date(post.created_at).toLocaleDateString(
+                    lang === 'es' ? 'es-ES' : 'en-GB',
+                    { year: 'numeric', month: 'long', day: 'numeric' }
+                  )}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Clock size={13} />
+                  {post.reading_time} {b.minRead}
+                </span>
+                <span className="text-gold font-medium">
+                  {b.by} {post.author}
+                </span>
+              </div>
+              <ShareButtons title={postTitle} />
+            </div>
 
             {/* Title */}
-            <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-8">{postTitle}</h1>
+            <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-8">
+              {postTitle}
+            </h1>
 
             {/* Divider */}
             <div className="flex items-center gap-4 mb-10">
@@ -220,7 +213,7 @@ export default function PostPage() {
               </svg>
             </div>
 
-            {/* Content — rendered as HTML (stored as HTML in Supabase) */}
+            {/* Content */}
             <div
               ref={contentRef}
               className="prose prose-lg max-w-none
@@ -238,13 +231,14 @@ export default function PostPage() {
               <Lightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
             )}
 
-            <ShareCard
-  title={postTitle}
-/>
+            <ShareCard title={postTitle} />
 
             {/* Back link bottom */}
             <div className="mt-16 pt-8 border-t border-navy/10">
-              <Link to="/blog" className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200">
+              <Link
+                to="/blog"
+                className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200"
+              >
                 <ArrowLeft size={14} />
                 {b.backToBlog}
               </Link>
@@ -254,6 +248,7 @@ export default function PostPage() {
       )}
 
       <Footer />
+      <BackToTop />
     </div>
   );
 }
