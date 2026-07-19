@@ -6,7 +6,11 @@ import { useLang } from '../i18n/LangContext';
 import { useSEO } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import BackToTop from '../components/BackToTop';
 
+// Categorías definidas aquí como fuente única de verdad para BlogPage.
+// BlogPreview.tsx tiene su propia copia localizada — si cambias el copy,
+// actualiza ambos o extrae a src/data/categories.ts.
 const CATEGORIES = {
   es: [
     {
@@ -65,31 +69,30 @@ export default function BlogPage() {
       });
   }, []);
 
-  const title = (p: Post) => lang === 'es' ? p.title_es : p.title_en;
+  const title   = (p: Post) => lang === 'es' ? p.title_es   : p.title_en;
   const excerpt = (p: Post) => lang === 'es' ? p.excerpt_es : p.excerpt_en;
 
   const filtered = activeCategory
     ? posts.filter(p => p.category === activeCategory)
     : posts;
 
-  // Artículo destacado: primero de rigor-escritura si no hay filtro activo, si no el primero del filtro
   const featured = filtered[0] ?? null;
-  const rest = filtered.slice(1);
+  const rest     = filtered.slice(1);
 
   const activeCategoryData = categories.find(c => c.key === activeCategory) ?? null;
 
-  // SEO dinámico — cambia según el filtro de categoría activo
+  // SEO dinámico — respeta idioma activo
   useSEO({
     title: activeCategoryData
       ? `${activeCategoryData.label} | Blog TEXTUM Mentoría Académica`
-      : (lang === 'es'
-          ? 'Blog Académico | Artículos sobre Investigación y Redacción Científica — TEXTUM'
-          : 'Academic Blog | Research and Scientific Writing Articles — TEXTUM'),
+      : lang === 'es'
+        ? 'Blog Académico | Artículos sobre Investigación y Redacción Científica — TEXTUM'
+        : 'Academic Blog | Research and Scientific Writing Articles — TEXTUM',
     description: activeCategoryData
       ? activeCategoryData.desc.replace(/[«»]/g, '').slice(0, 155)
-      : (lang === 'es'
-          ? 'Lee artículos y guías escritas por nuestras doctoras sobre redacción académica, metodología de investigación, APA 7 y cómo defender tu tesis con éxito.'
-          : 'Read articles and guides written by our doctors on academic writing, research methodology, APA 7 and how to successfully defend your thesis.'),
+      : lang === 'es'
+        ? 'Lee artículos y guías escritas por nuestras doctoras sobre redacción académica, metodología de investigación, APA 7 y cómo defender tu tesis con éxito.'
+        : 'Read articles and guides written by our doctors on academic writing, research methodology, APA 7 and how to successfully defend your thesis.',
     canonical: activeCategory ? `/blog?categoria=${activeCategory}` : '/blog',
     ogType: 'website',
     lang,
@@ -146,7 +149,6 @@ export default function BlogPage() {
             ))}
           </div>
 
-          {/* Dynamic category description */}
           {activeCategoryData && (
             <div className="max-w-3xl mx-auto text-center">
               <p className="text-sm text-navy/65 leading-relaxed font-serif italic">
@@ -179,9 +181,12 @@ export default function BlogPage() {
                 <div className="flex flex-col md:flex-row">
                   {featured.cover_url && (
                     <div className="relative md:w-1/2 h-64 md:h-auto overflow-hidden flex-shrink-0">
+                      {/* Featured: eager load ya que es el primer elemento visible */}
                       <img
                         src={featured.cover_url}
                         alt={featured.cover_alt ?? title(featured)}
+                        loading="eager"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent to-navy/20" />
@@ -234,9 +239,12 @@ export default function BlogPage() {
                   >
                     {post.cover_url && (
                       <div className="relative h-52 overflow-hidden">
+                        {/* Grid cards: lazy load */}
                         <img
                           src={post.cover_url}
                           alt={post.cover_alt ?? title(post)}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-navy/30 to-transparent" />
@@ -283,6 +291,7 @@ export default function BlogPage() {
       </div>
 
       <Footer />
+      <BackToTop />
     </div>
   );
 }

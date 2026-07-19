@@ -17,15 +17,12 @@ const memberImages = [
   },
 ];
 
-// Badges de estándares académicos por miembro
 const memberStandards = [
-  // Vilma — APA 7, Latindex, Bologna
   [
     { code: 'APA 7',    cls: 'bg-navy/8 text-navy/55 border-navy/15' },
     { code: 'Latindex', cls: 'bg-navy/8 text-navy/55 border-navy/15' },
     { code: 'Bologna',  cls: 'bg-blue-50 text-blue-600 border-blue-200' },
   ],
-  // Yadyra — Scopus, ANECA, IMRyD
   [
     { code: 'Scopus',   cls: 'bg-navy/8 text-navy/55 border-navy/15' },
     { code: 'ANECA',    cls: 'bg-blue-50 text-blue-600 border-blue-200' },
@@ -60,9 +57,8 @@ export default function About() {
       }} />
 
       <div className="max-w-6xl mx-auto">
-        {/* Main two-column block */}
         <div className="grid md:grid-cols-2 gap-16 items-center">
-          {/* Image - IMAGEN PRINCIPAL CON CAMBIOS DE RENDIMIENTO */}
+          {/* Image — LCP candidate: eager + decoding async */}
           <div className="reveal-left relative">
             <div className="relative rounded-sm overflow-hidden aspect-[4/5] shadow-2xl">
               <img
@@ -76,6 +72,7 @@ export default function About() {
                 alt="Redacción y mentoría académica"
                 loading="eager"
                 fetchPriority="high"
+                decoding="async"
                 width={600}
                 height={750}
                 className="w-full h-full object-cover"
@@ -137,7 +134,7 @@ export default function About() {
                   className="border border-navy/10 rounded-sm bg-white/60 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
                   <div className={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
-                    {/* ── Photo ── */}
+                    {/* Photo — lazy load (below the fold) */}
                     <div className="relative md:w-64 flex-shrink-0">
                       <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full min-h-[320px] overflow-hidden">
                         <picture>
@@ -146,13 +143,13 @@ export default function About() {
                             src={img.src}
                             alt={img.alt}
                             loading="lazy"
+                            decoding="async"
                             className="absolute inset-0 w-full h-full object-cover object-top"
                           />
                         </picture>
                         <div className={`absolute inset-0 ${isEven ? 'bg-gradient-to-r' : 'bg-gradient-to-l'} from-transparent via-transparent to-white/10 hidden md:block`} />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/10 md:hidden" />
                       </div>
-                      {/* Gold corner accents */}
                       {isEven ? (
                         <>
                           <div className="absolute top-3 left-3 w-10 h-10 border-t-2 border-l-2 border-gold/70" />
@@ -166,7 +163,7 @@ export default function About() {
                       )}
                     </div>
 
-                    {/* ── Bio ── */}
+                    {/* Bio */}
                     <div className="flex-1 p-8 md:p-10 flex flex-col justify-center">
                       <div className="mb-5">
                         <h3 className="font-serif text-2xl md:text-3xl font-light text-navy leading-snug">
@@ -175,8 +172,6 @@ export default function About() {
                         {member.role && (
                           <p className="text-xs tracking-[0.2em] text-gold uppercase mt-1">{member.role}</p>
                         )}
-
-                        {/* ORCID + badges de estándares europeos */}
                         <div className="flex flex-wrap items-center gap-2 mt-2">
                           <a
                             href={img.orcid}
@@ -204,7 +199,6 @@ export default function About() {
                         <p className="text-base text-navy font-medium leading-relaxed mb-4">{member.intro}</p>
                       )}
 
-                      {/* Bullets */}
                       {member.bullets && member.bullets.length > 0 && (
                         <ul className="space-y-2 mb-4">
                           {member.bullets.map((bullet, bi) => (
@@ -221,7 +215,6 @@ export default function About() {
 
                       <p className="text-sm text-navy/50 leading-relaxed font-light italic">{member.bio}</p>
 
-                      {/* Tags de especialidad */}
                       <div className="flex flex-wrap gap-2 mt-6">
                         {member.tags.map((tag) => (
                           <span key={tag} className="text-[11px] tracking-wide text-navy/60 border border-navy/15 px-3 py-1 rounded-full bg-white/80">
@@ -230,7 +223,6 @@ export default function About() {
                         ))}
                       </div>
 
-                      {/* Premio Nacional — solo Yadyra (idx 1) */}
                       {idx === 1 && (
                         <div className="mt-5 inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-gold/10 border border-gold/30 self-start">
                           <AwardIcon />

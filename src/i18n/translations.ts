@@ -16,7 +16,6 @@ export const translations = {
       tagline: 'TEXTUM',
       sub: 'Acompañamos tesis, trabajos de graduación, artículos científicos y procesos de defensa con filosofía pedagógica propia, rigor metodológico y uso ético de inteligencia artificial.',
       cta1: 'AGENDAR DIAGNÓSTICO ACADÉMICO',
-      cta2: 'Explorar el método TEXTUM',
       scroll: 'Explorar',
     },
     about: {
@@ -149,6 +148,10 @@ export const translations = {
         send: 'QUIERO MI DIAGNÓSTICO ACADÉMICO',
         sending: 'ENVIANDO…',
         legalNote: 'Al enviar este formulario, aceptas que usemos tus datos para responder tu solicitud y orientarte sobre nuestros programas.',
+        // Mensajes del toast — nuevos campos
+        successToast: '¡Mensaje recibido! Te responderemos en menos de 24 horas.',
+        errorToast: 'No se pudo enviar. Inténtalo de nuevo o escríbenos directamente.',
+        // Mantenidos por compatibilidad pero ya no se usan en pantalla
         successTitle: 'Solicitud recibida',
         successDesc: 'Gracias por contactarnos. Revisaremos tu caso y te responderemos en menos de 24 horas para orientarte hacia el programa más adecuado.',
         another: 'ENVIAR OTRA SOLICITUD',
@@ -195,7 +198,6 @@ export const translations = {
       tagline: 'TEXTUM',
       sub: 'We support theses, graduation projects, scientific articles and defence processes with our own pedagogical philosophy, methodological rigour and ethical use of artificial intelligence.',
       cta1: 'BOOK AN ACADEMIC DIAGNOSIS',
-      cta2: 'Explore the TEXTUM method',
       scroll: 'Explore',
     },
     about: {
@@ -328,6 +330,10 @@ export const translations = {
         send: 'I WANT MY ACADEMIC DIAGNOSIS',
         sending: 'SENDING…',
         legalNote: 'By submitting this form, you agree that we may use your data to respond to your enquiry and guide you about our programmes.',
+        // Toast messages — new fields
+        successToast: 'Message received! We will get back to you within 24 hours.',
+        errorToast: 'Could not send. Please try again or write to us directly.',
+        // Kept for compatibility
         successTitle: 'Request received',
         successDesc: 'Thank you for contacting us. We will review your case and get back to you within 24 hours to guide you towards the most appropriate programme.',
         another: 'SEND ANOTHER REQUEST',
