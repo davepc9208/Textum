@@ -2,15 +2,17 @@
 // Fix 1: honeypot name="website" → name="b_field" + autoComplete="new-password"
 //         evita que gestores de contraseñas (Chrome, 1Password, Bitwarden)
 //         rellenen el campo y silencien el formulario sin feedback.
-// Fix 2: Toast de confirmación emergente en lugar de reemplazar el formulario.
-//         El formulario sigue visible tras el envío por si el usuario quiere reenviar.
-//         El toast aparece fixed en la parte inferior central, se cierra solo en 5s.
+// Fix 2: Experiencia premium al enviar:
+//         - Botón cambia a "✓ Solicitud enviada" y se deshabilita
+//         - Tarjeta de confirmación con animación
+//         - Formulario se desvanece ligeramente
+//         - Sensación similar a Stripe, Apple o Notion
 
 import { useState, useEffect } from 'react';
 import { Mail, Globe, Send, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { useLang } from '../i18n/LangContext';
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
+// ─── Toast (solo para errores) ──────────────────────────────────────────────
 function Toast({
   type,
   message,
@@ -87,7 +89,8 @@ export default function Contact() {
   const [form, setForm]       = useState(EMPTY_FORM);
   const [honeypot, setHoneypot] = useState('');
   const [loading, setLoading] = useState(false);
-  const [toast, setToast]     = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [submitted, setSubmitted] = useState(false); // ← Premium: estado de éxito
+  const [toast, setToast]     = useState<{ type: 'error'; message: string } | null>(null); // Solo errores
 
   const closeToast = () => setToast(null);
 
@@ -114,11 +117,8 @@ export default function Contact() {
 
       if (!res.ok) throw new Error(data.error || 'Error desconocido');
 
-      // Éxito: toast + reset del formulario
-      setToast({
-        type: 'success',
-        message: f.successToast ?? '¡Mensaje recibido! Te responderemos en menos de 24 horas.',
-      });
+      // ✅ Éxito premium: estado submitted = true
+      setSubmitted(true);
       setForm(EMPTY_FORM);
 
     } catch (err) {
@@ -198,170 +198,232 @@ export default function Contact() {
 
           {/* Formulario */}
           <div className="lg:col-span-3 reveal-right">
-            <div className="glass-navy rounded-sm p-8 md:p-10 shadow-2xl">
-              <form onSubmit={handleSubmit} className="space-y-5">
-
-                {/* Honeypot — fix: name cambiado de "website" a "b_field"
-                    autoComplete="new-password" previene que gestores de contraseñas
-                    (Chrome, Safari, Bitwarden, 1Password) lo rellenen automáticamente */}
-                <div
-                  aria-hidden="true"
-                  style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}
+            <div className="glass-navy rounded-sm p-8 md:p-10 shadow-2xl relative overflow-hidden">
+              
+              {/* ✨ Overlay de éxito - aparece cuando submitted = true */}
+              {submitted && (
+                <div 
+                  className="absolute inset-0 z-20 flex items-center justify-center bg-navy/60 backdrop-blur-sm animate-[fadeIn_0.6s_ease]"
+                  style={{ animation: 'fadeIn 0.6s ease' }}
                 >
-                  <input
-                    type="text"
-                    name="b_field"
-                    value={honeypot}
-                    onChange={e => setHoneypot(e.target.value)}
-                    autoComplete="new-password"
-                    tabIndex={-1}
-                  />
-                </div>
+                  <div className="text-center max-w-md mx-6 animate-[slideUp_0.7s_cubic-bezier(0.34,1.56,0.64,1)]">
+                    {/* Check grande con animación */}
+                    <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gold/10 border-2 border-gold/40 flex items-center justify-center animate-[scaleIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)_0.2s_both]">
+                      <CheckCircle size={48} className="text-gold" />
+                    </div>
+                    
+                    <h3 className="font-serif text-2xl text-white mb-2">
+                      ✓ Hemos recibido correctamente tu solicitud.
+                    </h3>
+                    
+                    <p className="text-white/60 text-sm leading-relaxed mt-4">
+                      Uno de nuestros asesores contactará contigo en menos de 24 horas.
+                    </p>
+                    
+                    <p className="text-white/40 text-xs mt-6 font-light border-t border-white/10 pt-6">
+                      Mientras tanto puedes seguir explorando nuestros programas.
+                    </p>
 
-                {/* Título del formulario */}
-                <div className="pb-2 border-b border-white/8">
-                  <h3 className="font-serif text-xl text-white mb-1">{f.formTitle}</h3>
-                  <p className="text-white/50 text-xs font-light leading-relaxed">{f.formIntro}</p>
-                </div>
-
-                {/* Fila 1: Nombre + Email */}
-                <div className="grid sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className={labelCls}>{f.nameLabel}</label>
-                    <input
-                      type="text" name="name" value={form.name}
-                      onChange={handleChange} required
-                      placeholder={f.namePlaceholder}
-                      className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelCls}>{f.emailLabel}</label>
-                    <input
-                      type="email" name="email" value={form.email}
-                      onChange={handleChange} required
-                      placeholder={f.emailPlaceholder}
-                      className={inputCls}
-                    />
-                  </div>
-                </div>
-
-                {/* Fila 2: País + Nivel académico */}
-                <div className="grid sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className={labelCls}>{f.countryLabel}</label>
-                    <input
-                      type="text" name="country" value={form.country}
-                      onChange={handleChange}
-                      placeholder={f.countryPlaceholder}
-                      className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="academicLevel-select" className={labelCls}>{f.academicLevelLabel}</label>
-                    <select
-                      id="academicLevel-select" name="academicLevel"
-                      value={form.academicLevel} onChange={handleChange}
-                      className={selectCls}
-                      style={{ background: 'rgba(13,31,60,0.85)' }}
+                    {/* Botón opcional para "cerrar" (reiniciar el formulario) */}
+                    <button
+                      onClick={() => {
+                        setSubmitted(false);
+                        setForm(EMPTY_FORM);
+                      }}
+                      className="mt-6 text-white/40 hover:text-white text-xs tracking-[0.15em] transition-colors border border-white/10 hover:border-white/30 px-5 py-2 rounded-sm"
                     >
-                      <option value="" className="bg-navy">{f.academicLevelPlaceholder}</option>
-                      {f.academicLevelOpts.map(o => (
-                        <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
-                      ))}
-                    </select>
+                      ENVIAR OTRA SOLICITUD
+                    </button>
                   </div>
                 </div>
+              )}
 
-                {/* Fila 3: Tipo de proyecto + Etapa del manuscrito */}
-                <div className="grid sm:grid-cols-2 gap-5">
-                  <div>
-                    <label htmlFor="projectType-select" className={labelCls}>{f.projectTypeLabel}</label>
-                    <select
-                      id="projectType-select" name="projectType"
-                      value={form.projectType} onChange={handleChange}
-                      className={selectCls}
-                      style={{ background: 'rgba(13,31,60,0.85)' }}
-                    >
-                      <option value="" className="bg-navy">{f.projectTypePlaceholder}</option>
-                      {f.projectTypeOpts.map(o => (
-                        <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="manuscriptStage-select" className={labelCls}>{f.manuscriptStageLabel}</label>
-                    <select
-                      id="manuscriptStage-select" name="manuscriptStage"
-                      value={form.manuscriptStage} onChange={handleChange}
-                      className={selectCls}
-                      style={{ background: 'rgba(13,31,60,0.85)' }}
-                    >
-                      <option value="" className="bg-navy">{f.manuscriptStagePlaceholder}</option>
-                      {f.manuscriptStageOpts.map(o => (
-                        <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+              {/* Contenedor del formulario - se desvanece cuando submitted */}
+              <div 
+                className={`transition-all duration-700 ${
+                  submitted ? 'opacity-30 scale-[0.98] blur-[1px] pointer-events-none' : 'opacity-100 scale-100 blur-0'
+                }`}
+              >
+                <form onSubmit={handleSubmit} className="space-y-5">
 
-                {/* Programa de interés */}
-                <div>
-                  <label htmlFor="service-select" className={labelCls}>{f.serviceLabel}</label>
-                  <select
-                    id="service-select" name="service"
-                    value={form.service} onChange={handleChange}
-                    className={selectCls}
-                    style={{ background: 'rgba(13,31,60,0.85)' }}
+                  {/* Honeypot */}
+                  <div
+                    aria-hidden="true"
+                    style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}
                   >
-                    <option value="" className="bg-navy">{f.servicePlaceholder}</option>
-                    {f.serviceOpts.map(o => (
-                      <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
-                    ))}
-                  </select>
-                </div>
+                    <input
+                      type="text"
+                      name="b_field"
+                      value={honeypot}
+                      onChange={e => setHoneypot(e.target.value)}
+                      autoComplete="new-password"
+                      tabIndex={-1}
+                    />
+                  </div>
 
-                {/* Mensaje */}
-                <div>
-                  <label className={labelCls}>{f.messageLabel}</label>
-                  <textarea
-                    name="message" value={form.message}
-                    onChange={handleChange} required rows={4}
-                    placeholder={f.messagePlaceholder}
-                    className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all resize-none"
-                  />
-                </div>
+                  {/* Título del formulario */}
+                  <div className="pb-2 border-b border-white/8">
+                    <h3 className="font-serif text-xl text-white mb-1">{f.formTitle}</h3>
+                    <p className="text-white/50 text-xs font-light leading-relaxed">{f.formIntro}</p>
+                  </div>
 
-                {/* Nota legal */}
-                <p className="text-white/35 text-[10px] leading-relaxed font-light">{f.legalNote}</p>
+                  {/* Fila 1: Nombre + Email */}
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className={labelCls}>{f.nameLabel}</label>
+                      <input
+                        type="text" name="name" value={form.name}
+                        onChange={handleChange} required
+                        placeholder={f.namePlaceholder}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>{f.emailLabel}</label>
+                      <input
+                        type="email" name="email" value={form.email}
+                        onChange={handleChange} required
+                        placeholder={f.emailPlaceholder}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
 
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary w-full py-4 text-xs tracking-[0.18em] rounded-sm flex items-center justify-center gap-3 disabled:opacity-70"
-                >
-                  {loading ? (
-                    <span className="flex items-center gap-3">
-                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-                        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                      <span>{f.sending}</span>
-                    </span>
-                  ) : (
-                    <><Send size={14} className="relative z-10" /><span>{f.send}</span></>
-                  )}
-                </button>
+                  {/* Fila 2: País + Nivel académico */}
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className={labelCls}>{f.countryLabel}</label>
+                      <input
+                        type="text" name="country" value={form.country}
+                        onChange={handleChange}
+                        placeholder={f.countryPlaceholder}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="academicLevel-select" className={labelCls}>{f.academicLevelLabel}</label>
+                      <select
+                        id="academicLevel-select" name="academicLevel"
+                        value={form.academicLevel} onChange={handleChange}
+                        className={selectCls}
+                        style={{ background: 'rgba(13,31,60,0.85)' }}
+                      >
+                        <option value="" className="bg-navy">{f.academicLevelPlaceholder}</option>
+                        {f.academicLevelOpts.map(o => (
+                          <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-              </form>
+                  {/* Fila 3: Tipo de proyecto + Etapa del manuscrito */}
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    <div>
+                      <label htmlFor="projectType-select" className={labelCls}>{f.projectTypeLabel}</label>
+                      <select
+                        id="projectType-select" name="projectType"
+                        value={form.projectType} onChange={handleChange}
+                        className={selectCls}
+                        style={{ background: 'rgba(13,31,60,0.85)' }}
+                      >
+                        <option value="" className="bg-navy">{f.projectTypePlaceholder}</option>
+                        {f.projectTypeOpts.map(o => (
+                          <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="manuscriptStage-select" className={labelCls}>{f.manuscriptStageLabel}</label>
+                      <select
+                        id="manuscriptStage-select" name="manuscriptStage"
+                        value={form.manuscriptStage} onChange={handleChange}
+                        className={selectCls}
+                        style={{ background: 'rgba(13,31,60,0.85)' }}
+                      >
+                        <option value="" className="bg-navy">{f.manuscriptStagePlaceholder}</option>
+                        {f.manuscriptStageOpts.map(o => (
+                          <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Programa de interés */}
+                  <div>
+                    <label htmlFor="service-select" className={labelCls}>{f.serviceLabel}</label>
+                    <select
+                      id="service-select" name="service"
+                      value={form.service} onChange={handleChange}
+                      className={selectCls}
+                      style={{ background: 'rgba(13,31,60,0.85)' }}
+                    >
+                      <option value="" className="bg-navy">{f.servicePlaceholder}</option>
+                      {f.serviceOpts.map(o => (
+                        <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Mensaje */}
+                  <div>
+                    <label className={labelCls}>{f.messageLabel}</label>
+                    <textarea
+                      name="message" value={form.message}
+                      onChange={handleChange} required rows={4}
+                      placeholder={f.messagePlaceholder}
+                      className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all resize-none"
+                    />
+                  </div>
+
+                  {/* Nota legal */}
+                  <p className="text-white/35 text-[10px] leading-relaxed font-light">{f.legalNote}</p>
+
+                  {/* ✨ Botón con estado premium */}
+                  <button
+                    type="submit"
+                    disabled={loading || submitted}
+                    className={`
+                      w-full py-4 text-xs tracking-[0.18em] rounded-sm 
+                      flex items-center justify-center gap-3 
+                      transition-all duration-500
+                      ${submitted 
+                        ? 'bg-gold/10 border border-gold/30 text-gold cursor-default' 
+                        : 'btn-primary hover:scale-[1.01]'
+                      }
+                      ${loading ? 'opacity-70' : ''}
+                    `}
+                  >
+                    {submitted ? (
+                      // ✅ Estado: Solicitud enviada
+                      <span className="flex items-center gap-3">
+                        <CheckCircle size={16} className="text-gold" />
+                        <span>✓ Solicitud enviada</span>
+                      </span>
+                    ) : loading ? (
+                      // ⏳ Estado: Enviando
+                      <span className="flex items-center gap-3">
+                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+                          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                        <span>{f.sending}</span>
+                      </span>
+                    ) : (
+                      // 📤 Estado: Normal
+                      <><Send size={14} className="relative z-10" /><span>{f.send}</span></>
+                    )}
+                  </button>
+
+                </form>
+              </div>
+
             </div>
           </div>
 
         </div>
       </div>
 
-      {/* Toast de confirmación / error */}
+      {/* Toast de error (solo errores) */}
       {toast && (
         <Toast
           type={toast.type}
@@ -370,7 +432,7 @@ export default function Contact() {
         />
       )}
 
-      {/* Keyframes del toast */}
+      {/* Keyframes del toast + animaciones premium */}
       <style>{`
         @keyframes toastIn {
           from { opacity: 0; transform: translateX(-50%) translateY(20px); }
@@ -379,6 +441,18 @@ export default function Contact() {
         @keyframes toastProgress {
           from { width: 100%; }
           to   { width: 0%; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.5); }
+          to   { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </section>
