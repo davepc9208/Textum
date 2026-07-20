@@ -4,14 +4,9 @@
 // dependiendo de cómo se pase el prop desde AdminPage.
 
 import { useState, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-// ─── Supabase client (mismo que el resto de la app) ───────────────────────────
-// Usamos las variables de entorno de Vite igual que en src/lib/supabase.ts
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+// Fix: importar el singleton en lugar de crear un segundo cliente.
+// Dos instancias de createClient pueden causar conflictos de caché de auth.
+import { supabase } from '../lib/supabase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

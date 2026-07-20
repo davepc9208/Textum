@@ -200,6 +200,7 @@ export default function PostPage() {
                 alt={post.cover_alt ?? postTitle}
                 loading="eager"
                 decoding="async"
+                fetchPriority="high"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/20 to-transparent" />
