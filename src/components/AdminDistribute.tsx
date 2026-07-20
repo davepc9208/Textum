@@ -1,5 +1,17 @@
 // src/components/AdminDistribute.tsx
+// Fix Step 1: ahora actualiza published=true en Supabase antes de continuar.
+// El slug se usa como identificador porque post.id puede no estar disponible
+// dependiendo de cómo se pase el prop desde AdminPage.
+
 import { useState, useCallback } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+// ─── Supabase client (mismo que el resto de la app) ───────────────────────────
+// Usamos las variables de entorno de Vite igual que en src/lib/supabase.ts
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,6 +64,7 @@ interface DistributeResult {
   visual_assets: {
     instagram_carousel: CarouselSlide[];
     pinterest_pin: { title: string; description: string; image_prompt: string };
+    youtube_thumbnail?: { text: string; image_prompt: string };
   };
   seo: { meta_title: string; meta_description: string; keywords: string[] };
   copy_ready: {
@@ -252,17 +265,32 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
     setResult(null);
     setSteps({ publish: 'idle', ai: 'idle', content: 'idle', schedule: 'idle' });
 
-    // Step 1: publish (optimistic)
+    // ── Step 1: publicar en Supabase (real) ──────────────────────────────────
     setStep('publish', 'running');
-    await delay(500);
-    setStep('publish', 'done');
-    onPublishSuccess?.();
+    try {
+      // Intentamos por id primero, luego por slug como fallback
+      const filter = post.id
+        ? supabase.from('posts').update({ published: true }).eq('id', post.id)
+        : supabase.from('posts').update({ published: true }).eq('slug', post.slug);
 
-    // Step 2: call Worker (AI + sitemap)
+      const { error: supabaseError } = await filter;
+      if (supabaseError) throw new Error(supabaseError.message);
+
+      setStep('publish', 'done');
+      onPublishSuccess?.();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Error al publicar en Supabase';
+      setError(`Error al publicar: ${msg}`);
+      setStep('publish', 'error');
+      setRunning(false);
+      return;
+    }
+
+    // ── Step 2: Groq — generar contenido ─────────────────────────────────────
     setStep('ai', 'running');
     let data: DistributeResult;
     try {
-      const title = post.title_es || post.title_en || post.title || 'Sin título';
+      const title   = post.title_es || post.title_en || post.title || 'Sin título';
       const content = post.content_es || post.content_en || post.content || '';
       const excerpt = post.excerpt_es || post.excerpt_en || post.excerpt || '';
 
@@ -296,11 +324,9 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
     setStep('ai', 'done');
     await delay(150);
 
-    // Step 3: content ready
+    // ── Step 3 & 4: contenido y schedule listos ───────────────────────────────
     setStep('content', 'done');
     await delay(150);
-
-    // Step 4: schedule ready
     setStep('schedule', 'done');
 
     setDone(true);
@@ -316,7 +342,7 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
         <div>
           <h3 className="font-serif text-xl text-white">Publicar y distribuir</h3>
           <p className="text-xs text-white/40 mt-0.5 max-w-xs truncate">
-            {done ? `Completado · ${new Date(r!.generated_at).toLocaleTimeString('es-ES')}` : post.title}
+            {done ? `Completado · ${new Date(r!.generated_at).toLocaleTimeString('es-ES')}` : (post.title_es || post.title || post.slug)}
           </p>
         </div>
         <button
@@ -397,10 +423,10 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
             {/* Redes */}
             {activeTab === 'redes' && (
               <div className="space-y-3">
-                <ContentCard label="LinkedIn"         text={r.copy_ready.linkedin} />
-                <ContentCard label="Facebook"         text={r.copy_ready.facebook} />
-                <ContentCard label="Instagram"        text={r.copy_ready.instagram} />
-                <ContentCard label="Pinterest"        text={r.copy_ready.pinterest} />
+                <ContentCard label="LinkedIn"            text={r.copy_ready.linkedin} />
+                <ContentCard label="Facebook"            text={r.copy_ready.facebook} />
+                <ContentCard label="Instagram"           text={r.copy_ready.instagram} />
+                <ContentCard label="Pinterest"           text={r.copy_ready.pinterest} />
                 <ContentCard label="X / Twitter · Hilo" text={r.copy_ready.twitter_thread} mono />
                 <ContentCard label="Guion TikTok / Reels" text={r.copy_ready.tiktok_script} mono />
                 {r.tiktok_reels?.hooks?.length > 0 && (
@@ -435,10 +461,10 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
               </div>
             )}
 
-            {/* SEO */}
+            {/* SEO — ahora incluye youtube_thumbnail si existe */}
             {activeTab === 'seo' && r.seo && (
               <div className="space-y-3">
-                <ContentCard label="Meta título" text={r.seo.meta_title} />
+                <ContentCard label="Meta título"      text={r.seo.meta_title} />
                 <ContentCard label="Meta description" text={r.seo.meta_description} />
                 <div className="bg-white/5 border border-white/10 rounded-sm p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -451,6 +477,17 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
                     ))}
                   </div>
                 </div>
+                {/* YouTube thumbnail — ahora visible */}
+                {r.visual_assets?.youtube_thumbnail && (
+                  <div className="bg-white/5 border border-white/10 rounded-sm p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-medium text-gold/80 tracking-wide uppercase">YouTube Thumbnail</span>
+                      <CopyBtn text={`${r.visual_assets.youtube_thumbnail.text}\n\n${r.visual_assets.youtube_thumbnail.image_prompt}`} />
+                    </div>
+                    <p className="text-xs text-white/70 font-medium mb-1">{r.visual_assets.youtube_thumbnail.text}</p>
+                    <p className="text-[10px] text-white/30 italic">🎨 {r.visual_assets.youtube_thumbnail.image_prompt}</p>
+                  </div>
+                )}
                 {r.internal_links?.length > 0 && (
                   <div className="bg-white/5 border border-white/10 rounded-sm p-4">
                     <p className="text-[11px] font-medium text-gold/80 tracking-wide uppercase mb-2">Enlaces internos sugeridos</p>

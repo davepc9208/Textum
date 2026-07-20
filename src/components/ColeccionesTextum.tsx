@@ -1,6 +1,5 @@
 // src/components/ColeccionesTextum.tsx
-// Propiedad intelectual de TEXTUM — no es un servicio
-// Ubicación en App.tsx: entre WhyTextum y BlogPreview
+// Fix: href="#metodo" → href="/#metodo" para que funcione desde /blog y cualquier ruta
 
 import { useLang } from '../i18n/LangContext';
 
@@ -25,7 +24,8 @@ const content = {
         desc: 'Nuestro modelo de acompañamiento metodológico integra criterio experto, organización del proceso investigativo y uso responsable de herramientas de inteligencia artificial para fortalecer el trabajo del autor sin sustituir su autoría.',
         cta_es: 'Explorar el Método FLUX',
         cta_en: 'Explore the FLUX Method',
-        href: '#metodo',
+        // Fix: era "#metodo", no funciona desde rutas distintas a /
+        href: '/#metodo',
       },
       {
         icon: '◈',
@@ -57,7 +57,8 @@ const content = {
         desc: 'Our methodological support model integrates expert judgement, organisation of the research process and responsible use of artificial intelligence tools to strengthen the author´s work without replacing their authorship.',
         cta_es: 'Explorar el Método FLUX',
         cta_en: 'Explore the FLUX Method',
-        href: '#metodo',
+        // Fix: era "#metodo", no funciona desde rutas distintas a /
+        href: '/#metodo',
       },
       {
         icon: '◈',
@@ -77,14 +78,12 @@ export default function ColeccionesTextum() {
 
   return (
     <section id="colecciones" className="section-cream py-24 px-6 relative overflow-hidden">
-      {/* Watermark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.02]" aria-hidden>
         <span className="font-serif text-[30vw] font-bold text-navy leading-none">C</span>
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
 
-        {/* Header */}
         <div className="text-center mb-14 reveal">
           <p className="text-xs tracking-[0.3em] text-gold uppercase mb-4">{c.eyebrow}</p>
           <h2 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-6">
@@ -95,32 +94,22 @@ export default function ColeccionesTextum() {
           </p>
         </div>
 
-        {/* Cards */}
         <div className="grid md:grid-cols-3 gap-6 stagger">
           {c.collections.map((col, i) => (
             <div
               key={i}
               className="reveal group flex flex-col bg-white border border-navy/8 rounded-sm p-8 hover:border-gold/30 hover:shadow-lg transition-all duration-300"
             >
-              {/* Icono */}
               <span className="font-serif text-4xl text-gold/40 group-hover:text-gold/70 transition-colors duration-300 mb-6 leading-none select-none">
                 {col.icon}
               </span>
-
-              {/* Línea decorativa */}
               <div className="w-8 h-px bg-gold/30 mb-5 group-hover:w-14 transition-all duration-300" />
-
-              {/* Nombre */}
               <h3 className="font-serif text-xl font-light text-navy mb-4 leading-snug">
                 {col.name}
               </h3>
-
-              {/* Descripción */}
               <p className="text-sm text-navy/60 leading-relaxed font-light flex-1 mb-8">
                 {col.desc}
               </p>
-
-              {/* CTA */}
               <a
                 href={col.href}
                 className="inline-flex items-center gap-2 text-xs tracking-[0.15em] text-gold border border-gold/30 px-4 py-2.5 rounded-sm hover:bg-gold hover:text-navy transition-all duration-200 self-start"
@@ -135,7 +124,6 @@ export default function ColeccionesTextum() {
           ))}
         </div>
 
-        {/* Nota de propiedad intelectual */}
         <div className="mt-12 text-center reveal">
           <p className="text-xs text-navy/30 font-light tracking-wide">
             {lang === 'es'

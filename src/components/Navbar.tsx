@@ -1,10 +1,7 @@
 // src/components/Navbar.tsx
-// Navegación ampliada según TEXTUM_NEW_PROPUESTA.docx
-//
-// FIX ANDROID: handleAnchorClick ahora usa scrollIntoView() directamente
-// en lugar de depender del comportamiento nativo de href="#section".
-// En Android Chrome el href="#section" sobre elementos React a veces no
-// registra el tap o navega incorrectamente. scrollIntoView es más confiable.
+// Fix 6 (accesibilidad): toggle idioma con aria-label dinámico que indica
+// el idioma activo y el idioma al que se cambiará. Los spans ES/EN tienen
+// aria-current="true" para el idioma activo.
 
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
@@ -50,26 +47,17 @@ export default function Navbar() {
     return () => observer.disconnect();
   }, [isHome]);
 
-  // FIX ANDROID: en lugar de href="#section" nativo (poco fiable en Android Chrome),
-  // usamos scrollIntoView() directamente. Si no estamos en home, redirigimos
-  // con window.location.href que es más fiable que React Router para anclas cross-page.
   const handleAnchorClick = (e: React.MouseEvent, href: string) => {
     e.preventDefault();
     setOpen(false);
-
     const id = href.replace('#', '');
-
     if (isHome) {
-      const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
       window.location.href = '/' + href;
     }
   };
 
-  // Helper para el CTA "Diagnóstico" que siempre apunta a #contacto
   const handleContactoCta = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isHome) {
@@ -79,6 +67,12 @@ export default function Navbar() {
     }
   };
 
+  const nextLang = lang === 'es' ? 'en' : 'es';
+  // Fix 6: aria-label dinámico indica idioma activo y acción
+  const langToggleLabel = lang === 'es'
+    ? 'Idioma actual: Español. Cambiar a English'
+    : 'Current language: English. Switch to Español';
+
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
       scrolled
@@ -87,7 +81,6 @@ export default function Navbar() {
     }`}>
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
 
-        {/* Logo */}
         <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
           <div className="relative w-8 h-8">
             <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
@@ -97,7 +90,6 @@ export default function Navbar() {
           <span className="font-serif font-semibold text-xl tracking-[0.18em] text-white">TEXTUM</span>
         </Link>
 
-        {/* Desktop links */}
         <ul className="hidden lg:flex items-center gap-6">
           {anchorLinks.map((l) => (
             <li key={l.href}>
@@ -114,7 +106,6 @@ export default function Navbar() {
               </a>
             </li>
           ))}
-          {/* Blog — router link */}
           <li>
             <Link
               to="/blog"
@@ -127,23 +118,32 @@ export default function Navbar() {
           </li>
         </ul>
 
-        {/* Derecha: idioma + CTA */}
         <div className="hidden lg:flex items-center gap-3">
-          {/* Toggle idioma */}
+          {/* Fix 6: aria-label dinámico + aria-current en spans */}
           <button
-            onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
+            onClick={() => setLang(nextLang)}
             className="relative flex items-center px-1 py-1 rounded-full border border-gold/30 text-xs tracking-[0.1em] hover:border-gold/50 transition-colors duration-200 touch-manipulation"
-            aria-label="Switch language"
+            aria-label={langToggleLabel}
           >
             <span
               className="absolute top-1 bottom-1 w-8 rounded-full bg-gold transition-transform duration-300 ease-out"
+              aria-hidden="true"
               style={{ transform: lang === 'es' ? 'translateX(0%)' : 'translateX(100%)' }}
             />
-            <span className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'es' ? 'text-navy font-semibold' : 'text-gold/60'}`}>ES</span>
-            <span className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'en' ? 'text-navy font-semibold' : 'text-gold/60'}`}>EN</span>
+            <span
+              className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'es' ? 'text-navy font-semibold' : 'text-gold/60'}`}
+              aria-current={lang === 'es' ? 'true' : undefined}
+            >
+              ES
+            </span>
+            <span
+              className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'en' ? 'text-navy font-semibold' : 'text-gold/60'}`}
+              aria-current={lang === 'en' ? 'true' : undefined}
+            >
+              EN
+            </span>
           </button>
 
-          {/* CTA */}
           <a
             href={isHome ? '#contacto' : '/#contacto'}
             onClick={handleContactoCta}
@@ -153,17 +153,16 @@ export default function Navbar() {
           </a>
         </div>
 
-        {/* Mobile toggle */}
         <button
           onClick={() => setOpen(!open)}
           className="lg:hidden text-white p-2 touch-manipulation"
-          aria-label="Menu"
+          aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={open}
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
-      {/* Mobile menu */}
       <div className={`lg:hidden overflow-hidden transition-all duration-400 ${
         open ? 'max-h-[36rem] opacity-100' : 'max-h-0 opacity-0'
       }`}>
@@ -188,17 +187,28 @@ export default function Navbar() {
 
           <div className="h-px bg-white/10 my-2" />
 
-          {/* Toggle idioma mobile */}
           <button
-            onClick={() => { setLang(lang === 'es' ? 'en' : 'es'); setOpen(false); }}
+            onClick={() => { setLang(nextLang); setOpen(false); }}
             className="relative flex items-center px-1 py-1 rounded-full border border-gold/30 text-xs tracking-[0.1em] w-fit touch-manipulation"
+            aria-label={langToggleLabel}
           >
             <span
               className="absolute top-1 bottom-1 w-8 rounded-full bg-gold transition-transform duration-300 ease-out"
+              aria-hidden="true"
               style={{ transform: lang === 'es' ? 'translateX(0%)' : 'translateX(100%)' }}
             />
-            <span className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'es' ? 'text-navy font-semibold' : 'text-gold/60'}`}>ES</span>
-            <span className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'en' ? 'text-navy font-semibold' : 'text-gold/60'}`}>EN</span>
+            <span
+              className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'es' ? 'text-navy font-semibold' : 'text-gold/60'}`}
+              aria-current={lang === 'es' ? 'true' : undefined}
+            >
+              ES
+            </span>
+            <span
+              className={`relative z-10 w-8 text-center py-1 transition-colors duration-200 ${lang === 'en' ? 'text-navy font-semibold' : 'text-gold/60'}`}
+              aria-current={lang === 'en' ? 'true' : undefined}
+            >
+              EN
+            </span>
           </button>
 
           <a

@@ -1,6 +1,7 @@
-// src/App.tsx — orden definitivo según TEXTUM_NEW_PROPUESTA.docx
-// Fix: BlogListPage useSEO ahora usa el lang activo del contexto
-// Fix: BackToTop añadido a HomePage
+// src/App.tsx
+// Fix 5: ORG_SCHEMA enriquecido con founder, areaServed, foundingDate
+// Fix 6: BreadcrumbList schema en PostPage se gestiona desde PostPage.tsx
+// BackToTop integrado, BlogListPage con lang dinámico
 
 import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
@@ -38,13 +39,31 @@ function PageLoader() {
   );
 }
 
+// Fix 5: founder + areaServed + foundingDate añadidos
+// Estos tres campos son los que Google usa para el knowledge panel
 const ORG_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'EducationalOrganization',
   name: 'TEXTUM — Mentoría Académica Internacional',
   url: 'https://mentoriatextum.com',
   logo: 'https://mentoriatextum.com/favicon.svg',
+  foundingDate: '2024',
   description: 'Programas de mentoría académica internacional para titulación, publicación científica y defensa académica con rigor metodológico y uso ético de IA.',
+  areaServed: ['ES', 'EC', 'PE', 'MX', 'CO', 'AR', 'GB', 'DE', 'FR', 'IT'],
+  founder: [
+    {
+      '@type': 'Person',
+      name: 'Vilma María Pérez Viñas',
+      jobTitle: 'Doctora en Ciencias Pedagógicas',
+      sameAs: 'https://orcid.org/0000-0003-3041-096X',
+    },
+    {
+      '@type': 'Person',
+      name: 'Yadyra de la Caridad Piñera Concepción',
+      jobTitle: 'Doctora en Ciencias Pedagógicas',
+      sameAs: 'https://orcid.org/0000-0002-8947-1364',
+    },
+  ],
   contactPoint: {
     '@type': 'ContactPoint',
     email: 'contacto@mentoriatextum.com',
@@ -114,38 +133,25 @@ function HomePage() {
     <div className="relative">
       <Navbar />
       <main>
-        {/* 1 — Hero */}
         <Hero />
-        {/* 2 — Filosofía TEXTUM */}
         <Filosofia />
-        {/* 3 — Sobre el equipo */}
         <About />
-        {/* 4 — Integridad académica + estándares internacionales */}
         <AcademicIntegrity />
-        {/* 5 — Programas + Método FLUX */}
         <Services />
-        {/* 6 — Tabla de precios resumen */}
         <PricesTextum />
-        {/* 7 — Por qué TEXTUM es diferente */}
         <WhyTextum />
-        {/* 8 — Colecciones TEXTUM (propiedad intelectual) */}
         <ColeccionesTextum />
-        {/* 9 — Blog preview en homepage */}
         <BlogPreview />
-        {/* 10 — Valores */}
         <Values />
-        {/* 11 — Contacto / Diagnóstico */}
         <Contact />
       </main>
       <Footer />
-      {/* Botones flotantes — fuera del flujo de secciones */}
       <StickyDiagnosis />
       <BackToTop />
     </div>
   );
 }
 
-// Fix: useLang() para que el SEO del blog respete el idioma activo
 function BlogListPage() {
   const { lang } = useLang();
 

@@ -1,3 +1,7 @@
+// src/pages/PostPage.tsx
+// Fix 6: BreadcrumbList JSON-LD añadido
+// Fix 7: ShareCard y ShareButtons reciben url canónica explícita
+
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, X } from 'lucide-react';
@@ -9,6 +13,8 @@ import Footer from '../components/Footer';
 import ShareButtons from '../components/ShareButtons';
 import ShareCard from '../components/ShareCard';
 import BackToTop from '../components/BackToTop';
+
+const SITE_URL = 'https://mentoriatextum.com';
 
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
   useEffect(() => {
@@ -85,11 +91,13 @@ export default function PostPage() {
       });
   }, [slug]);
 
-  const postTitle  = post ? (lang === 'es' ? post.title_es  : post.title_en)  : '';
+  const postTitle   = post ? (lang === 'es' ? post.title_es   : post.title_en)   : '';
   const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
-  const content    = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
+  const content     = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
 
-  // SEO dinámico por artículo
+  // URL canónica del artículo — usada en SEO, ShareCard y ShareButtons
+  const canonicalUrl = post ? `${SITE_URL}/blog/${post.slug}` : undefined;
+
   useSEO(post ? {
     title: `${postTitle} — TEXTUM Mentoría Académica`,
     description: postExcerpt.slice(0, 155),
@@ -112,7 +120,8 @@ export default function PostPage() {
   // Schema Article JSON-LD
   useEffect(() => {
     if (!post) return;
-    const schema = {
+
+    const articleSchema = {
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: postTitle,
@@ -126,17 +135,44 @@ export default function PostPage() {
       publisher: {
         '@type': 'Organization',
         name: 'TEXTUM — Mentoría Académica',
-        logo: { '@type': 'ImageObject', url: 'https://mentoriatextum.com/favicon.svg' },
+        logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.svg` },
       },
       mainEntityOfPage: {
         '@type': 'WebPage',
-        '@id': `https://mentoriatextum.com/blog/${post.slug}`,
+        '@id': `${SITE_URL}/blog/${post.slug}`,
       },
       timeRequired: `PT${post.reading_time}M`,
       inLanguage: lang === 'es' ? 'es-ES' : 'en-GB',
     };
-    injectSchema(schema, 'schema-article');
-    return () => removeSchema('schema-article');
+
+    // Fix 6: BreadcrumbList — aparece en Google como ruta de migas
+    // "mentoriatextum.com › Blog › Título del artículo"
+    const breadcrumbSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Blog',
+          item: `${SITE_URL}/blog`,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: postTitle,
+          item: `${SITE_URL}/blog/${post.slug}`,
+        },
+      ],
+    };
+
+    injectSchema(articleSchema, 'schema-article');
+    injectSchema(breadcrumbSchema, 'schema-breadcrumb');
+
+    return () => {
+      removeSchema('schema-article');
+      removeSchema('schema-breadcrumb');
+    };
   }, [post, lang, postTitle, postExcerpt]);
 
   return (
@@ -157,12 +193,13 @@ export default function PostPage() {
         </div>
       ) : (
         <>
-          {/* Cover */}
           {post.cover_url && (
             <div className="relative h-72 md:h-96 overflow-hidden">
               <img
                 src={post.cover_url}
                 alt={post.cover_alt ?? postTitle}
+                loading="eager"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/20 to-transparent" />
@@ -170,7 +207,6 @@ export default function PostPage() {
           )}
 
           <div className="max-w-3xl mx-auto px-6 py-16">
-            {/* Back */}
             <Link
               to="/blog"
               className="inline-flex items-center gap-2 text-gold text-sm mb-10 hover:gap-3 transition-all duration-200"
@@ -179,7 +215,7 @@ export default function PostPage() {
               {b.backToBlog}
             </Link>
 
-            {/* Meta — fix: un solo contenedor, sin divs duplicados */}
+            {/* Meta — un solo contenedor limpio */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
               <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
                 <span className="flex items-center gap-1.5">
@@ -197,15 +233,14 @@ export default function PostPage() {
                   {b.by} {post.author}
                 </span>
               </div>
-              <ShareButtons title={postTitle} />
+              {/* Fix 7: url canónica explícita */}
+              <ShareButtons title={postTitle} url={canonicalUrl} />
             </div>
 
-            {/* Title */}
             <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-8">
               {postTitle}
             </h1>
 
-            {/* Divider */}
             <div className="flex items-center gap-4 mb-10">
               <div className="w-16 h-px bg-gradient-to-r from-gold to-transparent" />
               <svg width="8" height="8" viewBox="0 0 8 8">
@@ -213,7 +248,6 @@ export default function PostPage() {
               </svg>
             </div>
 
-            {/* Content */}
             <div
               ref={contentRef}
               className="prose prose-lg max-w-none
@@ -231,9 +265,9 @@ export default function PostPage() {
               <Lightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
             )}
 
-            <ShareCard title={postTitle} />
+            {/* Fix 7: url canónica explícita en ShareCard */}
+            <ShareCard title={postTitle} url={canonicalUrl} />
 
-            {/* Back link bottom */}
             <div className="mt-16 pt-8 border-t border-navy/10">
               <Link
                 to="/blog"

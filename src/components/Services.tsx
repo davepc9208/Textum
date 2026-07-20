@@ -1,6 +1,7 @@
 // src/components/Services.tsx
-// Reescrito para consumir el nuevo services.ts
-// Estructura: Intro → Tabs → Tiers → Defensa → FluxMethod
+// Fix 6 (accesibilidad): tabs de líneas de servicio con role="tablist", role="tab",
+// aria-selected y aria-controls correctos.
+// El panel de contenido tiene role="tabpanel" e id correspondiente.
 
 import { useState } from 'react';
 import { Check } from 'lucide-react';
@@ -13,13 +14,12 @@ import {
   type ServiceLine,
 } from '../data/services';
 
-// ─── Currency badge ───────────────────────────────────────────────────────────
 function CurrencyBadge({ currency, loading }: { currency: 'USD' | 'EUR'; loading: boolean }) {
   if (loading) {
     return (
       <span className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.2em] text-white/30 border border-white/10 px-3 py-1 rounded-full">
         <span className="w-1.5 h-1.5 rounded-full bg-white/20 animate-pulse" />
-        {' '}Detectando moneda…
+        Detectando moneda…
       </span>
     );
   }
@@ -31,15 +31,12 @@ function CurrencyBadge({ currency, loading }: { currency: 'USD' | 'EUR'; loading
   );
 }
 
-// ─── Tier card ────────────────────────────────────────────────────────────────
 function TierCard({
-  tier, currency, lang, solicitar, solicitarDiag,
+  tier, currency, lang,
 }: {
   tier: Tier;
   currency: 'USD' | 'EUR';
   lang: 'es' | 'en';
-  solicitar: string;
-  solicitarDiag: string;
 }) {
   const name     = lang === 'es' ? tier.name_es     : tier.name_en;
   const desc     = lang === 'es' ? tier.desc_es     : tier.desc_en;
@@ -48,9 +45,7 @@ function TierCard({
   const note     = lang === 'es' ? tier.priceNote_es: tier.priceNote_en;
   const cta      = lang === 'es' ? tier.cta_es      : tier.cta_en;
   const price    = formatPrice(tier.usd, tier.eur, currency);
-
-  // CTA distinto si es "diagnóstico" vs "postular"
-  const isDiag = cta.toLowerCase().includes('diagnós') || cta.toLowerCase().includes('diagnosis');
+  const isDiag   = cta.toLowerCase().includes('diagnós') || cta.toLowerCase().includes('diagnosis');
 
   return (
     <div className={`relative flex flex-col rounded-sm transition-transform duration-300 hover:-translate-y-1 ${
@@ -65,8 +60,6 @@ function TierCard({
           </span>
         </div>
       )}
-
-      {/* Precio */}
       <div className={`p-6 border-b ${tier.highlight ? 'border-navy/20' : 'border-white/8'}`}>
         <p className={`text-xs tracking-[0.25em] uppercase mb-2 ${tier.highlight ? 'text-navy/70' : 'text-gold/70'}`}>
           {name}
@@ -76,15 +69,11 @@ function TierCard({
         </p>
         <p className={`text-xs mt-1 ${tier.highlight ? 'text-navy/60' : 'text-white/40'}`}>{note}</p>
       </div>
-
-      {/* Descripción */}
       <div className="px-6 pt-5 pb-2">
         <p className={`text-xs leading-relaxed italic ${tier.highlight ? 'text-navy/65' : 'text-white/45'}`}>
           {desc}
         </p>
       </div>
-
-      {/* Features */}
       <ul className="px-6 pb-4 flex flex-col gap-3 flex-1">
         {features.map((f, i) => (
           <li key={i} className="flex items-start gap-3 text-sm leading-snug">
@@ -93,8 +82,6 @@ function TierCard({
           </li>
         ))}
       </ul>
-
-      {/* CTA */}
       <div className="px-6 pb-6">
         <a
           href="#contacto"
@@ -115,10 +102,9 @@ function TierCard({
   );
 }
 
-// ─── Defensa card (sección independiente) ────────────────────────────────────
 function DefensaCard({ lang, currency }: { lang: 'es' | 'en'; currency: 'USD' | 'EUR' }) {
-  const line = SERVICE_LINES.find(l => l.id === 'defensa')!;
-  const tier = line.tiers[0];
+  const line     = SERVICE_LINES.find(l => l.id === 'defensa')!;
+  const tier     = line.tiers[0];
   const title    = lang === 'es' ? line.title_es    : line.title_en;
   const subtitle = lang === 'es' ? line.subtitle_es : line.subtitle_en;
   const intro    = lang === 'es' ? line.intro_es    : line.intro_en;
@@ -171,21 +157,15 @@ function DefensaCard({ lang, currency }: { lang: 'es' | 'en'; currency: 'USD' | 
   );
 }
 
-// ─── Flux Method ──────────────────────────────────────────────────────────────
 function FluxMethod({ lang }: { lang: 'es' | 'en' }) {
   const m = FLUX_METHOD[lang];
   return (
     <div id="metodo" className="mt-24 reveal scroll-mt-24">
       <div className="text-center mb-10">
         <p className="text-xs tracking-[0.3em] text-gold uppercase mb-3">{m.eyebrow}</p>
-        <h3 className="font-serif text-3xl md:text-4xl font-light text-white mb-4">
-          {m.title}
-        </h3>
-        <p className="text-white/50 text-sm font-light max-w-2xl mx-auto leading-relaxed">
-          {m.intro}
-        </p>
+        <h3 className="font-serif text-3xl md:text-4xl font-light text-white mb-4">{m.title}</h3>
+        <p className="text-white/50 text-sm font-light max-w-2xl mx-auto leading-relaxed">{m.intro}</p>
       </div>
-
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-white/8 rounded-sm overflow-hidden">
         {m.steps.map((step) => (
           <div
@@ -201,27 +181,36 @@ function FluxMethod({ lang }: { lang: 'es' | 'en' }) {
           </div>
         ))}
       </div>
-
       <div className="mt-8 px-6 py-5 glass-navy border border-white/8 rounded-sm max-w-3xl mx-auto">
-        <p className="text-xs text-white/40 font-light italic text-center leading-relaxed">
-          {m.closing}
-        </p>
+        <p className="text-xs text-white/40 font-light italic text-center leading-relaxed">{m.closing}</p>
       </div>
     </div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export default function Services() {
   const { lang } = useLang();
   const { currency, loading: currencyLoading } = useCurrency();
+
   const s = lang === 'es'
-    ? { label: 'Qué ofrecemos', title1: '¿En qué etapa de tu investigación', title2: 'necesitas apoyo?', intro: 'Hemos organizado nuestra oferta en tres líneas internacionales para que encuentres el nivel de acompañamiento más adecuado según tu objetivo académico o científico.' }
-    : { label: 'What we offer', title1: 'At what stage of your research', title2: 'do you need support?', intro: 'We have organised our offer into three international lines so you can find the most appropriate level of support according to your academic or scientific objective.' };
+    ? {
+        label: 'Qué ofrecemos',
+        title1: '¿En qué etapa de tu investigación',
+        title2: 'necesitas apoyo?',
+        intro: 'Hemos organizado nuestra oferta en tres líneas internacionales para que encuentres el nivel de acompañamiento más adecuado según tu objetivo académico o científico.',
+      }
+    : {
+        label: 'What we offer',
+        title1: 'At what stage of your research',
+        title2: 'do you need support?',
+        intro: 'We have organised our offer into three international lines so you can find the most appropriate level of support according to your academic or scientific objective.',
+      };
 
   const mainLines = SERVICE_LINES.filter(l => l.id !== 'defensa');
   const [activeTab, setActiveTab] = useState(0);
   const active = mainLines[activeTab];
+  const panelId = (i: number) => `servicios-panel-${i}`;
+  const tabId   = (i: number) => `servicios-tab-${i}`;
 
   return (
     <section id="servicios" className="section-navy py-28 px-6 relative overflow-hidden">
@@ -230,15 +219,12 @@ export default function Services() {
 
       <div className="max-w-6xl mx-auto relative z-10">
 
-        {/* Header */}
         <div className="text-center mb-6 reveal">
           <p className="text-xs tracking-[0.3em] text-gold uppercase mb-4">{s.label}</p>
           <h2 className="font-serif text-5xl md:text-6xl font-light text-white leading-tight">
             {s.title1} <em className="not-italic text-gold">{s.title2}</em>
           </h2>
-          <p className="text-white/45 text-sm mt-6 max-w-2xl mx-auto font-light leading-relaxed">
-            {s.intro}
-          </p>
+          <p className="text-white/45 text-sm mt-6 max-w-2xl mx-auto font-light leading-relaxed">{s.intro}</p>
           <div className="flex items-center justify-center gap-4 mt-8">
             <div className="w-16 h-px bg-gradient-to-r from-transparent to-gold/60" />
             <svg width="8" height="8" viewBox="0 0 8 8">
@@ -248,17 +234,24 @@ export default function Services() {
           </div>
         </div>
 
-        {/* Currency badge */}
         <div className="flex justify-center mb-10 reveal">
           <CurrencyBadge currency={currency} loading={currencyLoading} />
         </div>
 
-        {/* Tabs */}
+        {/* Fix 6: tablist + tab + tabpanel con ARIA correctos */}
         <div className="flex justify-center mb-12 reveal">
-          <div className="inline-flex rounded-sm border border-white/10 overflow-hidden">
+          <div
+            role="tablist"
+            aria-label={lang === 'es' ? 'Líneas de servicio' : 'Service lines'}
+            className="inline-flex rounded-sm border border-white/10 overflow-hidden"
+          >
             {mainLines.map((line, i) => (
               <button
                 key={line.id}
+                id={tabId(i)}
+                role="tab"
+                aria-selected={activeTab === i}
+                aria-controls={panelId(i)}
                 onClick={() => setActiveTab(i)}
                 className={`relative px-8 py-4 text-sm tracking-[0.05em] transition-all duration-300 ${
                   activeTab === i
@@ -266,7 +259,7 @@ export default function Services() {
                     : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
-                {i > 0 && <span className="absolute left-0 top-1/4 h-1/2 w-px bg-white/10" />}
+                {i > 0 && <span className="absolute left-0 top-1/4 h-1/2 w-px bg-white/10" aria-hidden="true" />}
                 <span className="font-serif text-base">
                   {lang === 'es' ? line.title_es : line.title_en}
                 </span>
@@ -278,28 +271,28 @@ export default function Services() {
           </div>
         </div>
 
-        {/* Intro de línea activa */}
-        <div className="text-center mb-8 reveal max-w-2xl mx-auto">
-          <p className="text-white/45 text-sm font-light leading-relaxed italic">
-            {lang === 'es' ? active.intro_es : active.intro_en}
-          </p>
-        </div>
+        {/* Panel de contenido con role="tabpanel" */}
+        {mainLines.map((line, i) => (
+          <div
+            key={line.id}
+            id={panelId(i)}
+            role="tabpanel"
+            aria-labelledby={tabId(i)}
+            hidden={activeTab !== i}
+          >
+            <div className="text-center mb-8 reveal max-w-2xl mx-auto">
+              <p className="text-white/45 text-sm font-light leading-relaxed italic">
+                {lang === 'es' ? line.intro_es : line.intro_en}
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-6 stagger reveal">
+              {line.tiers.map((tier, j) => (
+                <TierCard key={j} tier={tier} currency={currency} lang={lang} />
+              ))}
+            </div>
+          </div>
+        ))}
 
-        {/* Tier cards */}
-        <div className="grid md:grid-cols-3 gap-6 stagger reveal">
-          {active.tiers.map((tier, i) => (
-            <TierCard
-              key={i}
-              tier={tier}
-              currency={currency}
-              lang={lang}
-              solicitar={lang === 'es' ? 'Postular al programa' : 'Apply to the programme'}
-              solicitarDiag={lang === 'es' ? 'Agendar diagnóstico académico' : 'Book an academic diagnosis'}
-            />
-          ))}
-        </div>
-
-        {/* Divider */}
         <div className="flex items-center gap-4 mt-20 mb-14">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/10" />
           <svg width="8" height="8" viewBox="0 0 8 8">
@@ -308,14 +301,11 @@ export default function Services() {
           <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/10" />
         </div>
 
-        {/* Defensa — sección independiente */}
         <div className="reveal">
           <DefensaCard lang={lang} currency={currency} />
         </div>
 
-        {/* Método FLUX */}
         <FluxMethod lang={lang} />
-
       </div>
     </section>
   );

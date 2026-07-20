@@ -1,12 +1,10 @@
-// =====================================================
 // functions/api/distribute.js
-// Mentoría TEXTUM - Generador de Contenido para Redes
-// Groq Edition v5 - Modo Manual
-// =====================================================
+// Fix: fechas de republicación ahora se generan dinámicamente desde new Date()
+// en lugar de estar hardcodeadas en julio 2026.
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MODEL = "llama-3.3-70b-versatile";
-const VERSION = "5.0.0-manual";
+const VERSION = "5.1.0-dynamic-dates";
 
 function stripHtml(html) {
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -27,13 +25,32 @@ function json(data, status = 200) {
   });
 }
 
-// --- Generación de contenido completo con Groq ---
+// Genera 6 fechas de republicación a partir de hoy, cada 3 días
+function generateRepublishingDates() {
+  const platforms = ['LinkedIn', 'Facebook', 'Instagram', 'Pinterest', 'LinkedIn', 'Facebook'];
+  const today = new Date();
+  return platforms.map((platform, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + (i + 1) * 3);
+    return {
+      date: d.toISOString().slice(0, 10),
+      platform,
+    };
+  });
+}
+
 async function generateFullContent(article, env) {
   const { title, content, slug, excerpt, category, tags } = article;
   const contentSnippet = truncate(stripHtml(content ?? ''), 2000);
   const articleUrl = `https://mentoriatextum.com/blog/${slug}`;
 
-  const prompt = `Eres un experto en marketing de contenido académico para "Mentoría TEXTUM" (Ecuador y Perú).
+  // Fechas dinámicas para el schedule — nunca quedan en el pasado
+  const scheduleDates = generateRepublishingDates();
+  const schedulePlaceholder = scheduleDates
+    .map((s, i) => `{ "date": "${s.date}", "platform": "${s.platform}", "content": "Variación ${i + 1} del post para republicación" }`)
+    .join(',\n      ');
+
+  const prompt = `Eres un experto en marketing de contenido académico para "Mentoría TEXTUM" (Ecuador, Perú y España).
 
 Genera contenido completo para todas las plataformas basado en este artículo:
 
@@ -84,70 +101,16 @@ IMPORTANTE: Responde SOLO con JSON válido sin markdown. Sigue EXACTAMENTE esta 
   ],
   "republishing": {
     "schedule": [
-      {
-        "date": "2026-07-10",
-        "platform": "LinkedIn",
-        "content": "Variación del post para republicación"
-      },
-      {
-        "date": "2026-07-13",
-        "platform": "Facebook",
-        "content": "Variación del post para republicación"
-      },
-      {
-        "date": "2026-07-16",
-        "platform": "Instagram",
-        "content": "Variación del post para republicación"
-      },
-      {
-        "date": "2026-07-19",
-        "platform": "Pinterest",
-        "content": "Variación del post para republicación"
-      },
-      {
-        "date": "2026-07-22",
-        "platform": "LinkedIn",
-        "content": "Variación del post para republicación"
-      },
-      {
-        "date": "2026-07-25",
-        "platform": "Facebook",
-        "content": "Variación del post para republicación"
-      }
+      ${schedulePlaceholder}
     ]
   },
   "visual_assets": {
     "instagram_carousel": [
-      {
-        "slide": 1,
-        "title": "Título del slide 1",
-        "text": "Texto para slide 1 (80-100 caracteres)",
-        "image_prompt": "Prompt para generar imagen del slide 1"
-      },
-      {
-        "slide": 2,
-        "title": "Título del slide 2",
-        "text": "Texto para slide 2 (80-100 caracteres)",
-        "image_prompt": "Prompt para generar imagen del slide 2"
-      },
-      {
-        "slide": 3,
-        "title": "Título del slide 3",
-        "text": "Texto para slide 3 (80-100 caracteres)",
-        "image_prompt": "Prompt para generar imagen del slide 3"
-      },
-      {
-        "slide": 4,
-        "title": "Título del slide 4",
-        "text": "Texto para slide 4 (80-100 caracteres)",
-        "image_prompt": "Prompt para generar imagen del slide 4"
-      },
-      {
-        "slide": 5,
-        "title": "Título del slide 5",
-        "text": "Texto para slide 5 (80-100 caracteres)",
-        "image_prompt": "Prompt para generar imagen del slide 5"
-      }
+      { "slide": 1, "title": "Título slide 1", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 1" },
+      { "slide": 2, "title": "Título slide 2", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 2" },
+      { "slide": 3, "title": "Título slide 3", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 3" },
+      { "slide": 4, "title": "Título slide 4", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 4" },
+      { "slide": 5, "title": "Título slide 5", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 5" }
     ],
     "pinterest_pin": {
       "title": "Título del pin",
@@ -176,11 +139,11 @@ IMPORTANTE: Responde SOLO con JSON válido sin markdown. Sigue EXACTAMENTE esta 
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          { 
-            role: 'system', 
-            content: 'Eres un experto en marketing de contenido académico para Latinoamérica. Siempre respondes con JSON válido y estructurado. Los textos deben ser profesionales, atractivos y adaptados al público académico.' 
+          {
+            role: 'system',
+            content: 'Eres un experto en marketing de contenido académico para Latinoamérica y España. Siempre respondes con JSON válido y estructurado. Los textos deben ser profesionales, atractivos y adaptados al público académico.',
           },
-          { role: 'user', content: prompt }
+          { role: 'user', content: prompt },
         ],
         temperature: 0.7,
         max_tokens: 4000,
@@ -194,10 +157,8 @@ IMPORTANTE: Responde SOLO con JSON válido sin markdown. Sigue EXACTAMENTE esta 
 
     const data = await response.json();
     const rawText = data.choices?.[0]?.message?.content || '';
-    
-    // Limpiar markdown
     const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-    
+
     try {
       return JSON.parse(cleaned);
     } catch (parseError) {
@@ -208,12 +169,10 @@ IMPORTANTE: Responde SOLO con JSON válido sin markdown. Sigue EXACTAMENTE esta 
   }
 }
 
-// --- Handler principal ---
 export async function onRequest(context) {
   try {
     const { request, env } = context;
 
-    // CORS
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         headers: {
@@ -237,7 +196,6 @@ export async function onRequest(context) {
 
     const apiKey = env.GROQ_API_KEY;
 
-    // --- Modo diagnóstico: config ---
     if (body.step === 'config') {
       return json({
         step: 'config',
@@ -245,14 +203,12 @@ export async function onRequest(context) {
         key_present: !!apiKey,
         key_prefix: apiKey ? apiKey.slice(0, 8) + '...' : null,
         version: VERSION,
-        mode: 'manual_generator'
+        mode: 'manual_generator',
       });
     }
 
-    // --- Modo diagnóstico: test Groq ---
     if (body.step === 'test_groq') {
       if (!apiKey) return json({ error: 'Sin API key.' }, 500);
-
       const res = await fetch(GROQ_API_URL, {
         method: 'POST',
         headers: {
@@ -263,49 +219,39 @@ export async function onRequest(context) {
           model: MODEL,
           messages: [
             { role: 'system', content: 'Responde SOLO con JSON válido.' },
-            { role: 'user', content: '{"test": "ok", "message": "Conexión exitosa"}' }
+            { role: 'user', content: '{"test": "ok"}' },
           ],
           temperature: 0,
           max_tokens: 50,
         }),
       });
-
       const statusCode = res.status;
       const resText = await res.text();
-      return json({ 
-        step: 'test_groq', 
-        http_status: statusCode, 
-        ok: statusCode === 200,
-        raw: resText.slice(0, 500) 
-      });
+      return json({ step: 'test_groq', http_status: statusCode, ok: statusCode === 200, raw: resText.slice(0, 500) });
     }
 
-    // --- FLUJO PRINCIPAL: Generar contenido ---
     if (!apiKey) return json({ error: 'GROQ_API_KEY no configurada.' }, 500);
 
     const { title, content, slug, excerpt, category, tags } = body;
-    
+
     if (!title || !slug || !content) {
-      return json({ 
-        error: 'Faltan campos obligatorios', 
+      return json({
+        error: 'Faltan campos obligatorios',
         required: ['title', 'slug', 'content'],
-        received: Object.keys(body)
+        received: Object.keys(body),
       }, 400);
     }
 
-    // Generar contenido completo
     const generatedContent = await generateFullContent(
       { title, content, slug, excerpt, category, tags },
       env
     );
 
-    // Respuesta estructurada para copiar/pegar
     return json({
       success: true,
       version: VERSION,
       generated_at: new Date().toISOString(),
       ...generatedContent,
-      // Formato amigable para copiar
       copy_ready: {
         linkedin: generatedContent.linkedin?.post || 'No generado',
         facebook: generatedContent.facebook?.post || 'No generado',
@@ -313,7 +259,7 @@ export async function onRequest(context) {
         pinterest: generatedContent.pinterest?.description || 'No generado',
         twitter_thread: generatedContent.twitter?.thread?.join('\n\n') || 'No generado',
         tiktok_script: generatedContent.tiktok_reels?.script || 'No generado',
-      }
+      },
     });
 
   } catch (error) {
