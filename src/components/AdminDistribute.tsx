@@ -2,29 +2,35 @@
 // Fix Step 1: ahora actualiza published=true en Supabase antes de continuar.
 // El slug se usa como identificador porque post.id puede no estar disponible
 // dependiendo de cómo se pase el prop desde AdminPage.
+//
+// CAMBIOS vs versión anterior:
+// - Eliminada la interfaz Post local duplicada.
+// - Ahora se importa Post desde supabase.ts (fuente única de verdad)
+//   y se extiende con los campos opcionales que AdminDistribute necesita
+//   pero que no existen en el esquema de Supabase (tags, legacy title/content).
 
 import { useState, useCallback } from 'react';
 // Fix: importar el singleton en lugar de crear un segundo cliente.
 // Dos instancias de createClient pueden causar conflictos de caché de auth.
-import { supabase } from '../lib/supabase';
+import { supabase, Post as SupabasePost } from '../lib/supabase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Post {
-  id?: string;
+/**
+ * Extiende el tipo Post de Supabase con campos opcionales que solo usa
+ * AdminDistribute (campos legacy sin sufijo de idioma y tags).
+ * Así TypeScript detecta incompatibilidades si el esquema cambia.
+ */
+type Post = SupabasePost & {
+  /** Campo legacy — usar title_es / title_en cuando sea posible */
   title?: string;
+  /** Campo legacy — usar content_es / content_en cuando sea posible */
   content?: string;
-  title_es?: string;
-  title_en?: string;
-  content_es?: string;
-  content_en?: string;
-  slug: string;
+  /** Campo legacy — usar excerpt_es / excerpt_en cuando sea posible */
   excerpt?: string;
-  excerpt_es?: string;
-  excerpt_en?: string;
-  category?: string | null;
+  /** Tags para el contenido distribuido (no está en el esquema de Supabase) */
   tags?: string[];
-}
+};
 
 interface RepublishItem {
   date: string;

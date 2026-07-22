@@ -266,13 +266,75 @@ function PostEditor({
   const [tab, setTab] = useState<'es' | 'en'>('es');
   const [preview, setPreview] = useState(false);
   const [hasDraft, setHasDraft] = useState(() => !!localStorage.getItem(draftKey));
+  const [draftTooLarge, setDraftTooLarge] = useState(false);
+  const [draftSizeKB, setDraftSizeKB] = useState<number | null>(null);
 
+  // ─── ✨ NUEVO: Guardado de draft con límite de 400 KB y compresión ──────
   useEffect(() => {
     try {
-      localStorage.setItem(draftKey, JSON.stringify(form));
+      const serialized = JSON.stringify(form);
+      const sizeKB = Math.round(serialized.length / 1024);
+      setDraftSizeKB(sizeKB);
+
+      // Límite de 400 KB para evitar saturar localStorage (5 MB total)
+      const MAX_DRAFT_BYTES = 400_000; // 400 KB
+
+      if (serialized.length > MAX_DRAFT_BYTES) {
+        // El draft es demasiado grande — intentamos comprimirlo
+        console.warn(
+          `[TEXTUM] Draft demasiado grande (${sizeKB} KB), ` +
+          `intentando comprimir...`
+        );
+
+        // Estrategia de compresión: eliminar espacios en blanco del HTML
+        // y acortar campos opcionales si es posible
+        const compressedForm = { ...form };
+        
+        // Comprimir contenido HTML eliminando espacios innecesarios
+        if (compressedForm.content_es) {
+          compressedForm.content_es = compressedForm.content_es
+            .replace(/\s{2,}/g, ' ') // múltiples espacios a uno
+            .replace(/>\s+</g, '><') // espacios entre etiquetas
+            .trim();
+        }
+        if (compressedForm.content_en) {
+          compressedForm.content_en = compressedForm.content_en
+            .replace(/\s{2,}/g, ' ')
+            .replace(/>\s+</g, '><')
+            .trim();
+        }
+
+        const compressedSerialized = JSON.stringify(compressedForm);
+        const compressedSizeKB = Math.round(compressedSerialized.length / 1024);
+
+        if (compressedSerialized.length <= MAX_DRAFT_BYTES) {
+          // La compresión funcionó
+          localStorage.setItem(draftKey, compressedSerialized);
+          setHasDraft(true);
+          setDraftTooLarge(false);
+          console.log(
+            `[TEXTUM] Draft comprimido de ${sizeKB} KB a ${compressedSizeKB} KB ✅`
+          );
+        } else {
+          // Incluso comprimido es demasiado grande
+          setDraftTooLarge(true);
+          console.warn(
+            `[TEXTUM] Draft demasiado grande incluso comprimido (${compressedSizeKB} KB). ` +
+            `El usuario debe guardar manualmente.`
+          );
+          // No guardamos en localStorage
+        }
+        return;
+      }
+
+      // Draft de tamaño normal — guardar normalmente
+      localStorage.setItem(draftKey, serialized);
       setHasDraft(true);
-    } catch {
-      // localStorage lleno o no disponible — ignorar silenciosamente
+      setDraftTooLarge(false);
+    } catch (error) {
+      // localStorage lleno o no disponible
+      console.warn('[TEXTUM] No se pudo guardar el draft:', error);
+      setDraftTooLarge(true);
     }
   }, [form, draftKey]);
 
@@ -291,6 +353,8 @@ function PostEditor({
     } catch {
       // ignorar
     }
+    setHasDraft(false);
+    setDraftTooLarge(false);
   };
 
   const set = (k: keyof typeof EMPTY, v: string | boolean | number) =>
@@ -345,17 +409,22 @@ function PostEditor({
     <div className="fixed inset-0 bg-navy/80 backdrop-blur-sm z-50 overflow-y-auto">
       <div className="max-w-4xl mx-auto my-8 px-4">
         <div className="bg-cream rounded-sm shadow-2xl overflow-hidden">
-          {hasDraft && (
+          {/* ── Banner: Borrador autoguardado ── */}
+          {hasDraft && !draftTooLarge && (
             <div className="bg-gold/10 border-b border-gold/30 px-8 py-2.5 flex items-center justify-between">
               <p className="text-xs text-navy/60">
                 📝 Borrador autoguardado en este navegador. Tus cambios se guardan automáticamente mientras escribes.
+                {draftSizeKB !== null && (
+                  <span className="ml-2 text-navy/40 text-[10px]">
+                    ({draftSizeKB} KB)
+                  </span>
+                )}
               </p>
               <button
                 onClick={() => {
                   if (window.confirm('¿Descartar el borrador guardado?')) {
                     clearDraft();
                     setForm({ ...EMPTY, ...initial });
-                    setHasDraft(false);
                   }
                 }}
                 className="text-xs text-navy/40 hover:text-red-500 transition-colors underline flex-shrink-0 ml-4"
@@ -364,6 +433,35 @@ function PostEditor({
               </button>
             </div>
           )}
+
+          {/* ── ✨ NUEVO: Banner de advertencia por draft demasiado grande ── */}
+          {draftTooLarge && (
+            <div className="bg-amber-50 border-b border-amber-300 px-8 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-amber-600 text-lg">⚠️</span>
+                <p className="text-xs text-amber-700">
+                  <strong>El borrador es demasiado grande</strong> para autoguardarse 
+                  {draftSizeKB !== null && ` (${draftSizeKB} KB)`}.
+                  <br className="sm:hidden" />
+                  <span className="text-amber-600">
+                    Guarda manualmente usando el botón GUARDAR para no perder tus cambios.
+                  </span>
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (window.confirm('¿Descartar el borrador guardado?')) {
+                    clearDraft();
+                    setForm({ ...EMPTY, ...initial });
+                  }
+                }}
+                className="text-xs text-amber-500 hover:text-red-600 transition-colors underline flex-shrink-0 ml-4"
+              >
+                Descartar
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center justify-between px-8 py-5 border-b border-navy/10 bg-white">
             <h2 className="font-serif text-2xl text-navy">{initial.id ? 'Editar artículo' : 'Nuevo artículo'}</h2>
             <div className="flex items-center gap-3">

@@ -98,11 +98,25 @@ export default function Contact() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  // FIX: validación de email en cliente antes de llamar a la API.
+  // type="email" del navegador acepta formatos como "a@b" sin TLD — esta regex lo rechaza.
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Honeypot: si está relleno es un bot — silencio total
     if (honeypot) return;
+
+    // FIX: validar email antes de cualquier petición de red
+    if (!isValidEmail(form.email)) {
+      setToast({
+        type: 'error',
+        message: 'Por favor introduce un correo electrónico válido.',
+      });
+      return;
+    }
 
     setLoading(true);
     setToast(null);
