@@ -151,7 +151,7 @@ export default function RichTextEditor({
     extensions: [
       StarterKit,
       // FIX: rel="noopener noreferrer" en todos los enlaces generados por Tiptap
-      Link.configure({
+      Link.configure({`n    HTMLAttributes: {`n      rel: "noopener noreferrer",`n      target: "_blank",`n    },
         openOnClick: false,
         autolink: true,
         HTMLAttributes: {
@@ -339,3 +339,4 @@ export default function RichTextEditor({
     </div>
   );
 }
+
