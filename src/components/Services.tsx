@@ -11,7 +11,6 @@ import {
   SERVICE_LINES,
   FLUX_METHOD,
   type Tier,
-  type ServiceLine,
 } from '../data/services';
 
 function CurrencyBadge({ currency, loading }: { currency: 'USD' | 'EUR'; loading: boolean }) {
@@ -208,7 +207,7 @@ export default function Services() {
 
   const mainLines = SERVICE_LINES.filter(l => l.id !== 'defensa');
   const [activeTab, setActiveTab] = useState(0);
-  const active = mainLines[activeTab];
+  // FIX: eliminada variable 'active' — era dead code (activeTab se usa directamente en el JSX)
   const panelId = (i: number) => `servicios-panel-${i}`;
   const tabId   = (i: number) => `servicios-tab-${i}`;
 
@@ -310,4 +309,3 @@ export default function Services() {
     </section>
   );
 }
-

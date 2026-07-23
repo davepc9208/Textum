@@ -7,24 +7,28 @@ import { useLang } from '../i18n/LangContext';
 
 export default function StickyDiagnosis() {
   const { lang } = useLang();
-  const [visible, setVisible] = useState(false);
-  const [nearContact, setNearContact] = useState(false);
+
+  // FIX: dos estados (visible + nearContact) fusionados en uno solo (show).
+  // Antes: cada evento scroll disparaba dos setState → dos renders por scroll.
+  // Ahora: un único setState con el valor final → un render por scroll.
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
-      setVisible(window.scrollY > 400);
+      const scrolled = window.scrollY > 400;
       const contactEl = document.getElementById('contacto');
-      if (contactEl) {
-        const rect = contactEl.getBoundingClientRect();
-        setNearContact(rect.top < window.innerHeight && rect.bottom > 0);
-      }
+      const nearContact = contactEl
+        ? (() => {
+            const r = contactEl.getBoundingClientRect();
+            return r.top < window.innerHeight && r.bottom > 0;
+          })()
+        : false;
+      setShow(scrolled && !nearContact);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  const show = visible && !nearContact;
   const label = lang === 'es' ? 'Agendar diagnóstico' : 'Book a diagnosis';
   const ariaLabel = lang === 'es'
     ? 'Agendar diagnóstico académico gratuito'

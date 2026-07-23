@@ -1,4 +1,5 @@
 // src/components/BlogPreview.tsx
+// FIX: eliminado import { Link } — no se usa en JSX (todos los CTAs usan navigate()).
 // Bloque del blog en homepage — intro + 3 categorías + CTA
 // Ubicación en App.tsx: entre ColeccionesTextum y Contact
 //
@@ -8,7 +9,7 @@
 // causando que en Android el tap cayera en el elemento equivocado y disparara scroll.
 
 import { useLang } from '../i18n/LangContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const content = {
   es: {
@@ -171,4 +172,3 @@ export default function BlogPreview() {
     </section>
   );
 }
-
