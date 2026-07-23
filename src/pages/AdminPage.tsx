@@ -269,6 +269,11 @@ function PostEditor({
   const [draftTooLarge, setDraftTooLarge] = useState(false);
   const [draftSizeKB, setDraftSizeKB] = useState<number | null>(null);
 
+  // 🆕 Estados para traducción automática
+  const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState('');
+  const [lastTranslated, setLastTranslated] = useState<string | null>(null);
+
   // ─── ✨ NUEVO: Guardado de draft con límite de 400 KB y compresión ──────
   useEffect(() => {
     try {
@@ -363,6 +368,39 @@ function PostEditor({
   const handleTitleEs = (v: string) => {
     set('title_es', v);
     if (!initial.id) set('slug', slugify(v));
+  };
+
+  // 🆕 Función para traducir al inglés con IA
+  const handleTranslate = async () => {
+    if (!form.title_es || !form.content_es) {
+      setTranslateError('Escribe el título y el contenido en español antes de traducir.');
+      return;
+    }
+    setTranslating(true);
+    setTranslateError('');
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title_es:   form.title_es,
+          excerpt_es: form.excerpt_es,
+          content_es: form.content_es,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      set('title_en',   data.title_en);
+      set('excerpt_en', data.excerpt_en);
+      set('content_en', data.content_en);
+      setLastTranslated(new Date().toLocaleTimeString('es-ES'));
+      // Cambiar a la pestaña EN para que el usuario revise
+      setTab('en');
+    } catch (err) {
+      setTranslateError(err instanceof Error ? err.message : 'Error al traducir.');
+    } finally {
+      setTranslating(false);
+    }
   };
 
   const handleSave = async () => {
@@ -569,9 +607,67 @@ function PostEditor({
                       <label className={labelCls}>Contenido (ES)</label>
                       <RichTextEditor content={form.content_es} onChange={(html) => set('content_es', html)} placeholder="Escribe el artículo en español..." />
                     </div>
+
+                    {/* 🆕 Botón de traducción automática */}
+                    <div className="mt-4 flex items-center justify-between gap-4 p-4 rounded-sm bg-navy/3 border border-navy/8">
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-navy/70">
+                          Traducción automática al inglés
+                        </p>
+                        <p className="text-[11px] text-navy/40 mt-0.5 leading-relaxed">
+                          Traduce título, resumen y contenido usando IA (Groq · Llama 3.3).
+                          Revisa siempre el resultado en la pestaña EN antes de publicar.
+                        </p>
+                        {translateError && (
+                          <p className="text-[11px] text-red-500 mt-1">{translateError}</p>
+                        )}
+                        {lastTranslated && !translating && (
+                          <p className="text-[11px] text-emerald-600 mt-1">
+                            ✓ Traducido a las {lastTranslated} — revisa la pestaña EN
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleTranslate}
+                        disabled={translating || !form.title_es || !form.content_es}
+                        className="flex items-center gap-2 px-4 py-2.5 text-xs tracking-wide rounded-sm bg-navy text-gold border border-gold/30 hover:bg-navy-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
+                      >
+                        {translating ? (
+                          <>
+                            <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3"/>
+                              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                            Traduciendo…
+                          </>
+                        ) : (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
+                            </svg>
+                            Traducir al inglés
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>
+                    {/* 🆕 Banner de aviso para contenido traducido automáticamente */}
+                    {lastTranslated && (
+                      <div className="flex items-start gap-3 px-4 py-3 rounded-sm bg-amber-50 border border-amber-200 text-xs text-amber-800 mb-4">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 mt-0.5">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span>
+                          Contenido generado automáticamente a las {lastTranslated}.{' '}
+                          <strong>Revisa y edita</strong> antes de publicar — especialmente los
+                          términos técnicos, los encabezados y el tono académico.
+                        </span>
+                      </div>
+                    )}
                     <div>
                       <label className={labelCls}>Article Title (English translation)</label>
                       <input className={inputCls} value={form.title_en} onChange={e => set('title_en', e.target.value)} placeholder='E.g. "How to structure the methodology of your thesis..."' />
