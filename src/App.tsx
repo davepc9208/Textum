@@ -27,6 +27,9 @@ import { useSEO, injectSchema, removeSchema } from './hooks/useSEO';
 import { useLang } from './i18n/LangContext';
 
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const ColeccionesPage     = lazy(() => import('./pages/ColeccionesPage'));
+const ColeccionListPage   = lazy(() => import('./pages/ColeccionListPage'));
+const ColeccionPiecePage  = lazy(() => import('./pages/ColeccionPiecePage'));
 
 function PageLoader() {
   return (
@@ -181,6 +184,9 @@ export default function App() {
       <Route path="/"                   element={<HomePage />} />
       <Route path="/blog"               element={<BlogListPage />} />
       <Route path="/blog/:slug"         element={<PostPage />} />
+      <Route path="/colecciones"            element={<Suspense fallback={<PageLoader />}><ColeccionesPage /></Suspense>} />
+      <Route path="/colecciones/:tipo"      element={<Suspense fallback={<PageLoader />}><ColeccionListPage /></Suspense>} />
+      <Route path="/colecciones/:tipo/:slug" element={<Suspense fallback={<PageLoader />}><ColeccionPiecePage /></Suspense>} />
       <Route
         path="/textum-redaccion-2026"
         element={

@@ -37,6 +37,7 @@ const EMPTY: Omit<Post, 'id' | 'created_at'> = {
   published: false,
   reading_time: 1,
   category: null,
+  collection_type: null,
 };
 
 // ─── Login form (con soporte 2FA) ──────────────────────────────────────────
@@ -575,6 +576,22 @@ function PostEditor({
               </select>
               <p className="text-xs text-navy/40 mt-1.5">Define en qué sección del blog aparecerá este artículo.</p>
             </div>
+            <div>
+  <label className={labelCls}>Tipo de Colección</label>
+  <select
+    className={inputCls}
+    value={form.collection_type ?? ''}
+    onChange={e => set('collection_type', e.target.value || null as unknown as string)}
+  >
+    <option value="">Blog — artículo normal</option>
+    <option value="principio">PT — Principios TEXTUM</option>
+    <option value="categoria">CM — Categorías Metodológicas</option>
+    <option value="herramienta">HT — Herramientas TEXTUM</option>
+  </select>
+  <p className="text-xs text-navy/40 mt-1.5">
+    Si seleccionas un tipo de Colección, la pieza no aparecerá en el Blog.
+  </p>
+</div>
 
             <div>
               <label className={labelCls}>Imagen de portada</label>

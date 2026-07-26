@@ -346,3 +346,54 @@ canvas.particles {
     display: none;
   }
 }
+
+/* Estilos para bloques de código */
+pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+/* Estilos para tablas en el editor */
+.ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.ProseMirror table td,
+.ProseMirror table th {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  vertical-align: top;
+}
+
+.ProseMirror table th {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+
+.ProseMirror table .selectedCell {
+  background: #f0e6d3;
+}
+
+/* Estilos para listas anidadas */
+.ProseMirror ul ul,
+.ProseMirror ol ol,
+.ProseMirror ul ol,
+.ProseMirror ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Placeholder */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}

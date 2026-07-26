@@ -20,7 +20,7 @@ export default function Navbar() {
     { href: '#inicio',      label: t.nav.inicio },
     { href: '#metodo',      label: lang === 'es' ? 'Método'      : 'Method'      },
     { href: '#servicios',   label: t.nav.servicios },
-    { href: '#colecciones', label: lang === 'es' ? 'Colecciones' : 'Collections' },
+    { href: '#coleccion-textum', label: lang === 'es' ? 'Colección TEXTUM' : 'TEXTUM Collection' },
     { href: '#sobre-mi',    label: lang === 'es' ? 'Equipo'      : 'Team'        },
     { href: '#contacto',    label: t.nav.contacto },
   ];
@@ -33,7 +33,7 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!isHome) return;
-    const ids = ['inicio', 'metodo', 'servicios', 'colecciones', 'sobre-mi', 'contacto'];
+    const ids = ['inicio', 'metodo', 'servicios', 'coleccion-textum', 'sobre-mi', 'contacto'];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => { if (e.isIntersecting) setActive(e.target.id); });
@@ -116,6 +116,16 @@ export default function Navbar() {
               {t.nav.blog.toUpperCase()}
             </Link>
           </li>
+          <li>
+            <Link
+              to="/colecciones"
+              className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
+                location.pathname.startsWith('/colecciones') ? 'text-gold active' : 'text-white/80 hover:text-white'
+              }`}
+            >
+              {lang === 'es' ? 'COLECCIONES' : 'COLLECTIONS'}
+            </Link>
+          </li>
         </ul>
 
         <div className="hidden lg:flex items-center gap-3">
@@ -183,6 +193,15 @@ export default function Navbar() {
             className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation"
           >
             {t.nav.blog.toUpperCase()}
+          </Link>
+          <Link
+            to="/colecciones"
+            onClick={() => setOpen(false)}
+            className={`block py-3 text-sm tracking-widest transition-colors touch-manipulation ${
+              location.pathname.startsWith('/colecciones') ? 'text-gold' : 'text-white/80 hover:text-gold active:text-gold'
+            }`}
+          >
+            {lang === 'es' ? 'COLECCIONES' : 'COLLECTIONS'}
           </Link>
 
           <div className="h-px bg-white/10 my-2" />

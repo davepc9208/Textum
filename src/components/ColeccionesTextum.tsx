@@ -89,7 +89,7 @@ export default function ColeccionesTextum() {
   const i18n = COLLECTIONS_I18N[lang];
 
   return (
-    <section id="colecciones" className="section-cream py-24 px-6 relative overflow-hidden">
+    <section id="coleccion-textum" className="section-cream py-24 px-6 relative overflow-hidden">
       <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.02]"
         aria-hidden="true"

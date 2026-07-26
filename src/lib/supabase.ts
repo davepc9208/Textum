@@ -27,4 +27,5 @@ export type Post = {
   created_at: string;
   reading_time: number;
   category: string | null;
+  collection_type: string | null;
 };

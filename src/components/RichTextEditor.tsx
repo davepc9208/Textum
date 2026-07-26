@@ -1,30 +1,53 @@
 // src/components/RichTextEditor.tsx
-//
-// CAMBIOS vs versión anterior:
-// 1. Link.configure: añadido HTMLAttributes con rel="noopener noreferrer" y
-//    target="_blank" — todos los enlaces generados por Tiptap son seguros.
-// 2. alert() eliminado — los errores de subida se propagan al padre
-//    mediante la prop onUploadError (callback opcional).
-// 3. window.prompt() eliminado — reemplazado por un input inline en el
-//    toolbar que aparece al pulsar el botón de enlace (sin bloquear el hilo).
-// 4. Timers (el único setTimeout existente estaba en Upload, que ya no existe)
-//    no introducen nuevos leaks.
+// 
+// EDITOR SUPERCOMPLETO PARA CONTENIDO ACADÉMICO
+// Soporta: imágenes, tablas, listas anidadas, citas, código, 
+// superíndice/subíndice, colores, resaltado, alineación, etc.
 
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import TextAlign from '@tiptap/extension-text-align';
+import Underline from '@tiptap/extension-underline';
+import Highlight from '@tiptap/extension-highlight';
+import { Table } from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import Superscript from '@tiptap/extension-superscript';
+import Subscript from '@tiptap/extension-subscript';
+import { TextStyle } from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import FontFamily from '@tiptap/extension-font-family';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { createLowlight } from 'lowlight';
+import js from 'highlight.js/lib/languages/javascript';
+import python from 'highlight.js/lib/languages/python';
+import xml from 'highlight.js/lib/languages/xml';
+import css from 'highlight.js/lib/languages/css';
+import 'highlight.js/styles/atom-one-dark.css';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import {
-  Bold, Italic, Heading2, List, ListOrdered, Quote,
-  Link as LinkIcon, Image as ImageIcon, Undo, Redo, Loader2,
-  Check, X,
+  Bold, Italic, Heading1, Heading2, Heading3, Heading4,
+  List, ListOrdered, Quote, Link as LinkIcon, Image as ImageIcon,
+  Undo, Redo, Loader2, Check, X, Table as TableIcon,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  Underline as UnderlineIcon, Highlighter, Code,
+  Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
+  Palette, Minus, Plus,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-// ─── Image upload to Supabase Storage ──────────────────────────────────────
-// FIX: eliminado alert() — el error se devuelve y el padre decide cómo mostrarlo
+// ─── Configurar lowlight para código ──────────────────────────────────────
+const lowlight = createLowlight();
+lowlight.register('javascript', js);
+lowlight.register('python', python);
+lowlight.register('html', xml);
+lowlight.register('css', css);
+
+// ─── Image upload ──────────────────────────────────────────────────────────
 async function uploadImage(file: File): Promise<{ url: string | null; error: string | null }> {
   const ext = file.name.split('.').pop();
   const path = `articles/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -53,7 +76,7 @@ function ToolbarButton({
       disabled={disabled}
       title={title}
       aria-pressed={active}
-      className={`p-2 rounded-sm transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+      className={`p-1.5 rounded-sm transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
         active ? 'bg-navy text-gold' : 'text-navy/60 hover:bg-navy/8 hover:text-navy'
       }`}
     >
@@ -62,8 +85,12 @@ function ToolbarButton({
   );
 }
 
-// ─── Link input inline (reemplaza window.prompt) ────────────────────────────
-// Aparece en el toolbar al pulsar el botón de enlace — no bloquea el hilo JS
+// ─── Toolbar separator ─────────────────────────────────────────────────────
+function ToolbarSeparator() {
+  return <span className="w-px h-5 bg-navy/15 mx-0.5" aria-hidden="true" />;
+}
+
+// ─── Link input inline ──────────────────────────────────────────────────────
 function LinkInput({
   initialUrl,
   onConfirm,
@@ -129,37 +156,187 @@ function LinkInput({
   );
 }
 
-// ─── Main rich text editor ──────────────────────────────────────────────────
+// ─── Image URL input ──────────────────────────────────────────────────────
+function ImageUrlInput({
+  onConfirm,
+  onCancel,
+}: {
+  onConfirm: (url: string) => void;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState('https://');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') { e.preventDefault(); onConfirm(value); }
+    if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+  };
+
+  return (
+    <div className="flex items-center gap-1 px-2 py-1.5 bg-navy/5 border-t border-navy/10 w-full">
+      <input
+        ref={inputRef}
+        type="url"
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="https://ejemplo.com/imagen.jpg"
+        className="flex-1 text-xs px-2 py-1 border border-navy/20 rounded-sm focus:outline-none focus:border-gold/50 bg-white text-navy"
+      />
+      <button
+        type="button"
+        onClick={() => onConfirm(value)}
+        title="Insertar imagen"
+        className="p-1.5 rounded-sm bg-navy text-gold hover:bg-navy-light transition-colors"
+      >
+        <Check size={13} />
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        title="Cancelar"
+        className="p-1.5 rounded-sm text-navy/40 hover:text-navy transition-colors"
+      >
+        <X size={13} />
+      </button>
+    </div>
+  );
+}
+
+// ─── Color picker ──────────────────────────────────────────────────────────
+function ColorPicker({
+  onSelect,
+  onClose,
+}: {
+  onSelect: (color: string) => void;
+  onClose: () => void;
+}) {
+  const colors = [
+    '#000000', '#434343', '#666666', '#999999', '#b7b7b7', '#cccccc', '#d9d9d9', '#efefef',
+    '#c9a84c', '#e6b800', '#ffcc00', '#f6b26b', '#e69138', '#d9662d', '#cc4125', '#a61c00',
+    '#6d9eeb', '#4a86e8', '#3c78d8', '#1155cc', '#0b5394', '#073763',
+    '#93c47d', '#6aa84f', '#38761d', '#274e13',
+    '#d5a6bd', '#c27ba0', '#a64d79', '#741b47',
+  ];
+
+  return (
+    <div className="flex items-center gap-1 px-2 py-1.5 bg-navy/5 border-t border-navy/10 w-full flex-wrap">
+      {colors.map((color) => (
+        <button
+          key={color}
+          type="button"
+          onClick={() => onSelect(color)}
+          className="w-6 h-6 rounded-sm border border-navy/10 hover:border-gold transition-colors"
+          style={{ backgroundColor: color }}
+          title={color}
+        />
+      ))}
+      <button
+        type="button"
+        onClick={onClose}
+        className="p-1 ml-1 text-navy/40 hover:text-navy transition-colors"
+      >
+        <X size={13} />
+      </button>
+    </div>
+  );
+}
+
+// ─── Main editor ────────────────────────────────────────────────────────────
+interface RichTextEditorProps {
+  content: string;
+  onChange: (html: string) => void;
+  placeholder?: string;
+  onUploadError?: (message: string) => void;
+}
+
 export default function RichTextEditor({
   content,
   onChange,
   placeholder = 'Escribe el contenido del artículo...',
   onUploadError,
-}: {
-  content: string;
-  onChange: (html: string) => void;
-  placeholder?: string;
-  /** Callback opcional — recibe el mensaje de error si falla la subida de imagen */
-  onUploadError?: (message: string) => void;
-}) {
+}: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  // FIX: reemplaza window.prompt — controla visibilidad del input inline
   const [showLinkInput, setShowLinkInput] = useState(false);
+  const [showImageUrlInput, setShowImageUrlInput] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      // FIX: rel="noopener noreferrer" en todos los enlaces generados por Tiptap
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3, 4],
+        },
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        codeBlock: false, // lo reemplazamos con CodeBlockLowlight
+      }),
+      // Imágenes en línea
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'inline-block max-w-full h-auto rounded-sm shadow-md my-1',
+        },
+      }),
+      // Tablas completas
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: 'border-collapse w-full',
+        },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      // Alineación
+      TextAlign.configure({
+        types: ['heading', 'paragraph', 'listItem'],
+        alignments: ['left', 'center', 'right', 'justify'],
+      }),
+      // Formatos de texto
+      Underline,
+      Highlight.configure({
+        multicolor: true,
+        HTMLAttributes: {
+          class: 'bg-yellow-200/60 px-0.5',
+        },
+      }),
+      Superscript,
+      Subscript,
+      // Colores
+      TextStyle,
+      Color,
+      FontFamily,
+      // Código con resaltado de sintaxis
+      CodeBlockLowlight.configure({
+        lowlight,
+        HTMLAttributes: {
+          class: 'rounded-sm text-sm',
+        },
+      }),
+      // Enlaces
       Link.configure({
         openOnClick: false,
         autolink: true,
         HTMLAttributes: {
           rel: 'noopener noreferrer',
           target: '_blank',
+          class: 'text-gold underline',
         },
       }),
-      Image.configure({ HTMLAttributes: { class: 'rounded-sm max-w-full' } }),
       Placeholder.configure({ placeholder }),
     ],
     content,
@@ -167,14 +344,31 @@ export default function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          'prose prose-sm max-w-none focus:outline-none min-h-[280px] px-4 py-3 ' +
-          'prose-headings:font-serif prose-headings:text-navy prose-p:text-navy/80 ' +
-          'prose-a:text-gold prose-strong:text-navy prose-blockquote:border-gold prose-blockquote:text-navy/60',
+          'prose prose-sm max-w-none focus:outline-none min-h-[400px] px-4 py-3 ' +
+          // Estilos generales
+          'prose-headings:font-serif prose-headings:text-navy ' +
+          'prose-p:text-navy/80 prose-p:leading-relaxed ' +
+          'prose-a:text-gold prose-a:no-underline hover:prose-a:underline ' +
+          'prose-strong:text-navy prose-strong:font-semibold ' +
+          'prose-em:text-navy/70 ' +
+          'prose-blockquote:border-l-gold prose-blockquote:text-navy/60 prose-blockquote:font-serif prose-blockquote:italic ' +
+          'prose-ul:list-disc prose-ol:list-decimal prose-li:marker:text-gold ' +
+          // Imágenes
+          'prose-img:rounded-sm prose-img:shadow-md ' +
+          // Tablas
+          'prose-table:border-collapse prose-table:w-full prose-table:my-4 ' +
+          'prose-th:border prose-th:border-navy/20 prose-th:px-4 prose-th:py-2 prose-th:bg-navy/5 prose-th:text-left prose-th:font-semibold prose-th:text-navy ' +
+          'prose-td:border prose-td:border-navy/20 prose-td:px-4 prose-td:py-2 ' +
+          // Código
+          'prose-code:bg-navy/5 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:text-navy ' +
+          'prose-pre:bg-navy prose-pre:text-white prose-pre:rounded-sm prose-pre:p-4 prose-pre:overflow-x-auto ' +
+          // Subíndice/Superíndice
+          'prose-sub:align-sub prose-sup:align-super',
       },
     },
   });
 
-  // Sincroniza el contenido cuando cambia desde fuera (ej. cambio de pestaña ES↔EN)
+  // Sincroniza contenido
   useEffect(() => {
     if (!editor) return;
     const current = editor.getHTML();
@@ -194,7 +388,6 @@ export default function RichTextEditor({
     const { url, error } = await uploadImage(file);
     setUploading(false);
     if (error) {
-      // FIX: sin alert() — delegamos al padre o ignoramos silenciosamente
       onUploadError?.(`Error al subir la imagen: ${error}`);
     } else if (url) {
       editor.chain().focus().setImage({ src: url }).run();
@@ -202,9 +395,22 @@ export default function RichTextEditor({
     e.target.value = '';
   }, [editor, onUploadError]);
 
-  // FIX: reemplaza window.prompt — abre el input inline
   const handleLinkButtonClick = useCallback(() => {
     setShowLinkInput(prev => !prev);
+    setShowImageUrlInput(false);
+    setShowColorPicker(false);
+  }, []);
+
+  const handleImageUrlClick = useCallback(() => {
+    setShowImageUrlInput(prev => !prev);
+    setShowLinkInput(false);
+    setShowColorPicker(false);
+  }, []);
+
+  const handleColorClick = useCallback(() => {
+    setShowColorPicker(prev => !prev);
+    setShowLinkInput(false);
+    setShowImageUrlInput(false);
   }, []);
 
   const handleLinkConfirm = useCallback((url: string) => {
@@ -222,97 +428,290 @@ export default function RichTextEditor({
     setShowLinkInput(false);
   }, [editor]);
 
+  const handleImageUrlConfirm = useCallback((url: string) => {
+    if (!editor || !url || url === 'https://') return;
+    editor.chain().focus().setImage({ src: url }).run();
+    setShowImageUrlInput(false);
+  }, [editor]);
+
+  const handleInsertTable = useCallback(() => {
+    if (!editor) return;
+    editor.chain()
+      .focus()
+      .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+      .run();
+  }, [editor]);
+
+  const handleAddRow = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().addRowAfter().run();
+  }, [editor]);
+
+  const handleAddCol = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().addColumnAfter().run();
+  }, [editor]);
+
+  const handleDeleteTable = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().deleteTable().run();
+  }, [editor]);
+
   if (!editor) return null;
 
   const currentLinkUrl = editor.getAttributes('link').href as string | undefined;
+  const currentColor = editor.getAttributes('textStyle').color as string | undefined;
 
   return (
     <div className="border border-navy/15 rounded-sm overflow-hidden bg-white">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 px-2 py-2 border-b border-navy/10 bg-navy/3">
+      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-navy/10 bg-navy/3 sticky top-0 z-10">
+        {/* ── Text styles ── */}
         <ToolbarButton
-          title="Negrita"
+          title="Negrita (Ctrl+B)"
           active={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
-          <Bold size={16} />
+          <Bold size={15} />
         </ToolbarButton>
         <ToolbarButton
-          title="Cursiva"
+          title="Cursiva (Ctrl+I)"
           active={editor.isActive('italic')}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
-          <Italic size={16} />
+          <Italic size={15} />
         </ToolbarButton>
         <ToolbarButton
-          title="Subtítulo"
+          title="Subrayado (Ctrl+U)"
+          active={editor.isActive('underline')}
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+        >
+          <UnderlineIcon size={15} />
+        </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        {/* ── Headings ── */}
+        <ToolbarButton
+          title="Título H1"
+          active={editor.isActive('heading', { level: 1 })}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        >
+          <Heading1 size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Título H2"
           active={editor.isActive('heading', { level: 2 })}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         >
-          <Heading2 size={16} />
+          <Heading2 size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Título H3"
+          active={editor.isActive('heading', { level: 3 })}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        >
+          <Heading3 size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Título H4"
+          active={editor.isActive('heading', { level: 4 })}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
+        >
+          <Heading4 size={15} />
         </ToolbarButton>
 
-        <div className="w-px h-5 bg-navy/15 mx-1" aria-hidden="true" />
+        <ToolbarSeparator />
 
+        {/* ── Lists ── */}
         <ToolbarButton
-          title="Lista"
+          title="Lista con viñetas"
           active={editor.isActive('bulletList')}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
-          <List size={16} />
+          <List size={15} />
         </ToolbarButton>
         <ToolbarButton
           title="Lista numerada"
           active={editor.isActive('orderedList')}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
-          <ListOrdered size={16} />
+          <ListOrdered size={15} />
         </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        {/* ── Alignment ── */}
+        <ToolbarButton
+          title="Alinear izquierda"
+          active={editor.isActive({ textAlign: 'left' })}
+          onClick={() => editor.chain().focus().setTextAlign('left').run()}
+        >
+          <AlignLeft size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Centrar"
+          active={editor.isActive({ textAlign: 'center' })}
+          onClick={() => editor.chain().focus().setTextAlign('center').run()}
+        >
+          <AlignCenter size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Alinear derecha"
+          active={editor.isActive({ textAlign: 'right' })}
+          onClick={() => editor.chain().focus().setTextAlign('right').run()}
+        >
+          <AlignRight size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Justificar"
+          active={editor.isActive({ textAlign: 'justify' })}
+          onClick={() => editor.chain().focus().setTextAlign('justify').run()}
+        >
+          <AlignJustify size={15} />
+        </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        {/* ── Block elements ── */}
         <ToolbarButton
           title="Cita"
           active={editor.isActive('blockquote')}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
         >
-          <Quote size={16} />
+          <Quote size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Resaltar texto"
+          active={editor.isActive('highlight')}
+          onClick={() => editor.chain().focus().toggleHighlight().run()}
+        >
+          <Highlighter size={15} />
         </ToolbarButton>
 
-        <div className="w-px h-5 bg-navy/15 mx-1" aria-hidden="true" />
+        <ToolbarSeparator />
 
-        {/* FIX: onClick abre input inline en lugar de window.prompt */}
+        {/* ── Superscript / Subscript ── */}
         <ToolbarButton
-          title="Enlace"
+          title="Superíndice"
+          active={editor.isActive('superscript')}
+          onClick={() => editor.chain().focus().toggleSuperscript().run()}
+        >
+          <SuperscriptIcon size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Subíndice"
+          active={editor.isActive('subscript')}
+          onClick={() => editor.chain().focus().toggleSubscript().run()}
+        >
+          <SubscriptIcon size={15} />
+        </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        {/* ── Color ── */}
+        <ToolbarButton
+          title="Color de texto"
+          active={showColorPicker}
+          onClick={handleColorClick}
+        >
+          <Palette size={15} style={{ color: currentColor || '#666' }} />
+        </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        {/* ── Tables ── */}
+        <ToolbarButton
+          title="Insertar tabla (3x3)"
+          onClick={handleInsertTable}
+        >
+          <TableIcon size={15} />
+        </ToolbarButton>
+        {editor.isActive('table') && (
+          <>
+            <ToolbarButton
+              title="Añadir fila"
+              onClick={handleAddRow}
+            >
+              <Plus size={15} className="rotate-90" />
+            </ToolbarButton>
+            <ToolbarButton
+              title="Añadir columna"
+              onClick={handleAddCol}
+            >
+              <Plus size={15} />
+            </ToolbarButton>
+            <ToolbarButton
+              title="Eliminar tabla"
+              onClick={handleDeleteTable}
+            >
+              <Minus size={15} />
+            </ToolbarButton>
+          </>
+        )}
+
+        <ToolbarSeparator />
+
+        {/* ── Code ── */}
+        <ToolbarButton
+          title="Código en línea"
+          active={editor.isActive('code')}
+          onClick={() => editor.chain().focus().toggleCode().run()}
+        >
+          <Code size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Bloque de código"
+          active={editor.isActive('codeBlock')}
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+        >
+          <Code size={15} className="border border-navy/30 rounded p-0.5" />
+        </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        {/* ── Links & Media ── */}
+        <ToolbarButton
+          title="Insertar enlace"
           active={editor.isActive('link') || showLinkInput}
           onClick={handleLinkButtonClick}
         >
-          <LinkIcon size={16} />
+          <LinkIcon size={15} />
         </ToolbarButton>
-
         <ToolbarButton
-          title="Insertar imagen"
+          title="Insertar imagen (URL)"
+          active={showImageUrlInput}
+          onClick={handleImageUrlClick}
+        >
+          <ImageIcon size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Subir imagen"
           onClick={handleImagePick}
           disabled={uploading}
         >
           {uploading
-            ? <Loader2 size={16} className="animate-spin" />
-            : <ImageIcon size={16} />
+            ? <Loader2 size={15} className="animate-spin" />
+            : <ImageIcon size={15} className="border border-navy/30 rounded p-0.5" />
           }
         </ToolbarButton>
 
-        <div className="w-px h-5 bg-navy/15 mx-1" aria-hidden="true" />
+        <ToolbarSeparator />
 
+        {/* ── Undo/Redo ── */}
         <ToolbarButton
-          title="Deshacer"
+          title="Deshacer (Ctrl+Z)"
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
         >
-          <Undo size={16} />
+          <Undo size={15} />
         </ToolbarButton>
         <ToolbarButton
-          title="Rehacer"
+          title="Rehacer (Ctrl+Y)"
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
         >
-          <Redo size={16} />
+          <Redo size={15} />
         </ToolbarButton>
 
         <input
@@ -324,7 +723,7 @@ export default function RichTextEditor({
         />
       </div>
 
-      {/* FIX: Input inline de enlace — reemplaza window.prompt */}
+      {/* ── Inputs inline ── */}
       {showLinkInput && (
         <LinkInput
           initialUrl={currentLinkUrl ?? ''}
@@ -334,7 +733,24 @@ export default function RichTextEditor({
         />
       )}
 
-      {/* Content */}
+      {showImageUrlInput && (
+        <ImageUrlInput
+          onConfirm={handleImageUrlConfirm}
+          onCancel={() => setShowImageUrlInput(false)}
+        />
+      )}
+
+      {showColorPicker && (
+        <ColorPicker
+          onSelect={(color) => {
+            editor.chain().focus().setColor(color).run();
+            setShowColorPicker(false);
+          }}
+          onClose={() => setShowColorPicker(false)}
+        />
+      )}
+
+      {/* ── Content ── */}
       <EditorContent editor={editor} />
     </div>
   );
