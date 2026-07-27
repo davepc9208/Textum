@@ -365,6 +365,129 @@ export default function RichTextEditor({
           // Subíndice/Superíndice
           'prose-sub:align-sub prose-sup:align-super',
       },
+
+      // ── Limpieza de HTML pegado desde Word / Google Docs ─────────────────
+      // Problema: Word genera HTML con imágenes locales (file://, blob:), estilos
+      // inline masivos, cuadros de texto en <div> con position:absolute, y viñetas
+      // como <img> en lugar de <li>. Tiptap no sabe qué hacer con eso.
+      // Solución: transformPastedHTML limpia el HTML ANTES de que Tiptap lo procese.
+      transformPastedHTML(html: string): string {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // 1. Eliminar imágenes con src local (file://, blob:, data: >100KB)
+        //    Estas son viñetas, separadores o imágenes embebidas de Word
+        //    que no tienen URL pública — no se pueden mostrar en la web.
+        doc.querySelectorAll('img').forEach(img => {
+          const src = img.getAttribute('src') ?? '';
+          const isLocal = src.startsWith('file://') || src.startsWith('blob:');
+          const isHugeDataUrl = src.startsWith('data:') && src.length > 100_000;
+          const isTinyIcon = (img.width > 0 && img.width <= 32) || (img.height > 0 && img.height <= 32);
+
+          if (isLocal || isHugeDataUrl) {
+            // Intentar reemplazar por un separador visual si parece un separador
+            const isDecorativo = isTinyIcon ||
+              img.closest('li') !== null ||
+              img.classList.contains('separator') ||
+              (img.width > 0 && img.height > 0 && img.width / img.height > 5);
+
+            if (isDecorativo) {
+              // Viñeta o separador → reemplazar por un <hr> elegante
+              img.replaceWith(doc.createElement('hr'));
+            } else {
+              // Imagen grande sin URL pública → eliminar con aviso
+              const placeholder = doc.createElement('p');
+              placeholder.style.cssText = 'color:#c9a84c;font-style:italic;font-size:0.85em;';
+              placeholder.textContent = '[Imagen no disponible — sube la imagen manualmente usando el botón de imagen]';
+              img.replaceWith(placeholder);
+            }
+          }
+          // Imágenes data: pequeñas (iconos inline de Word) → eliminar silenciosamente
+          else if (src.startsWith('data:') && isTinyIcon) {
+            img.remove();
+          }
+        });
+
+        // 2. Cuadros de texto de Word (div/p con position:absolute o position:fixed)
+        //    Word los usa para notas al margen, callouts, etc.
+        //    Los convertimos en blockquote para preservar el contenido.
+        doc.querySelectorAll('div, p').forEach(el => {
+          const style = el.getAttribute('style') ?? '';
+          if (/position\s*:\s*(absolute|fixed|relative)/i.test(style)) {
+            const bq = doc.createElement('blockquote');
+            bq.innerHTML = (el as HTMLElement).innerHTML;
+            el.replaceWith(bq);
+          }
+        });
+
+        // 3. Limpiar estilos inline masivos de Word
+        //    Word añade mso-*, font-family, margin, etc. en cada elemento.
+        //    Los eliminamos para que el editor aplique sus propios estilos.
+        doc.querySelectorAll('[style]').forEach(el => {
+          const style = el.getAttribute('style') ?? '';
+          // Preservar solo text-align (útil) y eliminar todo lo demás
+          const textAlign = style.match(/text-align\s*:\s*(left|center|right|justify)/i);
+          if (textAlign) {
+            el.setAttribute('style', textAlign[0]);
+          } else {
+            el.removeAttribute('style');
+          }
+        });
+
+        // 4. Limpiar clases de Word (MsoNormal, MsoHeading, etc.)
+        doc.querySelectorAll('[class]').forEach(el => {
+          const cls = el.getAttribute('class') ?? '';
+          if (/^[Mm]so|WordSection|Section\d/i.test(cls)) {
+            el.removeAttribute('class');
+          }
+        });
+
+        // 5. Eliminar comentarios condicionales y metadatos de Word
+        doc.querySelectorAll('xml, o\:p, w\:sdt, m\:oMath').forEach(el => el.remove());
+
+        // 6. Convertir listas de Word (que a veces llegan como <p> con estilos)
+        //    identificadas por mso-list en el estilo
+        doc.querySelectorAll('p[style*="mso-list"], p[style*="MsoList"]').forEach(p => {
+          const li = doc.createElement('li');
+          li.innerHTML = p.innerHTML;
+          const ul = doc.createElement('ul');
+          ul.appendChild(li);
+          p.replaceWith(ul);
+        });
+
+        return doc.body.innerHTML;
+      },
+
+      // ── Manejar pegado de imágenes del portapapeles ──────────────────────
+      // Cuando el usuario copia una imagen directamente (Ctrl+C sobre una imagen)
+      // y la pega, la interceptamos y la subimos a Supabase automáticamente.
+      handlePaste(view, event) {
+        const items = Array.from(event.clipboardData?.items ?? []);
+        const imageItem = items.find(item => item.type.startsWith('image/'));
+
+        if (!imageItem) return false; // dejar que Tiptap maneje el resto
+
+        event.preventDefault();
+        const file = imageItem.getAsFile();
+        if (!file) return true;
+
+        // Subir a Supabase y luego insertar — onUploadError se llama si falla
+        uploadImage(file).then(({ url, error: uploadError }) => {
+          if (uploadError) {
+            onUploadError?.(`Error al pegar imagen: ${uploadError}`);
+            return;
+          }
+          if (url) {
+            view.dispatch(
+              view.state.tr.replaceSelectionWith(
+                view.state.schema.nodes.image.create({ src: url })
+              )
+            );
+          }
+        });
+
+        return true;
+      },
     },
   });
 

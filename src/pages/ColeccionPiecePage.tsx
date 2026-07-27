@@ -12,6 +12,7 @@ import { sanitizeHtml } from '../lib/sanitize';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ShareButtons from '../components/ShareButtons';
+import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 
 const SITE_URL = 'https://mentoriatextum.com';
@@ -183,7 +184,10 @@ export default function ColeccionPiecePage() {
 
             {lightbox && <Lightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
 
-            <div className="mt-16 pt-8 border-t border-navy/10">
+            {/* CTA WhatsApp — al final de cada pieza de Colección */}
+            <WhatsAppCTA />
+
+            <div className="mt-10 pt-8 border-t border-navy/10">
               <Link to={`/colecciones/${tipo}`} className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200">
                 <ArrowLeft size={14} aria-hidden="true" />
                 {lang === 'es' ? `Volver a ${typeLabel}` : `Back to ${typeLabel}`}

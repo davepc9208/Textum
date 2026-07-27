@@ -12,6 +12,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ShareButtons from '../components/ShareButtons';
 import ShareCard from '../components/ShareCard';
+import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 
 const SITE_URL = 'https://mentoriatextum.com';
@@ -265,6 +266,9 @@ export default function PostPage() {
             {lightbox && (
               <Lightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
             )}
+
+            {/* CTA WhatsApp — aparece antes del ShareCard */}
+            <WhatsAppCTA />
 
             {/* Fix 7: url canónica explícita en ShareCard */}
             <ShareCard title={postTitle} url={canonicalUrl} />
