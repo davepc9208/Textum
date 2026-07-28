@@ -177,8 +177,7 @@ export default function Contact() {
               <div className="space-y-4">
                 {[
                   { icon: Mail,  label: c.emailLabel, value: 'contacto@mentoriatextum.com', href: 'mailto:contacto@mentoriatextum.com' },
-                  { icon: Globe, label: c.webLabel,   value: 'mentoriatextum.com',          href: 'https://mentoriatextum.com/' },
-                ].map((item) => {
+                  ].map((item) => {
                   const Icon = item.icon;
                   return (
                     <a key={item.label} href={item.href} className="flex items-center gap-4 group">

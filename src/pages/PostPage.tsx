@@ -3,7 +3,7 @@
 // Fix 7: ShareCard y ShareButtons reciben url canónica explícita
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, X } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
 import { useLang } from '../i18n/LangContext';

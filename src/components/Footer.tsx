@@ -9,14 +9,14 @@
 //    delay de 300ms del doble-tap-zoom en Android/iOS.
 // 4. block py-2.5 en todos los links amplía el área táctil a ~44px mínimo.
 
-import { Mail, Globe, Linkedin, Instagram, Facebook } from 'lucide-react';
+import { Mail, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLang } from '../i18n/LangContext';
 
 const socialLinks = [
-  { icon: Linkedin,  href: '#', label: 'LinkedIn' },
-  { icon: Instagram, href: '#', label: 'Instagram' },
-  { icon: Facebook,  href: '#', label: 'Facebook' },
+  { icon: Linkedin,  href: 'https://www.linkedin.com/company/mentor%C3%ADa-textum', label: 'LinkedIn'  },
+  { icon: Instagram, href: 'https://www.instagram.com/mentoria_textum/',             label: 'Instagram' },
+  { icon: Facebook,  href: 'https://www.facebook.com/MentoriaTextum',               label: 'Facebook'  },
 ];
 
 export default function Footer() {
@@ -39,13 +39,14 @@ export default function Footer() {
   };
 
   const navLinks = [
-    { label: t.nav.inicio,                                          action: () => goToSection('inicio') },
-    { label: t.nav.sobre,                                           action: () => goToSection('sobre-mi') },
-    { label: t.nav.servicios,                                       action: () => goToSection('servicios') },
-    { label: t.nav.valores,                                         action: () => goToSection('valores') },
-    { label: t.nav.blog,                                            action: () => navigate('/blog') },
-    { label: lang === 'es' ? 'Colecciones' : 'Collections',        action: () => navigate('/colecciones') },
-    { label: t.nav.contacto,                                        action: () => goToSection('contacto') },
+    { label: t.nav.inicio,                                   action: () => goToSection('inicio') },
+    { label: lang === 'es' ? 'Filosofía' : 'Philosophy',    action: () => goToSection('filosofia') },
+    { label: lang === 'es' ? 'Equipo' : 'Team',             action: () => goToSection('sobre-mi') },
+    { label: t.nav.servicios,                                action: () => goToSection('servicios') },
+    { label: t.nav.blog,                                     action: () => navigate('/blog') },
+    { label: t.nav.valores,                                  action: () => goToSection('valores') },
+    { label: lang === 'es' ? 'Colecciones' : 'Collections', action: () => navigate('/colecciones') },
+    { label: t.nav.contacto,                                 action: () => goToSection('contacto') },
   ];
 
   return (
@@ -111,18 +112,7 @@ export default function Footer() {
                 <Mail size={15} className="text-gold/50 group-hover:text-gold transition-colors flex-shrink-0" />
                 contacto@mentoriatextum.com
               </a>
-              <a
-                href="https://mentoriatextum.com/"
-                className="
-                  flex items-center gap-3 py-2.5
-                  text-sm text-white/50
-                  hover:text-gold active:text-gold
-                  transition-colors group touch-manipulation
-                "
-              >
-                <Globe size={15} className="text-gold/50 group-hover:text-gold transition-colors flex-shrink-0" />
-                mentoriatextum.com
-              </a>
+
               <a
                 href="https://wa.me/34614638406?text=Hola%2C%20me%20gustar%C3%ADa%20solicitar%20un%20diagn%C3%B3stico%20acad%C3%A9mico%20gratuito%20con%20TEXTUM."
                 target="_blank"

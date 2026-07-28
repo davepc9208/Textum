@@ -16,13 +16,23 @@ export default function Navbar() {
   const location                = useLocation();
   const isHome                  = location.pathname === '/';
 
+  // Orden EXACTO alineado con el Footer
   const anchorLinks = [
-    { href: '#inicio',      label: t.nav.inicio },
-    { href: '#metodo',      label: lang === 'es' ? 'Método'      : 'Method'      },
-    { href: '#servicios',   label: t.nav.servicios },
-    { href: '#coleccion-textum', label: lang === 'es' ? 'Colección TEXTUM' : 'TEXTUM Collection' },
-    { href: '#sobre-mi',    label: lang === 'es' ? 'Equipo'      : 'Team'        },
-    { href: '#contacto',    label: t.nav.contacto },
+    { href: '#inicio',           label: t.nav.inicio },
+    { href: '#filosofia',        label: lang === 'es' ? 'Filosofía' : 'Philosophy' },
+    { href: '#sobre-mi',         label: lang === 'es' ? 'Equipo' : 'Team' },
+    { href: '#servicios',        label: t.nav.servicios },
+    
+    
+  ];
+
+  // Elementos de navegación COMPLETOS en el orden del footer
+  const navItems = [
+    ...anchorLinks,
+    { type: 'blog', label: t.nav.blog },
+    { href: '#valores',          label: t.nav.valores },
+    { type: 'colecciones', label: lang === 'es' ? 'Colecciones' : 'Collections' },
+    { href: '#contacto',         label: t.nav.contacto },
   ];
 
   useEffect(() => {
@@ -33,7 +43,7 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!isHome) return;
-    const ids = ['inicio', 'metodo', 'servicios', 'coleccion-textum', 'sobre-mi', 'contacto'];
+    const ids = ['inicio', 'filosofia', 'sobre-mi', 'servicios', 'valores', 'contacto'];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => { if (e.isIntersecting) setActive(e.target.id); });
@@ -68,10 +78,101 @@ export default function Navbar() {
   };
 
   const nextLang = lang === 'es' ? 'en' : 'es';
-  // Fix 6: aria-label dinámico indica idioma activo y acción
   const langToggleLabel = lang === 'es'
     ? 'Idioma actual: Español. Cambiar a English'
     : 'Current language: English. Switch to Español';
+
+  // Renderizado de cada ítem de navegación
+  const renderNavItem = (item: any, index: number) => {
+    if (item.type === 'blog') {
+      return (
+        <li key={`blog-${index}`}>
+          <Link
+            to="/blog"
+            className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
+              location.pathname.startsWith('/blog') ? 'text-gold active' : 'text-white/80 hover:text-white'
+            }`}
+          >
+            {item.label.toUpperCase()}
+          </Link>
+        </li>
+      );
+    }
+    
+    if (item.type === 'colecciones') {
+      return (
+        <li key={`colecciones-${index}`}>
+          <Link
+            to="/colecciones"
+            className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
+              location.pathname.startsWith('/colecciones') ? 'text-gold active' : 'text-white/80 hover:text-white'
+            }`}
+          >
+            {item.label.toUpperCase()}
+          </Link>
+        </li>
+      );
+    }
+
+    // Anchor links (secciones del home)
+    return (
+      <li key={item.href}>
+        <a
+          href={isHome ? item.href : '/' + item.href}
+          onClick={(e) => handleAnchorClick(e, item.href)}
+          className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
+            isHome && active === item.href.slice(1)
+              ? 'text-gold active'
+              : 'text-white/80 hover:text-white'
+          }`}
+        >
+          {item.label.toUpperCase()}
+        </a>
+      </li>
+    );
+  };
+
+  // Renderizado móvil de cada ítem
+  const renderMobileNavItem = (item: any, index: number) => {
+    if (item.type === 'blog') {
+      return (
+        <Link
+          key={`mobile-blog-${index}`}
+          to="/blog"
+          onClick={() => setOpen(false)}
+          className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation"
+        >
+          {item.label.toUpperCase()}
+        </Link>
+      );
+    }
+    
+    if (item.type === 'colecciones') {
+      return (
+        <Link
+          key={`mobile-colecciones-${index}`}
+          to="/colecciones"
+          onClick={() => setOpen(false)}
+          className={`block py-3 text-sm tracking-widest transition-colors touch-manipulation ${
+            location.pathname.startsWith('/colecciones') ? 'text-gold' : 'text-white/80 hover:text-gold active:text-gold'
+          }`}
+        >
+          {item.label.toUpperCase()}
+        </Link>
+      );
+    }
+
+    return (
+      <a
+        key={`mobile-${item.href}`}
+        href={isHome ? item.href : '/' + item.href}
+        onClick={(e) => handleAnchorClick(e, item.href)}
+        className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation"
+      >
+        {item.label.toUpperCase()}
+      </a>
+    );
+  };
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
@@ -91,45 +192,10 @@ export default function Navbar() {
         </Link>
 
         <ul className="hidden lg:flex items-center gap-6">
-          {anchorLinks.map((l) => (
-            <li key={l.href}>
-              <a
-                href={isHome ? l.href : '/' + l.href}
-                onClick={(e) => handleAnchorClick(e, l.href)}
-                className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
-                  isHome && active === l.href.slice(1)
-                    ? 'text-gold active'
-                    : 'text-white/80 hover:text-white'
-                }`}
-              >
-                {l.label.toUpperCase()}
-              </a>
-            </li>
-          ))}
-          <li>
-            <Link
-              to="/blog"
-              className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
-                location.pathname.startsWith('/blog') ? 'text-gold active' : 'text-white/80 hover:text-white'
-              }`}
-            >
-              {t.nav.blog.toUpperCase()}
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/colecciones"
-              className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
-                location.pathname.startsWith('/colecciones') ? 'text-gold active' : 'text-white/80 hover:text-white'
-              }`}
-            >
-              {lang === 'es' ? 'COLECCIONES' : 'COLLECTIONS'}
-            </Link>
-          </li>
+          {navItems.map((item, index) => renderNavItem(item, index))}
         </ul>
 
         <div className="hidden lg:flex items-center gap-3">
-          {/* Fix 6: aria-label dinámico + aria-current en spans */}
           <button
             onClick={() => setLang(nextLang)}
             className="relative flex items-center px-1 py-1 rounded-full border border-gold/30 text-xs tracking-[0.1em] hover:border-gold/50 transition-colors duration-200 touch-manipulation"
@@ -186,35 +252,10 @@ export default function Navbar() {
       </div>
 
       <div className={`lg:hidden overflow-hidden transition-all duration-400 ${
-        open ? 'max-h-[36rem] opacity-100' : 'max-h-0 opacity-0'
+        open ? 'max-h-[48rem] opacity-100' : 'max-h-0 opacity-0'
       }`}>
         <div className="glass-navy border-t border-gold/20 px-6 py-5 flex flex-col gap-1">
-          {anchorLinks.map((l) => (
-            <a
-              key={l.href}
-              href={isHome ? l.href : '/' + l.href}
-              onClick={(e) => handleAnchorClick(e, l.href)}
-              className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation"
-            >
-              {l.label.toUpperCase()}
-            </a>
-          ))}
-          <Link
-            to="/blog"
-            onClick={() => setOpen(false)}
-            className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation"
-          >
-            {t.nav.blog.toUpperCase()}
-          </Link>
-          <Link
-            to="/colecciones"
-            onClick={() => setOpen(false)}
-            className={`block py-3 text-sm tracking-widest transition-colors touch-manipulation ${
-              location.pathname.startsWith('/colecciones') ? 'text-gold' : 'text-white/80 hover:text-gold active:text-gold'
-            }`}
-          >
-            {lang === 'es' ? 'COLECCIONES' : 'COLLECTIONS'}
-          </Link>
+          {navItems.map((item, index) => renderMobileNavItem(item, index))}
 
           <div className="h-px bg-white/10 my-2" />
 

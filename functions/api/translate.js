@@ -1,11 +1,16 @@
 // functions/api/translate.js
-// Cloudflare Pages Function — traduce un artículo de ES a EN usando Groq.
-// CON MANEJO DE CONTENIDO LARGO Y MEJOR LOGGING
+// Cloudflare Pages Function — traduce artículo ES → EN usando Groq
+//
+// Cambios v2:
+// - max_tokens aumentado a 8000
+// - Contenido largo se divide en chunks para evitar cortes
+// - Mejor manejo de errores con detalle del fallo real
+// - StarterKit link fix: ver RichTextEditor.tsx
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = "llama-3.3-70b-versatile";
-const MAX_CONTENT_LENGTH = 4000; // Caracteres por chunk
-const MAX_TOKENS = 4096; // Límite seguro para Llama 3
+const MODEL        = "llama-3.3-70b-versatile";
+// Límite conservador — el contexto del modelo es mayor pero Groq tiene rate limits
+const MAX_CONTENT_CHARS = 12_000;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -17,155 +22,118 @@ function json(data, status = 200) {
   });
 }
 
-async function callGroq(apiKey, systemPrompt, userPrompt, maxTokens = MAX_TOKENS) {
-  const startTime = Date.now();
-  
-  // Log en Cloudflare
-  console.log(`[translate] Groq call - prompt length: ${userPrompt.length}, maxTokens: ${maxTokens}`);
-  
-  try {
-    const res = await fetch(GROQ_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.2,
-        max_tokens: maxTokens,
-      }),
-    });
+const SYSTEM_TEXT = `
+Eres un traductor académico especializado en mentoría universitaria, investigación
+científica y redacción académica para el contexto de América Latina y Europa.
 
-    const elapsed = Date.now() - startTime;
-    console.log(`[translate] Groq response in ${elapsed}ms, status: ${res.status}`);
+REGLAS:
+1. Traduce del español al inglés académico formal (variante internacional).
+2. Mantén el tono profesional, sereno y riguroso del original.
+3. NO traduzcas estos términos: TFG, TFM, APA 7, IMRaD, Scopus, Latindex, ANECA, Bologna, FLUX, TEXTUM.
+4. Responde ÚNICAMENTE con la traducción, sin explicaciones ni comentarios.
+`.trim();
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error(`[translate] Groq error ${res.status}:`, errText.slice(0, 500));
-      
-      // Si es error de rate limit o timeout, lanzamos con mensaje específico
-      if (res.status === 429) {
-        throw new Error("Límite de peticiones a Groq excedido. Espera unos segundos.");
-      }
-      if (res.status === 401) {
-        throw new Error("API Key de Groq inválida o no configurada.");
-      }
-      
-      throw new Error(`Groq ${res.status}: ${errText.slice(0, 300)}`);
-    }
-
-    const data = await res.json();
-    const content = data.choices?.[0]?.message?.content?.trim() ?? "";
-    
-    console.log(`[translate] Groq success - tokens: ${data.usage?.total_tokens || 'unknown'}`);
-    
-    return content;
-
-  } catch (err) {
-    console.error(`[translate] Groq call exception:`, err.message);
-    throw err;
-  }
-}
-
-// ── Divide el contenido en chunks si es muy largo ──
-function splitContentIntoChunks(content, maxLength = MAX_CONTENT_LENGTH) {
-  if (content.length <= maxLength) return [content];
-  
-  const chunks = [];
-  // Dividir por párrafos para preservar estructura
-  const paragraphs = content.split(/(<\/p>|<\/h[1-6]>|<\/div>|<\/ul>|<\/ol>|<\/blockquote>)/i);
-  
-  let currentChunk = '';
-  let currentTag = '';
-  
-  for (let i = 0; i < paragraphs.length; i++) {
-    const part = paragraphs[i];
-    
-    // Si es una etiqueta de cierre, la añadimos al chunk actual
-    if (part.match(/^<\/(p|h[1-6]|div|ul|ol|blockquote)>$/i)) {
-      currentChunk += part;
-      currentTag = part;
-      continue;
-    }
-    
-    // Si añadir este párrafo excede el límite, guardamos el chunk actual
-    if (currentChunk.length + part.length > maxLength && currentChunk.length > 0) {
-      chunks.push(currentChunk);
-      currentChunk = '';
-    }
-    
-    currentChunk += part;
-  }
-  
-  if (currentChunk) {
-    chunks.push(currentChunk);
-  }
-  
-  console.log(`[translate] Content split into ${chunks.length} chunks`);
-  return chunks;
-}
-
-// ── Traduce contenido largo por partes ──
-async function translateLongContent(apiKey, content) {
-  const chunks = splitContentIntoChunks(content);
-  
-  if (chunks.length === 1) {
-    const SYSTEM = `
+const SYSTEM_HTML = `
 Eres un traductor académico especializado en mentoría universitaria e investigación científica.
 
 REGLAS ESTRICTAS:
-1. Traduce del español al inglés académico formal el TEXTO que está DENTRO de las etiquetas HTML.
-2. NO modifiques, muevas, añadas ni elimines ninguna etiqueta HTML.
-3. NO modifiques los atributos de las etiquetas (class, href, src, alt, etc.).
-4. Preserva exactamente la estructura del HTML original.
-5. Preserva sin traducir: TFG, TFM, APA 7, IMRaD, Scopus, Latindex, ANECA, Bologna, FLUX, TEXTUM.
-6. Responde ÚNICAMENTE con el HTML traducido, sin markdown, sin explicaciones.
+1. Traduce del español al inglés académico formal el TEXTO dentro de las etiquetas HTML.
+2. NO modifiques, muevas ni elimines ninguna etiqueta HTML ni sus atributos.
+3. Preserva exactamente la estructura y el orden del HTML original.
+4. NO traduzcas: TFG, TFM, APA 7, IMRaD, Scopus, Latindex, ANECA, Bologna, FLUX, TEXTUM.
+5. Responde ÚNICAMENTE con el HTML traducido, sin markdown ni explicaciones.
 `.trim();
 
-    return await callGroq(apiKey, SYSTEM, 
-      `Traduce al inglés el texto dentro de este HTML académico. Devuelve SOLO el HTML:\n\n${content}`
-    );
+async function callGroq(apiKey, systemPrompt, userPrompt) {
+  const res = await fetch(GROQ_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user",   content: userPrompt },
+      ],
+      temperature: 0.2,
+      max_tokens:  8000,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Groq API ${res.status}: ${errText.slice(0, 400)}`);
   }
-  
-  // Traducir chunk por chunk
-  console.log(`[translate] Translating ${chunks.length} chunks...`);
-  
-  const SYSTEM_CHUNK = `
-Eres un traductor académico. Traduce el siguiente fragmento de HTML del español al inglés académico.
 
-REGLAS:
-1. Traduce SOLO el texto dentro de las etiquetas HTML
-2. NO modifies las etiquetas ni sus atributos
-3. Preserva: TFG, TFM, APA 7, IMRaD, Scopus, Latindex, ANECA, Bologna, FLUX, TEXTUM
-4. Responde SOLO con el HTML traducido, sin explicaciones
-`.trim();
+  const data = await res.json();
+  const result = data.choices?.[0]?.message?.content?.trim();
 
-  const translatedChunks = [];
-  
-  for (let i = 0; i < chunks.length; i++) {
-    console.log(`[translate] Translating chunk ${i + 1}/${chunks.length}`);
-    
-    const translated = await callGroq(
+  if (!result) throw new Error("Groq devolvió respuesta vacía");
+
+  // Detectar si Groq cortó la respuesta por límite de tokens
+  const finishReason = data.choices?.[0]?.finish_reason;
+  if (finishReason === "length") {
+    console.warn("[translate] Respuesta cortada por límite de tokens — considera dividir el contenido");
+  }
+
+  return result;
+}
+
+// Divide HTML largo en chunks respetando etiquetas de bloque
+function splitHtmlIntoChunks(html, maxChars) {
+  if (html.length <= maxChars) return [html];
+
+  const chunks = [];
+  // Dividir por párrafos/bloques principales
+  const blockRegex = /(<(?:p|h[1-6]|ul|ol|li|blockquote|pre|table|div)[^>]*>[\s\S]*?<\/(?:p|h[1-6]|ul|ol|li|blockquote|pre|table|div)>)/gi;
+  const parts = html.split(blockRegex).filter(Boolean);
+
+  let current = "";
+  for (const part of parts) {
+    if ((current + part).length > maxChars && current.length > 0) {
+      chunks.push(current);
+      current = part;
+    } else {
+      current += part;
+    }
+  }
+  if (current) chunks.push(current);
+
+  return chunks.length > 0 ? chunks : [html];
+}
+
+async function translateHtmlContent(apiKey, content_es) {
+  if (!content_es) return "";
+
+  // Si el contenido es corto, traducir de una vez
+  if (content_es.length <= MAX_CONTENT_CHARS) {
+    return callGroq(
       apiKey,
-      SYSTEM_CHUNK,
-      `Fragmento ${i + 1} de ${chunks.length}:\n\n${chunks[i]}`
+      SYSTEM_HTML,
+      `Traduce al inglés el texto dentro de este HTML. Devuelve SOLO el HTML:\n\n${content_es}`
     );
-    
-    translatedChunks.push(translated);
   }
-  
-  return translatedChunks.join('');
+
+  // Contenido largo: dividir en chunks y traducir por partes
+  console.log(`[translate] Contenido largo (${content_es.length} chars) — dividiendo en chunks`);
+  const chunks = splitHtmlIntoChunks(content_es, MAX_CONTENT_CHARS);
+  const translatedChunks = await Promise.all(
+    chunks.map((chunk, i) =>
+      callGroq(
+        apiKey,
+        SYSTEM_HTML,
+        `Traduce al inglés el texto dentro de este HTML (parte ${i + 1} de ${chunks.length}). Devuelve SOLO el HTML:\n\n${chunk}`
+      )
+    )
+  );
+  return translatedChunks.join("\n");
 }
 
 export async function onRequest(context) {
   const { request, env } = context;
 
-  // CORS preflight
   if (request.method === "OPTIONS") {
     return new Response(null, {
       headers: {
@@ -182,8 +150,7 @@ export async function onRequest(context) {
 
   const apiKey = env.GROQ_API_KEY;
   if (!apiKey) {
-    console.error("[translate] GROQ_API_KEY not configured");
-    return json({ error: "GROQ_API_KEY no configurada en Cloudflare." }, 500);
+    return json({ error: "GROQ_API_KEY no configurada en Cloudflare Pages → Settings → Environment Variables." }, 500);
   }
 
   let body;
@@ -194,69 +161,37 @@ export async function onRequest(context) {
   }
 
   const { title_es, excerpt_es, content_es } = body;
-  
-  console.log(`[translate] Request received - title length: ${title_es?.length || 0}, content length: ${content_es?.length || 0}`);
 
   if (!title_es || !content_es) {
     return json({
-      error: "Faltan campos obligatorios: title_es y content_es son requeridos.",
+      error: "Faltan campos: title_es y content_es son obligatorios.",
+      received: Object.keys(body),
     }, 400);
   }
 
-  // ── Sistema de prompts ────────────────────────────────────────────────────
-
-  const SYSTEM_TEXT = `
-Eres un traductor académico especializado en mentoría universitaria, investigación
-científica y redacción académica para el contexto de América Latina y Europa.
-
-REGLAS ESTRICTAS:
-1. Traduce del español al inglés académico formal (variante internacional, no US slang).
-2. Mantén el tono profesional, sereno y riguroso del texto original.
-3. Preserva términos técnicos clave como: TFG, TFM, APA 7, IMRaD, Scopus, Latindex,
-   ANECA, Bologna, FLUX, TEXTUM. No los traduzcas — déjalos tal cual.
-4. Responde ÚNICAMENTE con la traducción solicitada, sin explicaciones ni comentarios.
-`.trim();
-
   try {
-    // Traducir título
-    console.log("[translate] Translating title...");
-    const title_en = await callGroq(
-      apiKey,
-      SYSTEM_TEXT,
-      `Traduce este título de artículo académico al inglés:\n\n${title_es}`
-    );
-    console.log(`[translate] Title translated: ${title_en.length} chars`);
+    // Título y excerpt en paralelo (son cortos) + contenido (puede ser largo)
+    const [title_en, excerpt_en, content_en] = await Promise.all([
+      callGroq(apiKey, SYSTEM_TEXT, `Traduce este título académico al inglés:\n\n${title_es}`),
+      excerpt_es
+        ? callGroq(apiKey, SYSTEM_TEXT, `Traduce este resumen académico al inglés:\n\n${excerpt_es}`)
+        : Promise.resolve(""),
+      translateHtmlContent(apiKey, content_es),
+    ]);
 
-    // Traducir excerpt (si existe)
-    let excerpt_en = "";
-    if (excerpt_es && excerpt_es.trim()) {
-      console.log("[translate] Translating excerpt...");
-      excerpt_en = await callGroq(
-        apiKey,
-        SYSTEM_TEXT,
-        `Traduce este resumen / excerpt académico al inglés:\n\n${excerpt_es}`
-      );
-      console.log(`[translate] Excerpt translated: ${excerpt_en.length} chars`);
-    }
-
-    // Traducir contenido (maneja contenido largo)
-    console.log("[translate] Translating content...");
-    const content_en = await translateLongContent(apiKey, content_es);
-    console.log(`[translate] Content translated: ${content_en.length} chars`);
-
-    return json({
-      success: true,
-      title_en,
-      excerpt_en,
-      content_en,
-    });
+    return json({ success: true, title_en, excerpt_en, content_en });
 
   } catch (err) {
-    console.error("[translate] Error:", err.message);
-    return json({
-      success: false,
-      error: "Error al traducir con Groq.",
-      detail: err.message,
-    }, 500);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[translate] Error:", message);
+
+    // Dar un mensaje de error útil según el tipo de fallo
+    let userMessage = "Error al traducir con Groq.";
+    if (message.includes("401")) userMessage = "GROQ_API_KEY inválida o expirada.";
+    else if (message.includes("429")) userMessage = "Límite de velocidad de Groq alcanzado — espera unos segundos e inténtalo de nuevo.";
+    else if (message.includes("413") || message.includes("too large")) userMessage = "El artículo es demasiado largo para traducir de una vez — divide el contenido en secciones más pequeñas.";
+    else if (message.includes("503") || message.includes("unavailable")) userMessage = "El servicio de Groq no está disponible temporalmente — inténtalo en unos minutos.";
+
+    return json({ error: userMessage, detail: message }, 500);
   }
 }

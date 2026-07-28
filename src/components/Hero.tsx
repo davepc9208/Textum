@@ -4,7 +4,6 @@
 // Fix Android: canvas desactivado en baja gama (sin cambios).
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { useLang } from '../i18n/LangContext';
 
 function canRunCanvas(): boolean {
@@ -18,7 +17,7 @@ function canRunCanvas(): boolean {
 }
 
 export default function Hero() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const h = t.hero;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showCanvas] = useState(() => canRunCanvas());
@@ -195,12 +194,6 @@ export default function Hero() {
             </p>
           )}
         </div>
-      </div>
-
-      {/* Scroll indicator */}
-      <div className="absolute bottom-10 flex flex-col items-center gap-2 scroll-indicator">
-        <span className="text-white/40 text-xs tracking-[0.2em] uppercase">{h.scroll}</span>
-        <ChevronDown size={18} className="text-gold/60" />
       </div>
 
       {/* Wave */}
