@@ -29,6 +29,8 @@ const EMPTY: Omit<Post, 'id' | 'created_at'> = {
   title_en: '',
   excerpt_es: '',
   excerpt_en: '',
+  keywords_es: '',
+  keywords_en: '',
   content_es: '',
   content_en: '',
   author: '',
@@ -384,16 +386,18 @@ function PostEditor({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title_es:   form.title_es,
-          excerpt_es: form.excerpt_es,
-          content_es: form.content_es,
-        }),
+          title_es:    form.title_es,
+          excerpt_es:  form.excerpt_es,
+          content_es:  form.content_es,
+          keywords_es: form.keywords_es,
+          }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
-      set('title_en',   data.title_en);
-      set('excerpt_en', data.excerpt_en);
-      set('content_en', data.content_en);
+      set('title_en',    data.title_en);
+      set('excerpt_en',  data.excerpt_en);
+      set('content_en',  data.content_en);
+      set('keywords_en', data.keywords_en ?? '');
       setLastTranslated(new Date().toLocaleTimeString('es-ES'));
       // Cambiar a la pestaña EN para que el usuario revise
       setTab('en');
@@ -616,10 +620,22 @@ function PostEditor({
                       <input className={inputCls} value={form.title_es} onChange={e => handleTitleEs(e.target.value)} placeholder='Ej: "Cómo estructurar la metodología de tu tesis..."' />
                     </div>
                     <div>
-                      <label className={labelCls}>Resumen y Palabras Clave / Keywords (ES)</label>
-                      <textarea className={inputCls} rows={3} value={form.excerpt_es} onChange={e => set('excerpt_es', e.target.value)}
-                        placeholder="Escribe el resumen ejecutivo del artículo (2-3 frases) que servirá de gancho en la tarjeta y añade abajo de 3 a 5 palabras clave científicas separadas por comas." />
-                    </div>
+  <label className={labelCls}>Resumen ejecutivo (ES)</label>
+  <textarea className={inputCls} rows={3} value={form.excerpt_es} onChange={e => set('excerpt_es', e.target.value)}
+    placeholder="2-3 frases de gancho que aparecen en la tarjeta del blog. Sin palabras clave aquí." />
+</div>
+<div>
+  <label className={labelCls}>Palabras clave SEO (ES)</label>
+  <input
+    className={inputCls}
+    value={form.keywords_es}
+    onChange={e => set('keywords_es', e.target.value)}
+    placeholder="Ej: mentoría académica, tesis doctoral, APA 7, escritura científica"
+  />
+  <p className="text-xs text-navy/40 mt-1.5 font-light">
+    Separadas por comas. Se usan en la etiqueta <code>&lt;meta name="keywords"&gt;</code> del artículo publicado.
+  </p>
+</div>
                     <div>
                       <label className={labelCls}>Contenido (ES)</label>
                       <RichTextEditor content={form.content_es} onChange={(html) => set('content_es', html)} placeholder="Escribe el artículo en español..." />
@@ -690,10 +706,22 @@ function PostEditor({
                       <input className={inputCls} value={form.title_en} onChange={e => set('title_en', e.target.value)} placeholder='E.g. "How to structure the methodology of your thesis..."' />
                     </div>
                     <div>
-                      <label className={labelCls}>Abstract and Keywords (English)</label>
-                      <textarea className={`${inputCls}`} rows={3} value={form.excerpt_en} onChange={e => set('excerpt_en', e.target.value)}
-                        placeholder="Coloca aquí la traducción técnica del resumen y las palabras clave en inglés para mejorar la indización bilingüe de la plataforma." />
-                    </div>
+  <label className={labelCls}>Abstract (English)</label>
+  <textarea className={inputCls} rows={3} value={form.excerpt_en} onChange={e => set('excerpt_en', e.target.value)}
+    placeholder="2-3 hook sentences for the blog card. No keywords here." />
+</div>
+<div>
+  <label className={labelCls}>SEO Keywords (EN)</label>
+  <input
+    className={inputCls}
+    value={form.keywords_en}
+    onChange={e => set('keywords_en', e.target.value)}
+    placeholder="E.g. academic mentoring, doctoral thesis, APA 7, scientific writing"
+  />
+  <p className="text-xs text-navy/40 mt-1.5 font-light">
+    Comma-separated. Used in the <code>&lt;meta name="keywords"&gt;</code> tag of the published article.
+  </p>
+</div>
                     <div>
                       <label className={labelCls}>Content (EN)</label>
                       <RichTextEditor content={form.content_en} onChange={(html) => set('content_en', html)} placeholder="Write the article in English..." />

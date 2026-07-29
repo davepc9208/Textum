@@ -7,6 +7,9 @@ export type SeoPost = {
   excerpt_es: string | null;
   excerpt_en: string | null;
 
+  keywords_es: string | null;   
+  keywords_en: string | null;   
+  
   author: string | null;
   created_at: string;
 

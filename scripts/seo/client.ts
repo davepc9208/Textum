@@ -22,6 +22,8 @@ export async function getPosts(): Promise<SeoPost[]> {
       title_en,
       excerpt_es,
       excerpt_en,
+      keywords_es,
+      keywords_en,
       author,
       created_at,
       cover_url,

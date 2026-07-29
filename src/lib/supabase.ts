@@ -20,6 +20,8 @@ export type Post = {
   excerpt_en: string;
   content_es: string;
   content_en: string;
+  keywords_es: string;
+  keywords_en: string;
   author: string;
   cover_url: string;
   cover_alt: string | null;

@@ -102,20 +102,6 @@ export default function BlogPage() {
     <div className="min-h-screen bg-cream">
       <Navbar />
 
-      {/* Barra superior con enlace a inicio */}
-      <div className="bg-navy/95 border-b border-gold/10 px-6 py-2 flex items-center justify-between">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-[11px] tracking-widest text-white/40 hover:text-gold transition-colors touch-manipulation"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            <path d="M19 12H5M12 5l-7 7 7 7" />
-          </svg>
-          {lang === 'es' ? 'Inicio' : 'Home'}
-        </Link>
-        <span className="text-[10px] tracking-[0.25em] text-gold/30 uppercase">TEXTUM Blog</span>
-      </div>
-
       {/* Header hero */}
       <div className="gradient-bg pt-32 pb-24 px-6 relative overflow-hidden">
         <div className="orb orb-gold w-[400px] h-[400px] top-[-80px] right-[-80px] opacity-15" />

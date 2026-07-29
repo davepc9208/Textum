@@ -41,19 +41,33 @@
     <meta name="theme-color" content="#0d1f3c" />
 
     <!--
-      FUENTES — estrategia de máximo rendimiento:
-      · preconnect a los 2 orígenes de Google Fonts
-      · preconnect a Pexels (imagen LCP en About)
-      · ELIMINADO: preconnect a ipapi.co (ya no se usa; reemplazado por cdn-cgi/trace)
-      · preload del CSS de fuentes como stylesheet diferido (no bloquea render)
-      · Solo 3 variantes de Cormorant: 300, 400 italic, 600
+      FUENTES — estrategia de rendimiento revisada (v2):
+
+      CAMBIOS vs versión anterior:
+      · Eliminado preconnect de images.pexels.com — Lighthouse detectó que no
+        participaba en el LCP path y generaba una advertencia de "preconnect no usado".
+        La imagen de Pexels en About se carga lazy, no es LCP.
+      · Eliminado preconnect de didxrqnhnxbhskdazkzz.supabase.co — Lighthouse lo
+        marcaba como "preconnect no usado". Supabase solo se llama cuando el usuario
+        navega a /blog o /colecciones, no en la carga inicial.
+        Sustituido por dns-prefetch (más ligero, sin handshake TLS anticipado).
+      · Mantenido preconnect SOLO para fonts.googleapis.com y fonts.gstatic.com
+        porque sí participan en el render path (bloquean fuentes).
+      · Añadido crossorigin en el preconnect de fonts.gstatic.com (requerido
+        para que el preconnect funcione con recursos CORS como los .woff2).
+      · Mantenido preload de fuentes con onload para no bloquear el render.
+      · Solo 3 variantes de Cormorant: 300, 400 italic, 600 — sin cambios.
     -->
+
+    <!-- Preconnect: SOLO los orígenes críticos para el render inicial -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://images.pexels.com" />
-    <link rel="preconnect" href="https://didxrqnhnxbhskdazkzz.supabase.co" />
 
-    <!-- Fuentes reducidas: solo las variantes realmente usadas -->
+    <!-- DNS prefetch: orígenes usados después de la carga inicial -->
+    <link rel="dns-prefetch" href="https://images.pexels.com" />
+    <link rel="dns-prefetch" href="https://didxrqnhnxbhskdazkzz.supabase.co" />
+
+    <!-- Fuentes: preload no bloqueante -->
     <link
       rel="preload"
       as="style"

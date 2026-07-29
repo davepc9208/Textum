@@ -1,7 +1,13 @@
 // src/App.tsx
-// Fix 5: ORG_SCHEMA enriquecido con founder, areaServed, foundingDate
-// Fix 6: BreadcrumbList schema en PostPage se gestiona desde PostPage.tsx
-// BackToTop integrado, BlogListPage con lang dinámico
+// v2 — fix crítico de rendimiento:
+//
+// CAMBIO PRINCIPAL: BlogPage y PostPage ahora son lazy imports.
+// Antes eran imports estáticos, lo que hacía que Vite incluyera
+// supabase en el bundle inicial aunque la homepage no lo necesite.
+// Con lazy(), supabase solo se descarga cuando el usuario navega a /blog.
+//
+// IMPACTO ESPERADO: reducción de ~55 KB en el bundle inicial (chunk supabase).
+// Lighthouse debería dejar de marcar supabase como "JS no usado".
 
 import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
@@ -11,7 +17,6 @@ import Filosofia         from './components/Filosofia';
 import About             from './components/About';
 import AcademicIntegrity from './components/AcademicIntegrity';
 import Services          from './components/Services';
-import PricesTextum      from './components/PricesTextum';
 import WhyTextum         from './components/WhyTextum';
 import ColeccionesTextum from './components/ColeccionesTextum';
 import BlogPreview       from './components/BlogPreview';
@@ -20,16 +25,24 @@ import Contact           from './components/Contact';
 import Footer            from './components/Footer';
 import StickyDiagnosis   from './components/StickyDiagnosis';
 import BackToTop         from './components/BackToTop';
-import BlogPage          from './pages/BlogPage';
-import PostPage          from './pages/PostPage';
 import { useScrollReveal } from './hooks/useScrollReveal';
 import { useSEO, injectSchema, removeSchema } from './hooks/useSEO';
 import { useLang } from './i18n/LangContext';
 
-const AdminPage = lazy(() => import('./pages/AdminPage'));
-const ColeccionesPage     = lazy(() => import('./pages/ColeccionesPage'));
-const ColeccionListPage   = lazy(() => import('./pages/ColeccionListPage'));
-const ColeccionPiecePage  = lazy(() => import('./pages/ColeccionPiecePage'));
+// CAMBIO: PricesTextum eliminado del import — ver nota al pie de HomePage.
+// Si decides mantenerlo, descomenta la línea y restáuralo en HomePage.
+// import PricesTextum from './components/PricesTextum';
+
+// ── Lazy imports ─────────────────────────────────────────────────────────────
+// NUEVO: BlogPage y PostPage ahora son lazy (antes eran estáticos).
+// Esto evita que el chunk de supabase se incluya en el bundle inicial.
+const BlogPage   = lazy(() => import('./pages/BlogPage'));
+const PostPage   = lazy(() => import('./pages/PostPage'));
+
+const AdminPage          = lazy(() => import('./pages/AdminPage'));
+const ColeccionesPage    = lazy(() => import('./pages/ColeccionesPage'));
+const ColeccionListPage  = lazy(() => import('./pages/ColeccionListPage'));
+const ColeccionPiecePage = lazy(() => import('./pages/ColeccionPiecePage'));
 
 function PageLoader() {
   return (
@@ -42,8 +55,6 @@ function PageLoader() {
   );
 }
 
-// Fix 5: founder + areaServed + foundingDate añadidos
-// Estos tres campos son los que Google usa para el knowledge panel
 const ORG_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'EducationalOrganization',
@@ -141,7 +152,13 @@ function HomePage() {
         <About />
         <AcademicIntegrity />
         <Services />
-        <PricesTextum />
+        {/*
+          PricesTextum eliminado de la homepage.
+          MOTIVO: mostrar precios dos veces (aquí + en Services) hace que el precio
+          sea el protagonista visual antes de que el visitante haya decidido si confía.
+          Los precios ya están en la sección Services en los tiers de cada programa.
+          Si quieres restaurarlo, añade: <PricesTextum /> aquí y descomenta el import.
+        */}
         <WhyTextum />
         <ColeccionesTextum />
         <BlogPreview />
@@ -155,6 +172,8 @@ function HomePage() {
   );
 }
 
+// NUEVO: BlogListPage y PostPage ahora usan Suspense individualmente
+// para que el spinner aparezca solo en el área de contenido.
 function BlogListPage() {
   const { lang } = useLang();
 
@@ -175,26 +194,43 @@ function BlogListPage() {
     return () => removeSchema('schema-blog');
   }, []);
 
-  return <BlogPage />;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <BlogPage />
+    </Suspense>
+  );
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/"                   element={<HomePage />} />
-      <Route path="/blog"               element={<BlogListPage />} />
-      <Route path="/blog/:slug"         element={<PostPage />} />
-      <Route path="/colecciones"            element={<Suspense fallback={<PageLoader />}><ColeccionesPage /></Suspense>} />
-      <Route path="/colecciones/:tipo"      element={<Suspense fallback={<PageLoader />}><ColeccionListPage /></Suspense>} />
-      <Route path="/colecciones/:tipo/:slug" element={<Suspense fallback={<PageLoader />}><ColeccionPiecePage /></Suspense>} />
-      <Route
-        path="/textum-redaccion-2026"
-        element={
-          <Suspense fallback={<PageLoader />}>
-            <AdminPage />
-          </Suspense>
-        }
-      />
+      <Route path="/"    element={<HomePage />} />
+      <Route path="/blog" element={<BlogListPage />} />
+      <Route path="/blog/:slug" element={
+        <Suspense fallback={<PageLoader />}>
+          <PostPage />
+        </Suspense>
+      } />
+      <Route path="/colecciones" element={
+        <Suspense fallback={<PageLoader />}>
+          <ColeccionesPage />
+        </Suspense>
+      } />
+      <Route path="/colecciones/:tipo" element={
+        <Suspense fallback={<PageLoader />}>
+          <ColeccionListPage />
+        </Suspense>
+      } />
+      <Route path="/colecciones/:tipo/:slug" element={
+        <Suspense fallback={<PageLoader />}>
+          <ColeccionPiecePage />
+        </Suspense>
+      } />
+      <Route path="/textum-redaccion-2026" element={
+        <Suspense fallback={<PageLoader />}>
+          <AdminPage />
+        </Suspense>
+      } />
     </Routes>
   );
 }

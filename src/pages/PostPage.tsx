@@ -110,7 +110,9 @@ export default function PostPage() {
       publishedTime: post.created_at,
       author: post.author,
     },
-    keywords: `${post.category ?? ''}, mentoría académica, redacción académica, ${post.author}`,
+    keywords: lang === 'es'
+  ? post.keywords_es || `${post.category ?? ''}, mentoría académica, ${post.author}`
+  : post.keywords_en || `${post.category ?? ''}, academic mentoring, ${post.author}`,
     lang,
   } : {
     title: 'Artículo — TEXTUM Mentoría Académica',

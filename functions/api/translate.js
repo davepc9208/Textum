@@ -160,7 +160,7 @@ export async function onRequest(context) {
     return json({ error: "Body JSON inválido." }, 400);
   }
 
-  const { title_es, excerpt_es, content_es } = body;
+  const { title_es, excerpt_es, content_es, keywords_es } = body;
 
   if (!title_es || !content_es) {
     return json({
@@ -171,13 +171,20 @@ export async function onRequest(context) {
 
   try {
     // Título y excerpt en paralelo (son cortos) + contenido (puede ser largo)
-    const [title_en, excerpt_en, content_en] = await Promise.all([
-      callGroq(apiKey, SYSTEM_TEXT, `Traduce este título académico al inglés:\n\n${title_es}`),
-      excerpt_es
-        ? callGroq(apiKey, SYSTEM_TEXT, `Traduce este resumen académico al inglés:\n\n${excerpt_es}`)
-        : Promise.resolve(""),
-      translateHtmlContent(apiKey, content_es),
-    ]);
+    const { title_es, excerpt_es, content_es, keywords_es } = body;
+
+const [title_en, excerpt_en, content_en, keywords_en] = await Promise.all([
+  callGroq(apiKey, SYSTEM_TEXT, `Traduce este título académico al inglés:\n\n${title_es}`),
+  excerpt_es
+    ? callGroq(apiKey, SYSTEM_TEXT, `Traduce este resumen académico al inglés:\n\n${excerpt_es}`)
+    : Promise.resolve(""),
+  translateHtmlContent(apiKey, content_es),
+  keywords_es
+    ? callGroq(apiKey, SYSTEM_TEXT, `Traduce estas palabras clave al inglés (mantén el formato de lista separada por comas):\n\n${keywords_es}`)
+    : Promise.resolve(""),
+]);
+
+return json({ success: true, title_en, excerpt_en, content_en, keywords_en });
 
     return json({ success: true, title_en, excerpt_en, content_en });
 

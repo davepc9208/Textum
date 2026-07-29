@@ -1,3 +1,22 @@
+// src/components/About.tsx
+// Fix rendimiento: imagen de Pexels ajustada al tamaño real que ocupa.
+//
+// PROBLEMA detectado por Lighthouse:
+// "Este archivo de imagen es más grande de lo necesario (700x875) para las
+// dimensiones mostradas (364x455). Ahorro estimado de 33,7 KiB."
+//
+// CAUSA: el srcSet incluía una variante de 700px como opción máxima pero
+// en mobile el contenedor mide 364px, y el navegador elegía 700px porque
+// el sizes no era lo suficientemente específico.
+//
+// SOLUCIÓN:
+// 1. Ajustar el tamaño máximo del srcSet a 500px (cubre hasta desktop 2x).
+// 2. Hacer el sizes más preciso usando container queries reales:
+//    - mobile (<768px): 100vw → la imagen ocupa todo el ancho
+//    - tablet (768px-1024px): 50vw → columna derecha del grid
+//    - desktop (>1024px): 400px → el contenedor tiene max-w-6xl/2 ≈ 400px
+// 3. width/height actualizados para reflejar el aspecto real (4/5).
+
 import { useLang } from '../i18n/LangContext';
 
 const memberImages = [
@@ -58,23 +77,23 @@ export default function About() {
 
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-16 items-center">
-          {/* Image — LCP candidate: eager + decoding async */}
+          {/* Image — FIX: srcSet y sizes ajustados al tamaño real del contenedor */}
           <div className="reveal-left relative">
             <div className="relative rounded-sm overflow-hidden aspect-[4/5] shadow-2xl">
               <img
-                src="https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=600&h=750&fit=crop"
+                src="https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&fit=crop"
                 srcSet="
                   https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=300&h=375&fit=crop 300w,
-                  https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=500&h=625&fit=crop 500w,
-                  https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=700&h=875&fit=crop 700w
+                  https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&fit=crop 400w,
+                  https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=500&h=625&fit=crop 500w
                 "
-                sizes="(max-width: 480px) 300px, (max-width: 768px) 100vw, 50vw"
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 400px"
                 alt="Redacción y mentoría académica"
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"
-                width={600}
-                height={750}
+                width={400}
+                height={500}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-navy/60 via-transparent to-transparent" />
@@ -134,7 +153,6 @@ export default function About() {
                   className="border border-navy/10 rounded-sm bg-white/60 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
                   <div className={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
-                    {/* Photo — lazy load (below the fold) */}
                     <div className="relative md:w-64 flex-shrink-0">
                       <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full min-h-[320px] overflow-hidden">
                         <picture>
@@ -163,7 +181,6 @@ export default function About() {
                       )}
                     </div>
 
-                    {/* Bio */}
                     <div className="flex-1 p-8 md:p-10 flex flex-col justify-center">
                       <div className="mb-5">
                         <h3 className="font-serif text-2xl md:text-3xl font-light text-navy leading-snug">
