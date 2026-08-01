@@ -27,7 +27,6 @@ import js from 'highlight.js/lib/languages/javascript';
 import python from 'highlight.js/lib/languages/python';
 import xml from 'highlight.js/lib/languages/xml';
 import css from 'highlight.js/lib/languages/css';
-import 'highlight.js/styles/atom-one-dark.css';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import {
   Bold, Italic, Heading1, Heading2, Heading3, Heading4,
@@ -266,6 +265,12 @@ export default function RichTextEditor({
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showImageUrlInput, setShowImageUrlInput] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  // FIX: cargar CSS de syntax highlighting dinámicamente
+  // para evitar que bloquee el render en la homepage
+  useEffect(() => {
+    import('highlight.js/styles/atom-one-dark.css');
+  }, []);
 
   const editor = useEditor({
     extensions: [

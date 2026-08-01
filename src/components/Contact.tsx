@@ -7,6 +7,7 @@
 //         - Tarjeta de confirmación con animación
 //         - Formulario se desvanece ligeramente
 //         - Sensación similar a Stripe, Apple o Notion
+// Fix 3: Fondo creamy para contrastar con Testimonios (navy)
 
 import { useState, useEffect } from 'react';
 import { Mail, Globe, Send, CheckCircle, AlertCircle, X } from 'lucide-react';
@@ -146,14 +147,14 @@ export default function Contact() {
   };
 
   const inputCls =
-    'w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all';
+    'w-full bg-navy/5 border border-navy/10 rounded-sm px-4 py-3 text-navy text-sm placeholder-navy/25 focus:outline-none focus:border-gold/50 transition-all';
   const selectCls =
-    'w-full border border-white/10 rounded-sm px-4 py-3 text-white text-sm focus:outline-none focus:border-gold/50 transition-all appearance-none cursor-pointer';
+    'w-full border border-navy/10 rounded-sm px-4 py-3 text-navy text-sm focus:outline-none focus:border-gold/50 transition-all appearance-none cursor-pointer';
   const labelCls =
-    'block text-white/60 text-[10px] tracking-[0.2em] mb-2 uppercase';
+    'block text-navy/60 text-[10px] tracking-[0.2em] mb-2 uppercase';
 
   return (
-    <section id="contacto" className="section-navy py-28 px-6 relative overflow-hidden">
+    <section id="contacto" className="bg-cream py-28 px-6 relative overflow-hidden">
       <div className="orb orb-gold w-[500px] h-[500px] top-[-100px] left-[-100px] opacity-10" />
       <div className="orb orb-gold w-[300px] h-[300px] bottom-0 right-0 opacity-8" style={{ animationDelay: '2s' }} />
 
@@ -162,10 +163,10 @@ export default function Contact() {
         {/* Header */}
         <div className="text-center mb-16 reveal">
           <p className="text-xs tracking-[0.3em] text-gold uppercase mb-4">{c.label}</p>
-          <h2 className="font-serif text-5xl md:text-6xl font-light text-white leading-tight">
+          <h2 className="font-serif text-5xl md:text-6xl font-light text-navy leading-tight">
             {c.title1} <em className="not-italic text-gold">{c.title2}</em>
           </h2>
-          <p className="text-white/50 text-sm mt-4 max-w-md mx-auto font-light">{c.subtitle}</p>
+          <p className="text-navy/50 text-sm mt-4 max-w-md mx-auto font-light">{c.subtitle}</p>
         </div>
 
         <div className="grid lg:grid-cols-5 gap-12 items-start">
@@ -173,7 +174,7 @@ export default function Contact() {
           {/* Columna izquierda */}
           <div className="lg:col-span-2 reveal-left space-y-8">
             <div>
-              <h3 className="font-serif text-2xl text-white mb-6">{c.directTitle}</h3>
+              <h3 className="font-serif text-2xl text-navy mb-6">{c.directTitle}</h3>
               <div className="space-y-4">
                 {[
                   { icon: Mail,  label: c.emailLabel, value: 'contacto@mentoriatextum.com', href: 'mailto:contacto@mentoriatextum.com' },
@@ -185,8 +186,8 @@ export default function Contact() {
                         <Icon size={18} className="text-gold" />
                       </div>
                       <div>
-                        <p className="text-white/40 text-xs tracking-widest uppercase">{item.label}</p>
-                        <p className="text-white/80 text-sm group-hover:text-gold transition-colors">{item.value}</p>
+                        <p className="text-navy/40 text-xs tracking-widest uppercase">{item.label}</p>
+                        <p className="text-navy/80 text-sm group-hover:text-gold transition-colors">{item.value}</p>
                       </div>
                     </a>
                   );
@@ -205,8 +206,8 @@ export default function Contact() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-white/40 text-xs tracking-widest uppercase">WhatsApp</p>
-                    <p className="text-white/80 text-sm group-hover:text-[#25D366] transition-colors">+34 614 63 84 06</p>
+                    <p className="text-navy/40 text-xs tracking-widest uppercase">WhatsApp</p>
+                    <p className="text-navy/80 text-sm group-hover:text-[#25D366] transition-colors">+34 614 63 84 06</p>
                   </div>
                 </a>
               </div>
@@ -220,21 +221,21 @@ export default function Contact() {
                 decoding="async"
                 className="w-full h-full object-cover opacity-60"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-cream via-cream/30 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
-                <p className="font-serif italic text-white/90 text-base">{c.imgQuote}</p>
+                <p className="font-serif italic text-navy/90 text-base">{c.imgQuote}</p>
               </div>
             </div>
           </div>
 
           {/* Formulario */}
           <div className="lg:col-span-3 reveal-right">
-            <div className="glass-navy rounded-sm p-8 md:p-10 shadow-2xl relative overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-sm border border-gold/20 rounded-sm p-8 md:p-10 shadow-2xl relative overflow-hidden">
               
               {/* ✨ Overlay de éxito - aparece cuando submitted = true */}
               {submitted && (
                 <div 
-                  className="absolute inset-0 z-20 flex items-center justify-center bg-navy/60 backdrop-blur-sm animate-[fadeIn_0.6s_ease]"
+                  className="absolute inset-0 z-20 flex items-center justify-center bg-cream/90 backdrop-blur-sm animate-[fadeIn_0.6s_ease]"
                   style={{ animation: 'fadeIn 0.6s ease' }}
                 >
                   <div className="text-center max-w-md mx-6 animate-[slideUp_0.7s_cubic-bezier(0.34,1.56,0.64,1)]">
@@ -243,15 +244,15 @@ export default function Contact() {
                       <CheckCircle size={48} className="text-gold" />
                     </div>
                     
-                    <h3 className="font-serif text-2xl text-white mb-2">
+                    <h3 className="font-serif text-2xl text-navy mb-2">
                       ✓ Hemos recibido correctamente tu solicitud.
                     </h3>
                     
-                    <p className="text-white/60 text-sm leading-relaxed mt-4">
+                    <p className="text-navy/60 text-sm leading-relaxed mt-4">
                       Uno de nuestros asesores contactará contigo en menos de 24 horas.
                     </p>
                     
-                    <p className="text-white/40 text-xs mt-6 font-light border-t border-white/10 pt-6">
+                    <p className="text-navy/40 text-xs mt-6 font-light border-t border-navy/10 pt-6">
                       Mientras tanto puedes seguir explorando nuestros programas.
                     </p>
 
@@ -261,7 +262,7 @@ export default function Contact() {
                         setSubmitted(false);
                         setForm(EMPTY_FORM);
                       }}
-                      className="mt-6 text-white/40 hover:text-white text-xs tracking-[0.15em] transition-colors border border-white/10 hover:border-white/30 px-5 py-2 rounded-sm"
+                      className="mt-6 text-navy/40 hover:text-navy text-xs tracking-[0.15em] transition-colors border border-navy/10 hover:border-navy/30 px-5 py-2 rounded-sm"
                     >
                       ENVIAR OTRA SOLICITUD
                     </button>
@@ -293,9 +294,9 @@ export default function Contact() {
                   </div>
 
                   {/* Título del formulario */}
-                  <div className="pb-2 border-b border-white/8">
-                    <h3 className="font-serif text-xl text-white mb-1">{f.formTitle}</h3>
-                    <p className="text-white/50 text-xs font-light leading-relaxed">{f.formIntro}</p>
+                  <div className="pb-2 border-b border-navy/8">
+                    <h3 className="font-serif text-xl text-navy mb-1">{f.formTitle}</h3>
+                    <p className="text-navy/50 text-xs font-light leading-relaxed">{f.formIntro}</p>
                   </div>
 
                   {/* Fila 1: Nombre + Email */}
@@ -337,11 +338,11 @@ export default function Contact() {
                         id="academicLevel-select" name="academicLevel"
                         value={form.academicLevel} onChange={handleChange}
                         className={selectCls}
-                        style={{ background: 'rgba(13,31,60,0.85)' }}
+                        style={{ background: 'rgba(247, 242, 235, 0.85)' }}
                       >
-                        <option value="" className="bg-navy">{f.academicLevelPlaceholder}</option>
+                        <option value="" className="bg-cream">{f.academicLevelPlaceholder}</option>
                         {f.academicLevelOpts.map(o => (
-                          <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
+                          <option key={o.value} value={o.value} className="bg-cream">{o.label}</option>
                         ))}
                       </select>
                     </div>
@@ -355,11 +356,11 @@ export default function Contact() {
                         id="projectType-select" name="projectType"
                         value={form.projectType} onChange={handleChange}
                         className={selectCls}
-                        style={{ background: 'rgba(13,31,60,0.85)' }}
+                        style={{ background: 'rgba(247, 242, 235, 0.85)' }}
                       >
-                        <option value="" className="bg-navy">{f.projectTypePlaceholder}</option>
+                        <option value="" className="bg-cream">{f.projectTypePlaceholder}</option>
                         {f.projectTypeOpts.map(o => (
-                          <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
+                          <option key={o.value} value={o.value} className="bg-cream">{o.label}</option>
                         ))}
                       </select>
                     </div>
@@ -369,11 +370,11 @@ export default function Contact() {
                         id="manuscriptStage-select" name="manuscriptStage"
                         value={form.manuscriptStage} onChange={handleChange}
                         className={selectCls}
-                        style={{ background: 'rgba(13,31,60,0.85)' }}
+                        style={{ background: 'rgba(247, 242, 235, 0.85)' }}
                       >
-                        <option value="" className="bg-navy">{f.manuscriptStagePlaceholder}</option>
+                        <option value="" className="bg-cream">{f.manuscriptStagePlaceholder}</option>
                         {f.manuscriptStageOpts.map(o => (
-                          <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
+                          <option key={o.value} value={o.value} className="bg-cream">{o.label}</option>
                         ))}
                       </select>
                     </div>
@@ -386,11 +387,11 @@ export default function Contact() {
                       id="service-select" name="service"
                       value={form.service} onChange={handleChange}
                       className={selectCls}
-                      style={{ background: 'rgba(13,31,60,0.85)' }}
+                      style={{ background: 'rgba(247, 242, 235, 0.85)' }}
                     >
-                      <option value="" className="bg-navy">{f.servicePlaceholder}</option>
+                      <option value="" className="bg-cream">{f.servicePlaceholder}</option>
                       {f.serviceOpts.map(o => (
-                        <option key={o.value} value={o.value} className="bg-navy">{o.label}</option>
+                        <option key={o.value} value={o.value} className="bg-cream">{o.label}</option>
                       ))}
                     </select>
                   </div>
@@ -402,12 +403,12 @@ export default function Contact() {
                       name="message" value={form.message}
                       onChange={handleChange} required rows={4}
                       placeholder={f.messagePlaceholder}
-                      className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all resize-none"
+                      className="w-full bg-navy/5 border border-navy/10 rounded-sm px-4 py-3 text-navy text-sm placeholder-navy/25 focus:outline-none focus:border-gold/50 transition-all resize-none"
                     />
                   </div>
 
                   {/* Nota legal */}
-                  <p className="text-white/35 text-[10px] leading-relaxed font-light">{f.legalNote}</p>
+                  <p className="text-navy/35 text-[10px] leading-relaxed font-light">{f.legalNote}</p>
 
                   {/* ✨ Botón con estado premium */}
                   <button

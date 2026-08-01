@@ -8,6 +8,7 @@
 // 3. touch-manipulation en todos los elementos interactivos elimina el
 //    delay de 300ms del doble-tap-zoom en Android/iOS.
 // 4. block py-2.5 en todos los links amplía el área táctil a ~44px mínimo.
+// 5. Añadido enlace a Testimonios en el footer.
 
 import { Mail, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -42,9 +43,10 @@ export default function Footer() {
     { label: t.nav.inicio,                                   action: () => goToSection('inicio') },
     { label: lang === 'es' ? 'Filosofía' : 'Philosophy',    action: () => goToSection('filosofia') },
     { label: lang === 'es' ? 'Equipo' : 'Team',             action: () => goToSection('sobre-mi') },
-    { label: t.nav.servicios,                                action: () => goToSection('servicios') },
-    { label: t.nav.blog,                                     action: () => navigate('/blog') },
     { label: t.nav.valores,                                  action: () => goToSection('valores') },
+    { label: t.nav.servicios,                                action: () => goToSection('servicios') },
+    { label: lang === 'es' ? 'Testimonios' : 'Testimonials', action: () => goToSection('testimonios') },
+    { label: t.nav.blog,                                     action: () => navigate('/blog') },
     { label: lang === 'es' ? 'Colecciones' : 'Collections', action: () => navigate('/colecciones') },
     { label: t.nav.contacto,                                 action: () => goToSection('contacto') },
   ];

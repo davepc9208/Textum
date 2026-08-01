@@ -2,6 +2,7 @@
 // Fix 6 (accesibilidad): toggle idioma con aria-label dinámico que indica
 // el idioma activo y el idioma al que se cambiará. Los spans ES/EN tienen
 // aria-current="true" para el idioma activo.
+// Fix 7: Añadido enlace a Testimonios en el navbar
 
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
@@ -16,21 +17,20 @@ export default function Navbar() {
   const location                = useLocation();
   const isHome                  = location.pathname === '/';
 
-  // Orden EXACTO alineado con el Footer
+  // Orden EXACTO alineado con el Footer (incluye Testimonios)
   const anchorLinks = [
     { href: '#inicio',           label: t.nav.inicio },
     { href: '#filosofia',        label: lang === 'es' ? 'Filosofía' : 'Philosophy' },
     { href: '#sobre-mi',         label: lang === 'es' ? 'Equipo' : 'Team' },
+    { href: '#valores',          label: t.nav.valores },
     { href: '#servicios',        label: t.nav.servicios },
-    
-    
+    { href: '#testimonios',      label: lang === 'es' ? 'Testimonios' : 'Testimonials' },
   ];
 
   // Elementos de navegación COMPLETOS en el orden del footer
   const navItems = [
     ...anchorLinks,
     { type: 'blog', label: t.nav.blog },
-    { href: '#valores',          label: t.nav.valores },
     { type: 'colecciones', label: lang === 'es' ? 'Colecciones' : 'Collections' },
     { href: '#contacto',         label: t.nav.contacto },
   ];
@@ -43,7 +43,7 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!isHome) return;
-    const ids = ['inicio', 'filosofia', 'sobre-mi', 'servicios', 'valores', 'contacto'];
+    const ids = ['inicio', 'filosofia', 'sobre-mi', 'servicios', 'valores', 'testimonios', 'contacto'];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => { if (e.isIntersecting) setActive(e.target.id); });

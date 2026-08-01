@@ -1,44 +1,44 @@
 // src/App.tsx
-// v2 — fix crítico de rendimiento:
+// v5 — Testimonios añadidos entre Services y Contact
 //
-// CAMBIO PRINCIPAL: BlogPage y PostPage ahora son lazy imports.
-// Antes eran imports estáticos, lo que hacía que Vite incluyera
-// supabase en el bundle inicial aunque la homepage no lo necesite.
-// Con lazy(), supabase solo se descarga cuando el usuario navega a /blog.
-//
-// IMPACTO ESPERADO: reducción de ~55 KB en el bundle inicial (chunk supabase).
-// Lighthouse debería dejar de marcar supabase como "JS no usado".
+// ORDEN FINAL Y FONDOS:
+// Hero             (navy gradient)
+// Filosofia        (cream)
+// About            (cream)
+// AcademicIntegrity (cream)
+// WhyTextum        (navy)
+// ColeccionesTextum (cream)
+// BlogPreview      (navy)
+// Values           (cream)
+// FluxMethodSection (navy)
+// Services         (cream)
+// Testimonios      (navy)   ← nuevo — se fusiona visualmente con Contact
+// Contact          (navy)   ← mismo fondo, separados por divisor interno
 
 import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Navbar            from './components/Navbar';
-import Hero              from './components/Hero';
-import Filosofia         from './components/Filosofia';
-import About             from './components/About';
-import AcademicIntegrity from './components/AcademicIntegrity';
-import Services          from './components/Services';
-import WhyTextum         from './components/WhyTextum';
-import ColeccionesTextum from './components/ColeccionesTextum';
-import BlogPreview       from './components/BlogPreview';
-import Values            from './components/Values';
-import Contact           from './components/Contact';
-import Footer            from './components/Footer';
-import StickyDiagnosis   from './components/StickyDiagnosis';
-import BackToTop         from './components/BackToTop';
-import { useScrollReveal } from './hooks/useScrollReveal';
+import Navbar               from './components/Navbar';
+import Hero                 from './components/Hero';
+import Filosofia            from './components/Filosofia';
+import About                from './components/About';
+import AcademicIntegrity    from './components/AcademicIntegrity';
+import WhyTextum            from './components/WhyTextum';
+import ColeccionesTextum    from './components/ColeccionesTextum';
+import BlogPreview          from './components/BlogPreview';
+import Values               from './components/Values';
+import FluxMethodSection    from './components/FluxMethodSection';
+import Services             from './components/Services';
+import Testimonios          from './components/Testimonios';
+import Contact              from './components/Contact';
+import Footer               from './components/Footer';
+import StickyDiagnosis      from './components/StickyDiagnosis';
+import BackToTop            from './components/BackToTop';
+import { useScrollReveal }  from './hooks/useScrollReveal';
 import { useSEO, injectSchema, removeSchema } from './hooks/useSEO';
-import { useLang } from './i18n/LangContext';
+import { useLang }          from './i18n/LangContext';
 
-// CAMBIO: PricesTextum eliminado del import — ver nota al pie de HomePage.
-// Si decides mantenerlo, descomenta la línea y restáuralo en HomePage.
-// import PricesTextum from './components/PricesTextum';
-
-// ── Lazy imports ─────────────────────────────────────────────────────────────
-// NUEVO: BlogPage y PostPage ahora son lazy (antes eran estáticos).
-// Esto evita que el chunk de supabase se incluya en el bundle inicial.
-const BlogPage   = lazy(() => import('./pages/BlogPage'));
-const PostPage   = lazy(() => import('./pages/PostPage'));
-
+const BlogPage           = lazy(() => import('./pages/BlogPage'));
+const PostPage           = lazy(() => import('./pages/PostPage'));
 const AdminPage          = lazy(() => import('./pages/AdminPage'));
 const ColeccionesPage    = lazy(() => import('./pages/ColeccionesPage'));
 const ColeccionListPage  = lazy(() => import('./pages/ColeccionListPage'));
@@ -65,29 +65,11 @@ const ORG_SCHEMA = {
   description: 'Programas de mentoría académica internacional para titulación, publicación científica y defensa académica con rigor metodológico y uso ético de IA.',
   areaServed: ['ES', 'EC', 'PE', 'MX', 'CO', 'AR', 'GB', 'DE', 'FR', 'IT'],
   founder: [
-    {
-      '@type': 'Person',
-      name: 'Vilma María Pérez Viñas',
-      jobTitle: 'Doctora en Ciencias Pedagógicas',
-      sameAs: 'https://orcid.org/0000-0003-3041-096X',
-    },
-    {
-      '@type': 'Person',
-      name: 'Yadyra de la Caridad Piñera Concepción',
-      jobTitle: 'Doctora en Ciencias Pedagógicas',
-      sameAs: 'https://orcid.org/0000-0002-8947-1364',
-    },
+    { '@type': 'Person', name: 'Vilma María Pérez Viñas', jobTitle: 'Doctora en Ciencias Pedagógicas', sameAs: 'https://orcid.org/0000-0003-3041-096X' },
+    { '@type': 'Person', name: 'Yadyra de la Caridad Piñera Concepción', jobTitle: 'Doctora en Ciencias Pedagógicas', sameAs: 'https://orcid.org/0000-0002-8947-1364' },
   ],
-  contactPoint: {
-    '@type': 'ContactPoint',
-    email: 'contacto@mentoriatextum.com',
-    contactType: 'customer support',
-    availableLanguage: ['Spanish', 'English'],
-  },
-  sameAs: [
-    'https://orcid.org/0000-0003-3041-096X',
-    'https://orcid.org/0000-0002-8947-1364',
-  ],
+  contactPoint: { '@type': 'ContactPoint', email: 'contacto@mentoriatextum.com', contactType: 'customer support', availableLanguage: ['Spanish', 'English'] },
+  sameAs: ['https://orcid.org/0000-0003-3041-096X', 'https://orcid.org/0000-0002-8947-1364'],
 };
 
 const SERVICES_SCHEMA = {
@@ -111,11 +93,7 @@ const BLOG_SCHEMA = {
   name: 'Blog TEXTUM — Mentoría Académica',
   url: 'https://mentoriatextum.com/blog',
   description: 'Artículos y guías académicas sobre investigación, redacción científica y defensa oral.',
-  publisher: {
-    '@type': 'Organization',
-    name: 'TEXTUM — Mentoría Académica',
-    logo: { '@type': 'ImageObject', url: 'https://mentoriatextum.com/favicon.svg' },
-  },
+  publisher: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica', logo: { '@type': 'ImageObject', url: 'https://mentoriatextum.com/favicon.svg' } },
 };
 
 function HomePage() {
@@ -137,10 +115,7 @@ function HomePage() {
   useEffect(() => {
     injectSchema(ORG_SCHEMA, 'schema-org');
     injectSchema(SERVICES_SCHEMA, 'schema-services');
-    return () => {
-      removeSchema('schema-org');
-      removeSchema('schema-services');
-    };
+    return () => { removeSchema('schema-org'); removeSchema('schema-services'); };
   }, []);
 
   return (
@@ -151,18 +126,13 @@ function HomePage() {
         <Filosofia />
         <About />
         <AcademicIntegrity />
-        <Services />
-        {/*
-          PricesTextum eliminado de la homepage.
-          MOTIVO: mostrar precios dos veces (aquí + en Services) hace que el precio
-          sea el protagonista visual antes de que el visitante haya decidido si confía.
-          Los precios ya están en la sección Services en los tiers de cada programa.
-          Si quieres restaurarlo, añade: <PricesTextum /> aquí y descomenta el import.
-        */}
         <WhyTextum />
         <ColeccionesTextum />
         <BlogPreview />
         <Values />
+        <FluxMethodSection />
+        <Services />
+        <Testimonios />
         <Contact />
       </main>
       <Footer />
@@ -172,8 +142,6 @@ function HomePage() {
   );
 }
 
-// NUEVO: BlogListPage y PostPage ahora usan Suspense individualmente
-// para que el spinner aparezca solo en el área de contenido.
 function BlogListPage() {
   const { lang } = useLang();
 
@@ -206,31 +174,11 @@ export default function App() {
     <Routes>
       <Route path="/"    element={<HomePage />} />
       <Route path="/blog" element={<BlogListPage />} />
-      <Route path="/blog/:slug" element={
-        <Suspense fallback={<PageLoader />}>
-          <PostPage />
-        </Suspense>
-      } />
-      <Route path="/colecciones" element={
-        <Suspense fallback={<PageLoader />}>
-          <ColeccionesPage />
-        </Suspense>
-      } />
-      <Route path="/colecciones/:tipo" element={
-        <Suspense fallback={<PageLoader />}>
-          <ColeccionListPage />
-        </Suspense>
-      } />
-      <Route path="/colecciones/:tipo/:slug" element={
-        <Suspense fallback={<PageLoader />}>
-          <ColeccionPiecePage />
-        </Suspense>
-      } />
-      <Route path="/textum-redaccion-2026" element={
-        <Suspense fallback={<PageLoader />}>
-          <AdminPage />
-        </Suspense>
-      } />
+      <Route path="/blog/:slug" element={<Suspense fallback={<PageLoader />}><PostPage /></Suspense>} />
+      <Route path="/colecciones" element={<Suspense fallback={<PageLoader />}><ColeccionesPage /></Suspense>} />
+      <Route path="/colecciones/:tipo" element={<Suspense fallback={<PageLoader />}><ColeccionListPage /></Suspense>} />
+      <Route path="/colecciones/:tipo/:slug" element={<Suspense fallback={<PageLoader />}><ColeccionPiecePage /></Suspense>} />
+      <Route path="/textum-redaccion-2026" element={<Suspense fallback={<PageLoader />}><AdminPage /></Suspense>} />
     </Routes>
   );
 }
