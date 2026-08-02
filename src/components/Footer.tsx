@@ -1,15 +1,4 @@
 // src/components/Footer.tsx
-//
-// FIXES ANDROID:
-// 1. href="/#seccion" reemplazado por useNavigate + scrollIntoView.
-//    En Android lento, href="/#seccion" navega a / y pierde el hash.
-// 2. <Link to="/blog"> reemplazado por button + navigate() para garantizar
-//    que React Router maneje la navegación aunque la hidratación sea tardía.
-// 3. touch-manipulation en todos los elementos interactivos elimina el
-//    delay de 300ms del doble-tap-zoom en Android/iOS.
-// 4. block py-2.5 en todos los links amplía el área táctil a ~44px mínimo.
-// 5. Añadido enlace a Testimonios en el footer.
-
 import { Mail, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLang } from '../i18n/LangContext';
@@ -25,9 +14,6 @@ export default function Footer() {
   const f = t.footer;
   const navigate = useNavigate();
 
-  // Navega a una sección del homepage de forma confiable en Android.
-  // Si ya estamos en /, hace scroll directo.
-  // Si estamos en otra ruta, navega a / y espera a que el DOM esté listo.
   const goToSection = (sectionId: string) => {
     if (window.location.pathname === '/') {
       document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -40,15 +26,15 @@ export default function Footer() {
   };
 
   const navLinks = [
-    { label: t.nav.inicio,                                   action: () => goToSection('inicio') },
-    { label: lang === 'es' ? 'Filosofía' : 'Philosophy',    action: () => goToSection('filosofia') },
-    { label: lang === 'es' ? 'Equipo' : 'Team',             action: () => goToSection('sobre-mi') },
-    { label: t.nav.valores,                                  action: () => goToSection('valores') },
-    { label: t.nav.servicios,                                action: () => goToSection('servicios') },
-    { label: lang === 'es' ? 'Testimonios' : 'Testimonials', action: () => goToSection('testimonios') },
-    { label: t.nav.blog,                                     action: () => navigate('/blog') },
-    { label: lang === 'es' ? 'Colecciones' : 'Collections', action: () => navigate('/colecciones') },
-    { label: t.nav.contacto,                                 action: () => goToSection('contacto') },
+    { label: t.nav.inicio,                                        action: () => goToSection('inicio') },
+    { label: lang === 'es' ? 'Filosofía'    : 'Philosophy',       action: () => goToSection('filosofia') },
+    { label: lang === 'es' ? 'Equipo'       : 'Team',             action: () => goToSection('sobre-mi') },
+    { label: t.nav.valores,                                        action: () => goToSection('valores') },
+    { label: t.nav.servicios,                                      action: () => goToSection('servicios') },
+    { label: t.nav.blog,                                           action: () => navigate('/blog') },
+    { label: lang === 'es' ? 'Colecciones'  : 'Collections',      action: () => navigate('/colecciones') },
+    { label: lang === 'es' ? 'Testimonios'  : 'Testimonials',     action: () => goToSection('testimonios') },
+    { label: t.nav.contacto,                                       action: () => goToSection('contacto') },
   ];
 
   return (
@@ -74,23 +60,14 @@ export default function Footer() {
             <p className="text-xs leading-relaxed text-white/40 font-light max-w-xs">{f.desc}</p>
           </div>
 
-          {/* Nav — todos los links son botones para máxima fiabilidad en Android */}
+          {/* Nav */}
           <div>
             <h4 className="text-xs tracking-[0.25em] text-gold/70 uppercase mb-5">{f.navTitle}</h4>
             <ul className="space-y-0">
               {navLinks.map((l) => (
                 <li key={l.label}>
-                  <button
-                    type="button"
-                    onClick={l.action}
-                    className="
-                      block w-full text-left py-2.5
-                      text-sm text-white/50
-                      hover:text-gold active:text-gold
-                      transition-colors duration-200 tracking-wide
-                      touch-manipulation
-                    "
-                  >
+                  <button type="button" onClick={l.action}
+                    className="block w-full text-left py-2.5 text-sm text-white/50 hover:text-gold active:text-gold transition-colors duration-200 tracking-wide touch-manipulation">
                     {l.label}
                   </button>
                 </li>
@@ -102,30 +79,14 @@ export default function Footer() {
           <div>
             <h4 className="text-xs tracking-[0.25em] text-gold/70 uppercase mb-5">{f.contactTitle}</h4>
             <div className="space-y-0">
-              <a
-                href="mailto:contacto@mentoriatextum.com"
-                className="
-                  flex items-center gap-3 py-2.5
-                  text-sm text-white/50
-                  hover:text-gold active:text-gold
-                  transition-colors group touch-manipulation
-                "
-              >
+              <a href="mailto:contacto@mentoriatextum.com"
+                className="flex items-center gap-3 py-2.5 text-sm text-white/50 hover:text-gold active:text-gold transition-colors group touch-manipulation">
                 <Mail size={15} className="text-gold/50 group-hover:text-gold transition-colors flex-shrink-0" />
                 contacto@mentoriatextum.com
               </a>
-
-              <a
-                href="https://wa.me/34614638406?text=Hola%2C%20me%20gustar%C3%ADa%20solicitar%20un%20diagn%C3%B3stico%20acad%C3%A9mico%20gratuito%20con%20TEXTUM."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="
-                  flex items-center gap-3 py-2.5
-                  text-sm text-white/50
-                  hover:text-[#25D366] active:text-[#25D366]
-                  transition-colors group touch-manipulation
-                "
-              >
+              <a href="https://wa.me/34614638406?text=Hola%2C%20me%20gustar%C3%ADa%20solicitar%20un%20diagn%C3%B3stico%20acad%C3%A9mico%20gratuito%20con%20TEXTUM."
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 py-2.5 text-sm text-white/50 hover:text-[#25D366] active:text-[#25D366] transition-colors group touch-manipulation">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="#25D366" className="flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" aria-hidden="true">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                   <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.533 5.847L.054 23.446a.75.75 0 0 0 .916.916l5.628-1.484A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 0 1-4.953-1.355l-.355-.21-3.685.97.985-3.6-.23-.37A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
@@ -136,19 +97,8 @@ export default function Footer() {
                 {socialLinks.map((s) => {
                   const Icon = s.icon;
                   return (
-                    <a
-                      key={s.label}
-                      href={s.href}
-                      aria-label={s.label}
-                      className="
-                        w-11 h-11
-                        rounded-sm bg-white/5 border border-white/10
-                        flex items-center justify-center
-                        hover:bg-gold/15 hover:border-gold/30
-                        active:bg-gold/20
-                        transition-all group touch-manipulation
-                      "
-                    >
+                    <a key={s.label} href={s.href} aria-label={s.label}
+                      className="w-11 h-11 rounded-sm bg-white/5 border border-white/10 flex items-center justify-center hover:bg-gold/15 hover:border-gold/30 active:bg-gold/20 transition-all group touch-manipulation">
                       <Icon size={15} className="text-white/50 group-hover:text-gold transition-colors" />
                     </a>
                   );

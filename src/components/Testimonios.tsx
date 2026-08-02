@@ -1,23 +1,11 @@
 // src/components/Testimonios.tsx
-// Sección de testimonios con carrusel automático + navegación manual.
-// Se coloca justo antes de Contact en App.tsx.
-//
-// DISEÑO:
-// - Fondo navy para contrastar con Services (cream) y fusionarse con Contact (navy)
-// - Avatar con iniciales — mismo formato para los tres (sin foto, decisión deliberada)
-// - Carrusel auto-avanza cada 6s, se pausa al hover
-// - Enlace a publicación verificable en cada testimonio
-// - Indicadores de posición (dots) en la parte inferior
-// - Transición suave fade+slide
-// - Barra de progreso que muestra el tiempo restante para el cambio
+// v2 — barra de progreso por tarjeta + fondo navy (Contact pasa a cream)
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLang } from '../i18n/LangContext';
 import { ExternalLink } from 'lucide-react';
 
 type Testimonio = {
-  initials: string;
-  color: string; // color del avatar
   name: string;
   institution: string;
   country: string;
@@ -30,8 +18,6 @@ type Testimonio = {
 
 const TESTIMONIOS: Testimonio[] = [
   {
-    initials: 'ZT',
-    color: '#c9a84c', // gold
     name: 'Zulmi Consuelo Tenorio Polo',
     institution: 'Universidad César Vallejo',
     country: 'Perú',
@@ -45,8 +31,6 @@ const TESTIMONIOS: Testimonio[] = [
     ],
   },
   {
-    initials: 'XK',
-    color: '#1a3160', // navy light
     name: 'Xu Kong',
     institution: 'Universidad de Linyi',
     country: 'China',
@@ -59,11 +43,9 @@ const TESTIMONIOS: Testimonio[] = [
     ],
   },
   {
-    initials: 'OS',
-    color: '#c9a84c', // gold
     name: 'Omar Silva Ramos',
     institution: 'Doctor en Ciencias Pedagógicas',
-    country: 'Cuba',
+    country: 'Latinoamérica',
     service_es: 'Publicación científica',
     service_en: 'Scientific publication',
     quote_es: 'Tenía el borrador pero necesitaba convertirlo en un manuscrito con el rigor que exigen las revistas científicas. TEXTUM me acompañó en todo el proceso: estructura, argumentación, estilo académico y criterios editoriales. Logré publicar y adquirí herramientas que aplicaré en mis futuras investigaciones.',
@@ -74,31 +56,37 @@ const TESTIMONIOS: Testimonio[] = [
   },
 ];
 
-function Avatar({ initials, color }: { initials: string; color: string }) {
+const INTERVAL_MS = 6000;
+
+
+function QuoteIcon() {
   return (
-    <div
-      className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-gold/30 shadow-lg"
-      style={{ backgroundColor: color }}
-      aria-hidden="true"
-    >
-      <span className="font-serif text-lg font-semibold text-white tracking-wide">
-        {initials}
-      </span>
-    </div>
+    <svg width="32" height="24" viewBox="0 0 32 24" fill="currentColor" className="text-gold/25 mb-4" aria-hidden="true">
+      <path d="M0 24V14.4C0 6.4 5.2 1.6 15.6 0l1.6 3.2C11.2 4.4 8 7.2 7.2 12H12V24H0zm20 0V14.4C20 6.4 25.2 1.6 35.6 0L37.2 3.2C31.2 4.4 28 7.2 27.2 12H32V24H20z" />
+    </svg>
   );
 }
 
-// Icono de comillas tipográficas
-function QuoteIcon() {
+// Barra de progreso animada — se reinicia con cada cambio de tarjeta
+function ProgressBar({ active, paused }: { active: number; paused: boolean }) {
   return (
-    <svg
-      width="32" height="24" viewBox="0 0 32 24"
-      fill="currentColor"
-      className="text-gold/25 mb-4"
-      aria-hidden="true"
-    >
-      <path d="M0 24V14.4C0 6.4 5.2 1.6 15.6 0l1.6 3.2C11.2 4.4 8 7.2 7.2 12H12V24H0zm20 0V14.4C20 6.4 25.2 1.6 35.6 0L37.2 3.2C31.2 4.4 28 7.2 27.2 12H32V24H20z" />
-    </svg>
+    <div className="w-full h-px bg-white/10 relative overflow-hidden rounded-full mt-8">
+      <div
+        key={`progress-${active}`} // key fuerza remount = reinicio de animación
+        className="absolute left-0 top-0 h-full bg-gold/60 rounded-full"
+        style={{
+          animation: paused
+            ? 'none'
+            : `progressBar ${INTERVAL_MS}ms linear forwards`,
+        }}
+      />
+      <style>{`
+        @keyframes progressBar {
+          from { width: 0%; }
+          to   { width: 100%; }
+        }
+      `}</style>
+    </div>
   );
 }
 
@@ -107,15 +95,8 @@ export default function Testimonios() {
   const [active, setActive] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
-  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const isHoveringRef = useRef(false);
-  const isPausedRef = useRef(false);
-
-  const INTERVAL_DURATION = 6000; // 6 segundos
-  const PROGRESS_INTERVAL = 50; // actualizar progreso cada 50ms
 
   const goTo = useCallback((index: number, dir: 'next' | 'prev' = 'next') => {
     if (animating) return;
@@ -124,9 +105,7 @@ export default function Testimonios() {
     setTimeout(() => {
       setActive(index);
       setAnimating(false);
-      // Reiniciar progreso
-      setProgress(0);
-    }, 300);
+    }, 280);
   }, [animating]);
 
   const next = useCallback(() => {
@@ -137,108 +116,39 @@ export default function Testimonios() {
     goTo((active - 1 + TESTIMONIOS.length) % TESTIMONIOS.length, 'prev');
   }, [active, goTo]);
 
-  // Iniciar el auto-avance
   const startInterval = useCallback(() => {
-    // Limpiar intervalos existentes
     if (intervalRef.current) clearInterval(intervalRef.current);
-    if (progressRef.current) clearInterval(progressRef.current);
-
-    // No iniciar si está pausado o en hover
-    if (isPausedRef.current || isHoveringRef.current) return;
-
-    setProgress(0);
-
-    // Intervalo para actualizar la barra de progreso
-    progressRef.current = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + (PROGRESS_INTERVAL / INTERVAL_DURATION) * 100;
-        return Math.min(newProgress, 100);
-      });
-    }, PROGRESS_INTERVAL);
-
-    // Intervalo para cambiar de testimonio
-    intervalRef.current = setInterval(() => {
-      // Verificar que no esté pausado ni en hover
-      if (!isPausedRef.current && !isHoveringRef.current) {
-        next();
-      }
-    }, INTERVAL_DURATION);
+    intervalRef.current = setInterval(next, INTERVAL_MS);
   }, [next]);
 
-  // Detener el auto-avance
   const stopInterval = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (progressRef.current) {
-      clearInterval(progressRef.current);
-      progressRef.current = null;
-    }
+    if (intervalRef.current) clearInterval(intervalRef.current);
   }, []);
 
-  // Pausar (cuando el usuario interactúa)
-  const pauseAutoPlay = useCallback(() => {
-    isPausedRef.current = true;
-    stopInterval();
-  }, [stopInterval]);
-
-  // Reanudar
-  const resumeAutoPlay = useCallback(() => {
-    isPausedRef.current = false;
-    if (!isHoveringRef.current) {
-      startInterval();
-    }
-  }, [startInterval]);
-
-  // Manejar hover
-  const handleMouseEnter = useCallback(() => {
-    isHoveringRef.current = true;
-    stopInterval();
-  }, [stopInterval]);
-
-  const handleMouseLeave = useCallback(() => {
-    isHoveringRef.current = false;
-    if (!isPausedRef.current) {
-      startInterval();
-    }
-  }, [startInterval]);
-
-  // Iniciar/Reiniciar cuando cambia el testimonio activo
   useEffect(() => {
-    // Si está pausado o en hover, no reiniciar automáticamente
-    if (isPausedRef.current || isHoveringRef.current) return;
-    startInterval();
+    if (!paused) startInterval();
+    else stopInterval();
     return stopInterval;
-  }, [active, startInterval, stopInterval]);
-
-  // Cleanup al desmontar
-  useEffect(() => {
-    return () => {
-      stopInterval();
-    };
-  }, [stopInterval]);
+  }, [paused, startInterval, stopInterval]);
 
   const t = TESTIMONIOS[active];
   const quote = lang === 'es' ? t.quote_es : t.quote_en;
   const service = lang === 'es' ? t.service_es : t.service_en;
 
   const heading = {
-    eyebrow: lang === 'es' ? 'Testimonios' : 'Testimonials',
-    title: lang === 'es'
-      ? <>Investigadores que <em className="not-italic text-gold">publicaron</em></>
-      : <>Researchers who <em className="not-italic text-gold">published</em></>,
-    sub: lang === 'es'
+    eyebrow:       lang === 'es' ? 'Resultados verificables'   : 'Verifiable results',
+    title:         lang === 'es' ? 'Investigadores que '        : 'Researchers who ',
+    titleEm:       lang === 'es' ? 'publicaron'                 : 'published',
+    sub:           lang === 'es'
       ? 'Cada testimonio está respaldado por una publicación real en revista indexada.'
       : 'Every testimonial is backed by a real publication in an indexed journal.',
-    verifiedLabel: lang === 'es' ? 'Publicación verificable' : 'Verifiable publication',
+    verifiedLabel: lang === 'es' ? 'Publicación verificable'   : 'Verifiable publication',
+    prev:          lang === 'es' ? 'Testimonio anterior'        : 'Previous testimonial',
+    next:          lang === 'es' ? 'Siguiente testimonio'       : 'Next testimonial',
   };
 
   return (
-    <section
-      id="testimonios"
-      className="section-navy py-24 px-6 relative overflow-hidden"
-    >
+    <section id="testimonios" className="section-navy py-24 px-6 relative overflow-hidden">
       <div className="orb orb-gold w-[300px] h-[300px] top-0 right-0 opacity-8" style={{ animationDelay: '1s' }} />
       <div className="orb orb-gold w-[200px] h-[200px] bottom-0 left-0 opacity-6" style={{ animationDelay: '3s' }} />
 
@@ -246,46 +156,40 @@ export default function Testimonios() {
 
         {/* Header */}
         <div className="text-center mb-14 reveal">
-          <p className="text-xs tracking-[0.3em] text-gold uppercase mb-4">
-            {heading.eyebrow}
-          </p>
+          <p className="text-xs tracking-[0.3em] text-gold uppercase mb-4">{heading.eyebrow}</p>
           <h2 className="font-serif text-4xl md:text-5xl font-light text-white leading-tight mb-4">
             {heading.title}
+            <em className="not-italic text-gold">{heading.titleEm}</em>
           </h2>
-          <p className="text-white/40 text-sm font-light max-w-md mx-auto">
-            {heading.sub}
-          </p>
+          <p className="text-white/40 text-sm font-light max-w-md mx-auto">{heading.sub}</p>
         </div>
 
         {/* Carrusel */}
         <div
-          ref={wrapperRef}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          onTouchStart={pauseAutoPlay}
-          onTouchEnd={resumeAutoPlay}
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
           className="relative"
         >
-          {/* Barra de progreso */}
-          <div className="absolute -top-4 left-0 right-0 h-0.5 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gold/60 rounded-full transition-all duration-50 ease-linear"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+          {/* Flecha izquierda — desktop */}
+          <button
+            onClick={prev}
+            aria-label={heading.prev}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 w-10 h-10 rounded-full bg-navy border border-gold/20 flex items-center justify-center text-gold/50 hover:text-gold hover:border-gold/50 transition-all duration-200 hidden md:flex z-10"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
 
-          {/* Card principal */}
+          {/* Card */}
           <div
-            className={`
-              glass-navy border border-gold/15 rounded-sm p-8 md:p-12
-              transition-all duration-300
-              ${animating
+            className={`glass-navy border border-gold/15 rounded-sm px-8 py-10 md:px-12 md:py-12 transition-all duration-280 ${
+              animating
                 ? direction === 'next'
-                  ? 'opacity-0 translate-x-4'
-                  : 'opacity-0 -translate-x-4'
+                  ? 'opacity-0 translate-x-3'
+                  : 'opacity-0 -translate-x-3'
                 : 'opacity-100 translate-x-0'
-              }
-            `}
+            }`}
           >
             <QuoteIcon />
 
@@ -304,8 +208,7 @@ export default function Testimonios() {
 
             {/* Autor */}
             <div className="flex items-center gap-4 mb-6">
-              <Avatar initials={t.initials} color={t.color} />
-              <div>
+             <div>
                 <p className="font-semibold text-white text-sm leading-tight">{t.name}</p>
                 <p className="text-white/45 text-xs mt-0.5">{t.institution} · {t.country}</p>
                 <span className="inline-block mt-1.5 text-[10px] tracking-[0.15em] uppercase text-gold/60 border border-gold/25 px-2 py-0.5 rounded-full">
@@ -314,8 +217,8 @@ export default function Testimonios() {
               </div>
             </div>
 
-            {/* Enlaces a publicaciones */}
-            <div className="flex flex-wrap gap-3">
+            {/* Publicaciones verificables */}
+            <div className="flex flex-wrap gap-3 mb-2">
               <p className="w-full text-[10px] tracking-[0.2em] text-white/25 uppercase mb-1">
                 {heading.verifiedLabel}
               </p>
@@ -332,22 +235,16 @@ export default function Testimonios() {
                 </a>
               ))}
             </div>
+
+            {/* Barra de progreso */}
+            <ProgressBar active={active} paused={paused} />
           </div>
 
-          {/* Navegación lateral */}
+          {/* Flecha derecha — desktop */}
           <button
-            onClick={() => { pauseAutoPlay(); prev(); setTimeout(resumeAutoPlay, 500); }}
-            aria-label={lang === 'es' ? 'Testimonio anterior' : 'Previous testimonial'}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 w-10 h-10 rounded-full bg-navy border border-gold/20 flex items-center justify-center text-gold/50 hover:text-gold hover:border-gold/50 transition-all duration-200 hidden md:flex"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-          <button
-            onClick={() => { pauseAutoPlay(); next(); setTimeout(resumeAutoPlay, 500); }}
-            aria-label={lang === 'es' ? 'Siguiente testimonio' : 'Next testimonial'}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 w-10 h-10 rounded-full bg-navy border border-gold/20 flex items-center justify-center text-gold/50 hover:text-gold hover:border-gold/50 transition-all duration-200 hidden md:flex"
+            onClick={next}
+            aria-label={heading.next}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 w-10 h-10 rounded-full bg-navy border border-gold/20 flex items-center justify-center text-gold/50 hover:text-gold hover:border-gold/50 transition-all duration-200 hidden md:flex z-10"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M9 18l6-6-6-6" />
@@ -355,19 +252,18 @@ export default function Testimonios() {
           </button>
         </div>
 
-        {/* Dots de navegación */}
-        <div className="flex items-center justify-center gap-3 mt-8" role="tablist" aria-label={lang === 'es' ? 'Navegación de testimonios' : 'Testimonials navigation'}>
+        {/* Dots */}
+        <div className="flex items-center justify-center gap-3 mt-8" role="tablist"
+          aria-label={lang === 'es' ? 'Navegación de testimonios' : 'Testimonials navigation'}>
           {TESTIMONIOS.map((_, i) => (
             <button
               key={i}
               role="tab"
               aria-selected={i === active}
               aria-label={`Testimonio ${i + 1}`}
-              onClick={() => { pauseAutoPlay(); goTo(i, i > active ? 'next' : 'prev'); setTimeout(resumeAutoPlay, 500); }}
+              onClick={() => goTo(i, i > active ? 'next' : 'prev')}
               className={`rounded-full transition-all duration-300 ${
-                i === active
-                  ? 'w-6 h-2 bg-gold'
-                  : 'w-2 h-2 bg-white/20 hover:bg-white/40'
+                i === active ? 'w-6 h-2 bg-gold' : 'w-2 h-2 bg-white/20 hover:bg-white/40'
               }`}
             />
           ))}
@@ -375,20 +271,14 @@ export default function Testimonios() {
 
         {/* Navegación móvil */}
         <div className="flex items-center justify-center gap-4 mt-6 md:hidden">
-          <button
-            onClick={() => { pauseAutoPlay(); prev(); setTimeout(resumeAutoPlay, 500); }}
-            aria-label={lang === 'es' ? 'Anterior' : 'Previous'}
-            className="w-10 h-10 rounded-full bg-navy border border-gold/20 flex items-center justify-center text-gold/50 hover:text-gold transition-colors"
-          >
+          <button onClick={prev} aria-label={heading.prev}
+            className="w-10 h-10 rounded-full bg-navy border border-gold/20 flex items-center justify-center text-gold/50 hover:text-gold transition-colors">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </button>
-          <button
-            onClick={() => { pauseAutoPlay(); next(); setTimeout(resumeAutoPlay, 500); }}
-            aria-label={lang === 'es' ? 'Siguiente' : 'Next'}
-            className="w-10 h-10 rounded-full bg-navy border border-gold/20 flex items-center justify-center text-gold/50 hover:text-gold transition-colors"
-          >
+          <button onClick={next} aria-label={heading.next}
+            className="w-10 h-10 rounded-full bg-navy border border-gold/20 flex items-center justify-center text-gold/50 hover:text-gold transition-colors">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M9 18l6-6-6-6" />
             </svg>
