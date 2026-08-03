@@ -50,7 +50,7 @@ async function generateFullContent(article, env) {
     .map((s, i) => `{ "date": "${s.date}", "platform": "${s.platform}", "content": "Variación ${i + 1} del post para republicación" }`)
     .join(',\n      ');
 
-  const prompt = `Eres un experto en marketing de contenido académico para "Mentoría TEXTUM" (Ecuador, Perú y España).
+ const prompt = `Eres un experto en marketing de contenido académico para "Mentoría TEXTUM" (Ecuador, Perú y España).
 
 Genera contenido completo para todas las plataformas basado en este artículo:
 
@@ -69,32 +69,41 @@ IMPORTANTE: Responde SOLO con JSON válido sin markdown. Sigue EXACTAMENTE esta 
     "url": "${articleUrl}",
     "slug": "${slug}"
   },
+  "hooks": {
+    "emotional": "Hook emocional que apela al problema del investigador. Máximo 8 palabras. Sin signos de interrogación al inicio.",
+    "data": "Hook de dato o hecho sorprendente del artículo. Máximo 8 palabras.",
+    "question": "Pregunta directa que genera curiosidad inmediata. Máximo 8 palabras."
+  },
+  "tiktok_reels": {
+    "script": "Guion optimizado para TikTok, Instagram Reels y YouTube Shorts (formato 9:16). Duración total: 45-60 segundos. REGLAS: frases de máximo 10 palabras cada una, cada frase en una línea separada, tono académico pero directo y cercano. USA ESTE FORMATO EXACTO con los corchetes y tiempos:\n\n[0s-4s] Frase de gancho igual al hook emocional.\n[5s-10s] Segunda frase que desarrolla el problema.\n[11s-16s] Tercera frase.\n[17s-22s] Cuarta frase con dato o insight del artículo.\n[23s-30s] Quinta frase.\n[31s-38s] Sexta frase con la solución o método TEXTUM.\n[39s-46s] Séptima frase.\n[47s-55s] Octava frase.\n[56s-60s] Llama a la acción: visita el blog de TEXTUM.",
+    "hooks_alternativos": [
+      "Variación del hook emocional (máx 8 palabras)",
+      "Variación del hook de dato (máx 8 palabras)",
+      "Variación del hook de pregunta (máx 8 palabras)"
+    ]
+  },
   "linkedin": {
-    "post": "Post profesional de 200-250 palabras. Empieza con una pregunta provocadora. Incluye 3-5 hashtags relevantes. Firma: - Mentoría TEXTUM"
+    "post": "Empieza EXACTAMENTE con el hook emocional generado arriba. Luego desarrolla en 200-250 palabras: problema que enfrenta el investigador, insight del artículo, cómo TEXTUM ayuda, enlace al artículo. Tono profesional y cercano. Incluye 3-5 hashtags al final. Firma: — Mentoría TEXTUM"
   },
   "facebook": {
-    "post": "Post conversacional de 150-200 palabras. Empieza con una frase que genere engagement. Incluye llamado a la acción."
+    "post": "Empieza EXACTAMENTE con el hook de pregunta generado arriba. Luego 150-200 palabras conversacionales. Incluye llamado a la acción claro hacia el artículo."
   },
   "instagram": {
-    "caption": "Caption de 150 palabras con emojis. Empieza con un gancho visual. Incluye 10-15 hashtags."
+    "caption": "Empieza EXACTAMENTE con el hook de dato generado arriba. Luego 150 palabras con emojis académicos (📚🎓✍️). Incluye 10-15 hashtags en español e inglés relacionados con investigación académica y mentoría."
   },
   "pinterest": {
     "title": "Título SEO de 60-80 caracteres",
-    "description": "Descripción de 150 palabras con keywords principales."
+    "description": "Empieza con el hook emocional. Luego descripción de 150 palabras con keywords principales sobre investigación y mentoría académica."
   },
   "twitter": {
     "thread": [
-      "Tweet 1: Hook + introducción (máx 280 caracteres)",
-      "Tweet 2: Punto clave 1",
-      "Tweet 3: Punto clave 2",
-      "Tweet 4: Punto clave 3",
-      "Tweet 5: Punto clave 4",
+      "Tweet 1: Usa el hook de pregunta + introducción (máx 280 caracteres)",
+      "Tweet 2: Punto clave 1 del artículo",
+      "Tweet 3: Punto clave 2 del artículo",
+      "Tweet 4: Punto clave 3 del artículo",
+      "Tweet 5: Punto clave 4 del artículo",
       "Tweet 6: CTA + enlace + hashtags"
     ]
-  },
-  "tiktok_reels": {
-    "script": "Guion de 25-30 segundos con marcas de tiempo. Formato: 0s-3s: texto, 4s-7s: texto, etc.",
-    "hooks": ["Hook 1", "Hook 2", "Hook 3"]
   },
   "internal_links": [
     {"text": "Texto del enlace", "url": "/blog/articulo-relacionado", "description": "Descripción breve"}
@@ -106,21 +115,22 @@ IMPORTANTE: Responde SOLO con JSON válido sin markdown. Sigue EXACTAMENTE esta 
   },
   "visual_assets": {
     "instagram_carousel": [
-      { "slide": 1, "title": "Título slide 1", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 1" },
-      { "slide": 2, "title": "Título slide 2", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 2" },
-      { "slide": 3, "title": "Título slide 3", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 3" },
-      { "slide": 4, "title": "Título slide 4", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 4" },
-      { "slide": 5, "title": "Título slide 5", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 5" }
+      { "slide": 1, "title": "Usa el hook emocional como título", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 1 en inglés para Pexels: escena académica concreta" },
+      { "slide": 2, "title": "Título slide 2", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 2 en inglés para Pexels" },
+      { "slide": 3, "title": "Título slide 3", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 3 en inglés para Pexels" },
+      { "slide": 4, "title": "Título slide 4", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 4 en inglés para Pexels" },
+      { "slide": 5, "title": "Título slide 5 — CTA", "text": "Texto (80-100 chars)", "image_prompt": "Prompt imagen 5 en inglés para Pexels" }
     ],
     "pinterest_pin": {
       "title": "Título del pin",
       "description": "Descripción para el pin",
-      "image_prompt": "Prompt para generar imagen del pin"
+      "image_prompt": "Prompt en inglés para generar imagen del pin — escena académica"
     },
     "youtube_thumbnail": {
       "text": "Texto para miniatura (máx 5 palabras)",
-      "image_prompt": "Prompt para generar imagen de miniatura"
-    }
+      "image_prompt": "Prompt en inglés para generar imagen de miniatura"
+    },
+    "pexels_keywords": "3-5 palabras clave EN INGLÉS separadas por comas para buscar footage en Pexels que encaje con el artículo. Ejemplo: researcher writing, academic library, thesis defense"
   },
   "seo": {
     "meta_title": "Título SEO (50-60 caracteres)",
@@ -253,13 +263,17 @@ export async function onRequest(context) {
       generated_at: new Date().toISOString(),
       ...generatedContent,
       copy_ready: {
-        linkedin: generatedContent.linkedin?.post || 'No generado',
-        facebook: generatedContent.facebook?.post || 'No generado',
-        instagram: generatedContent.instagram?.caption || 'No generado',
-        pinterest: generatedContent.pinterest?.description || 'No generado',
-        twitter_thread: generatedContent.twitter?.thread?.join('\n\n') || 'No generado',
-        tiktok_script: generatedContent.tiktok_reels?.script || 'No generado',
-      },
+  hook_emotional: generatedContent.hooks?.emotional || 'No generado',
+  hook_data: generatedContent.hooks?.data || 'No generado',
+  hook_question: generatedContent.hooks?.question || 'No generado',
+  pexels_keywords: generatedContent.visual_assets?.pexels_keywords || 'No generado',
+  linkedin: generatedContent.linkedin?.post || 'No generado',
+  facebook: generatedContent.facebook?.post || 'No generado',
+  instagram: generatedContent.instagram?.caption || 'No generado',
+  pinterest: generatedContent.pinterest?.description || 'No generado',
+  twitter_thread: generatedContent.twitter?.thread?.join('\n\n') || 'No generado',
+  tiktok_script: generatedContent.tiktok_reels?.script || 'No generado',
+},
     });
 
   } catch (error) {

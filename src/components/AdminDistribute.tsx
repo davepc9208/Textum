@@ -59,7 +59,7 @@ interface DistributeResult {
   instagram: { caption: string };
   pinterest: { title: string; description: string };
   twitter: { thread: string[] };
-  tiktok_reels: { script: string; hooks: string[] };
+  tiktok_reels: { script: string; hooks: string[]; hooks_alternativos: string[] };
   internal_links: InternalLink[];
   republishing: { schedule: RepublishItem[] };
   visual_assets: {
@@ -69,6 +69,10 @@ interface DistributeResult {
   };
   seo: { meta_title: string; meta_description: string; keywords: string[] };
   copy_ready: {
+    hook_emotional: string;
+    hook_data: string;
+    hook_question: string;
+    pexels_keywords: string;
     linkedin: string;
     facebook: string;
     instagram: string;
@@ -423,28 +427,80 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
 
             {/* Redes */}
             {activeTab === 'redes' && (
-              <div className="space-y-3">
-                <ContentCard label="LinkedIn"            text={r.copy_ready.linkedin} />
-                <ContentCard label="Facebook"            text={r.copy_ready.facebook} />
-                <ContentCard label="Instagram"           text={r.copy_ready.instagram} />
-                <ContentCard label="Pinterest"           text={r.copy_ready.pinterest} />
-                <ContentCard label="X / Twitter · Hilo" text={r.copy_ready.twitter_thread} mono />
-                <ContentCard label="Guion TikTok / Reels" text={r.copy_ready.tiktok_script} mono />
-                {r.tiktok_reels?.hooks?.length > 0 && (
-                  <div className="bg-white/5 border border-white/10 rounded-sm p-4">
-                    <p className="text-[11px] font-medium text-gold/80 tracking-wide uppercase mb-2">Hooks alternativos</p>
-                    <ul className="space-y-1.5">
-                      {r.tiktok_reels.hooks.map((h, i) => (
-                        <li key={i} className="flex items-start justify-between gap-3">
-                          <span className="text-xs text-white/60">{i + 1}. {h}</span>
-                          <CopyBtn text={h} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
+  <div className="space-y-3">
+    {/* Hooks — para usar como apertura en cada red y en MPT */}
+    <div className="bg-white/5 border border-gold/20 rounded-sm p-4">
+      <p className="text-[11px] font-medium text-gold/80 tracking-wide uppercase mb-3">
+        Hooks de apertura
+      </p>
+      <div className="space-y-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-white/30 uppercase tracking-wide mb-1">Emocional · LinkedIn · Pinterest · Vídeo</p>
+            <p className="text-xs text-white/70 leading-relaxed">{r.copy_ready.hook_emotional}</p>
+          </div>
+          <CopyBtn text={r.copy_ready.hook_emotional} />
+        </div>
+        <div className="w-full h-px bg-white/8" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-white/30 uppercase tracking-wide mb-1">Dato · Instagram</p>
+            <p className="text-xs text-white/70 leading-relaxed">{r.copy_ready.hook_data}</p>
+          </div>
+          <CopyBtn text={r.copy_ready.hook_data} />
+        </div>
+        <div className="w-full h-px bg-white/8" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-white/30 uppercase tracking-wide mb-1">Pregunta · Facebook · Twitter · Hilo</p>
+            <p className="text-xs text-white/70 leading-relaxed">{r.copy_ready.hook_question}</p>
+          </div>
+          <CopyBtn text={r.copy_ready.hook_question} />
+        </div>
+      </div>
+    </div>
+
+    {/* Keywords para Pexels / MPT */}
+    <div className="bg-white/5 border border-gold/20 rounded-sm p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <p className="text-[11px] font-medium text-gold/80 tracking-wide uppercase">
+            Keywords para Pexels / MPT
+          </p>
+          <p className="text-[10px] text-white/30 mt-0.5">
+            Pega esto en el campo "Palabras clave del vídeo" de MoneyPrinterTurbo
+          </p>
+        </div>
+        <CopyBtn text={r.copy_ready.pexels_keywords} />
+      </div>
+      <p className="text-xs text-white/60 font-mono">{r.copy_ready.pexels_keywords}</p>
+    </div>
+
+    {/* Copy por red social */}
+    <ContentCard label="LinkedIn" text={r.copy_ready.linkedin} />
+    <ContentCard label="Facebook" text={r.copy_ready.facebook} />
+    <ContentCard label="Instagram" text={r.copy_ready.instagram} />
+    <ContentCard label="Pinterest" text={r.copy_ready.pinterest} />
+    <ContentCard label="X / Twitter · Hilo" text={r.copy_ready.twitter_thread} mono />
+    <ContentCard label="Guion TikTok / Reels / Shorts" text={r.copy_ready.tiktok_script} mono />
+
+    {r.tiktok_reels?.hooks_alternativos?.length > 0 && (
+      <div className="bg-white/5 border border-white/10 rounded-sm p-4">
+        <p className="text-[11px] font-medium text-gold/80 tracking-wide uppercase mb-2">
+          Variaciones de hook para pruebas A/B
+        </p>
+        <ul className="space-y-1.5">
+          {r.tiktok_reels.hooks_alternativos.map((h: string, i: number) => (
+            <li key={i} className="flex items-start justify-between gap-3">
+              <span className="text-xs text-white/60">{i + 1}. {h}</span>
+              <CopyBtn text={h} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </div>
+)}
 
             {/* Carrusel */}
             {activeTab === 'carousel' && r.visual_assets?.instagram_carousel && (
