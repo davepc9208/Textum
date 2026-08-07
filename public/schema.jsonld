@@ -3,7 +3,7 @@
   "@type": "EducationalOrganization",
   "name": "TEXTUM — Mentoría Académica Internacional",
   "url": "https://mentoriatextum.com",
-  "description": "Mentoría académica personalizada para investigadores, doctorandos y estudiantes de posgrado. Especialistas en metodología científica, titulación y publicación científica.",
+  "description": "Mentoría académica personalizada para investigadores, doctorandos y estudiantes de posgrado. Especialistas en metodología científica, titulación (TFG, TFM, tesis doctoral), publicación en revistas indexadas (Scopus, Latindex) y preparación para defensa oral.",
   "foundingDate": "2024",
   "address": {
     "@type": "PostalAddress",
@@ -13,59 +13,110 @@
     "@type": "ContactPoint",
     "email": "contacto@mentoriatextum.com",
     "telephone": "+34614638406",
-    "contactType": "customer service"
+    "contactType": "customer service",
+    "availableLanguage": ["Spanish", "English"]
   },
   "founder": [
     {
       "@type": "Person",
       "name": "Vilma María Pérez Viñas",
       "jobTitle": "Doctora en Ciencias Pedagógicas",
-      "affiliation": {
-        "@type": "Organization",
-        "name": "TEXTUM"
-      },
-      "url": "https://orcid.org/0000-0003-3041-096X"
+      "description": "Doctora en Ciencias Pedagógicas. Máster en Didáctica de la Lengua Inglesa. Licenciada en Educación. Más de 40 años de experiencia en docencia universitaria, investigación, redacción académica, edición y traducción.",
+      "url": "https://orcid.org/0000-0003-3041-096X",
+      "sameAs": "https://orcid.org/0000-0003-3041-096X"
     },
     {
       "@type": "Person",
       "name": "Yadyra de la Caridad Piñera Concepción",
       "jobTitle": "Doctora en Ciencias Pedagógicas",
-      "affiliation": {
-        "@type": "Organization",
-        "name": "TEXTUM"
-      },
-      "url": "https://orcid.org/0000-0002-8947-1364"
+      "description": "Doctora en Ciencias Pedagógicas. Máster en Didáctica del Español y la Literatura. Asesora de tesis y artículos científicos. Coautora de libros y más de 80 publicaciones académicas indexadas. Premio Nacional de Investigación Científica, El Salvador, 2025.",
+      "url": "https://orcid.org/0000-0002-8947-1364",
+      "sameAs": "https://orcid.org/0000-0002-8947-1364"
     }
   ],
   "makesOffer": [
     {
       "@type": "Service",
       "name": "Mentoría Avanzada FLUX®",
-      "description": "Acompañamiento metodológico personalizado para tesis y proyectos de investigación.",
+      "description": "Acompañamiento metodológico personalizado. Incluye diagnóstico, revisión de arquitectura, transferencia de criterio metodológico, sesión estratégica en vivo y acompañamiento híbrido con uso ético de IA.",
+      "category": "Titulación",
       "offers": {
         "@type": "Offer",
         "price": "349",
-        "priceCurrency": "USD"
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
       }
     },
     {
       "@type": "Service",
       "name": "Pre-arbitraje Científico + FLUX®",
-      "description": "Revisión crítica y optimización para publicación en revistas indexadas.",
+      "description": "Revisión crítica IMRaD/IMRyD, auditoría de referencias, optimización con método TEXTUM FLUX, sesión de mentoría científica en vivo.",
+      "category": "Publicación Científica",
       "offers": {
         "@type": "Offer",
         "price": "499",
-        "priceCurrency": "USD"
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
       }
     },
     {
       "@type": "Service",
       "name": "Alta Defensa y Oratoria Académica",
-      "description": "Preparación personalizada para defensa oral de tesis.",
+      "description": "Estructuración del guion y discurso de apertura, optimización visual de diapositivas, entrenamiento en control de nervios y lenguaje corporal, banco simulado de preguntas difíciles del tribunal, sesión 1:1 en vivo.",
+      "category": "Defensa Académica",
       "offers": {
         "@type": "Offer",
         "price": "120",
-        "priceCurrency": "USD"
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    },
+    {
+      "@type": "Service",
+      "name": "Ajuste de Estilo y Norma",
+      "description": "Optimización ortotipográfica, adecuación a APA 7 / Vancouver, normalización de referencias.",
+      "category": "Titulación",
+      "offers": {
+        "@type": "Offer",
+        "price": "199",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    },
+    {
+      "@type": "Service",
+      "name": "Adaptación Editorial",
+      "description": "Revisión de estructura editorial, normalización de referencias, mejora del resumen y palabras clave, optimización para revista objetivo.",
+      "category": "Publicación Científica",
+      "offers": {
+        "@type": "Offer",
+        "price": "299",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    },
+    {
+      "@type": "Service",
+      "name": "Acompañamiento Editorial Premium",
+      "description": "Co-elaboración de respuestas a revisores, trazabilidad ética del uso de IA, soporte estratégico hasta la aceptación final.",
+      "category": "Publicación Científica",
+      "offers": {
+        "@type": "Offer",
+        "price": "799",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    },
+    {
+      "@type": "Service",
+      "name": "Co-creación de Alta Intensidad",
+      "description": "Para proyectos complejos o con plazos ajustados. Co-diseño de estructura, aceleración metodológica, acompañamiento continuo hasta la entrega final.",
+      "category": "Titulación",
+      "offers": {
+        "@type": "Offer",
+        "price": "499",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
       }
     }
   ],
