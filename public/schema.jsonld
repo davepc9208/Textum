@@ -36,88 +36,40 @@
   ],
   "makesOffer": [
     {
-      "@type": "Service",
-      "name": "Mentoría Avanzada FLUX®",
-      "description": "Acompañamiento metodológico personalizado. Incluye diagnóstico, revisión de arquitectura, transferencia de criterio metodológico, sesión estratégica en vivo y acompañamiento híbrido con uso ético de IA.",
-      "category": "Titulación",
-      "offers": {
-        "@type": "Offer",
-        "price": "349",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
+      "@type": "Offer",
+      "itemOffered": {
+        "@type": "Service",
+        "name": "Mentoría Avanzada FLUX®",
+        "description": "Acompañamiento metodológico personalizado. Incluye diagnóstico, revisión de arquitectura, transferencia de criterio metodológico, sesión estratégica en vivo y acompañamiento híbrido con uso ético de IA.",
+        "category": "Titulación"
+      },
+      "price": "349",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
     },
     {
-      "@type": "Service",
-      "name": "Pre-arbitraje Científico + FLUX®",
-      "description": "Revisión crítica IMRaD/IMRyD, auditoría de referencias, optimización con método TEXTUM FLUX, sesión de mentoría científica en vivo.",
-      "category": "Publicación Científica",
-      "offers": {
-        "@type": "Offer",
-        "price": "499",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
+      "@type": "Offer",
+      "itemOffered": {
+        "@type": "Service",
+        "name": "Pre-arbitraje Científico + FLUX®",
+        "description": "Revisión crítica IMRaD/IMRyD, auditoría de referencias, optimización con método TEXTUM FLUX, sesión de mentoría científica en vivo.",
+        "category": "Publicación Científica"
+      },
+      "price": "499",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
     },
     {
-      "@type": "Service",
-      "name": "Alta Defensa y Oratoria Académica",
-      "description": "Estructuración del guion y discurso de apertura, optimización visual de diapositivas, entrenamiento en control de nervios y lenguaje corporal, banco simulado de preguntas difíciles del tribunal, sesión 1:1 en vivo.",
-      "category": "Defensa Académica",
-      "offers": {
-        "@type": "Offer",
-        "price": "120",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "Service",
-      "name": "Ajuste de Estilo y Norma",
-      "description": "Optimización ortotipográfica, adecuación a APA 7 / Vancouver, normalización de referencias.",
-      "category": "Titulación",
-      "offers": {
-        "@type": "Offer",
-        "price": "199",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "Service",
-      "name": "Adaptación Editorial",
-      "description": "Revisión de estructura editorial, normalización de referencias, mejora del resumen y palabras clave, optimización para revista objetivo.",
-      "category": "Publicación Científica",
-      "offers": {
-        "@type": "Offer",
-        "price": "299",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "Service",
-      "name": "Acompañamiento Editorial Premium",
-      "description": "Co-elaboración de respuestas a revisores, trazabilidad ética del uso de IA, soporte estratégico hasta la aceptación final.",
-      "category": "Publicación Científica",
-      "offers": {
-        "@type": "Offer",
-        "price": "799",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "Service",
-      "name": "Co-creación de Alta Intensidad",
-      "description": "Para proyectos complejos o con plazos ajustados. Co-diseño de estructura, aceleración metodológica, acompañamiento continuo hasta la entrega final.",
-      "category": "Titulación",
-      "offers": {
-        "@type": "Offer",
-        "price": "499",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
+      "@type": "Offer",
+      "itemOffered": {
+        "@type": "Service",
+        "name": "Alta Defensa y Oratoria Académica",
+        "description": "Estructuración del guion y discurso de apertura, optimización visual de diapositivas, entrenamiento en control de nervios y lenguaje corporal, banco simulado de preguntas difíciles del tribunal, sesión 1:1 en vivo.",
+        "category": "Defensa Académica"
+      },
+      "price": "120",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
     }
   ],
   "sameAs": [
