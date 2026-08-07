@@ -1,461 +1,76 @@
 {
   "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "EducationalOrganization",
-      "@id": "https://mentoriatextum.com/#organization",
-      "name": "TEXTUM — Mentoría Académica Internacional",
-      "url": "https://mentoriatextum.com",
-      "logo": "https://mentoriatextum.com/logo.png",
-      "description": "Mentoría académica personalizada para investigadores, doctorandos y estudiantes de posgrado. Especialistas en metodología científica, titulación (TFG, TFM, tesis doctoral), publicación en revistas indexadas (Scopus, Latindex) y preparación para defensa oral.",
-      "foundingDate": "2024",
-      "foundingLocation": {
-        "@type": "Place",
-        "address": {
-          "@type": "PostalAddress",
-          "addressCountry": "ES"
-        }
-      },
-      "address": {
-        "@type": "PostalAddress",
-        "addressCountry": "ES"
-      },
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "email": "contacto@mentoriatextum.com",
-        "telephone": "+34614638406",
-        "contactType": "customer service",
-        "availableLanguage": ["Spanish", "English"]
-      },
-      "sameAs": [
-        "https://orcid.org/0000-0003-3041-096X",
-        "https://orcid.org/0000-0002-8947-1364"
-      ],
-      "parentOrganization": {
-        "@type": "Organization",
-        "name": "TEXTUM"
-      }
-    },
+  "@type": "EducationalOrganization",
+  "name": "TEXTUM — Mentoría Académica Internacional",
+  "url": "https://mentoriatextum.com",
+  "description": "Mentoría académica personalizada para investigadores, doctorandos y estudiantes de posgrado. Especialistas en metodología científica, titulación y publicación científica.",
+  "foundingDate": "2024",
+  "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "ES"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "email": "contacto@mentoriatextum.com",
+    "telephone": "+34614638406",
+    "contactType": "customer service"
+  },
+  "founder": [
     {
       "@type": "Person",
-      "@id": "https://orcid.org/0000-0003-3041-096X",
       "name": "Vilma María Pérez Viñas",
       "jobTitle": "Doctora en Ciencias Pedagógicas",
-      "description": "Doctora en Ciencias Pedagógicas. Máster en Didáctica de la Lengua Inglesa. Licenciada en Educación. Más de 40 años de experiencia en docencia universitaria, investigación, redacción académica, edición y traducción.",
       "affiliation": {
         "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
+        "name": "TEXTUM"
       },
-      "worksFor": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      },
-      "url": "https://orcid.org/0000-0003-3041-096X",
-      "sameAs": "https://orcid.org/0000-0003-3041-096X"
+      "url": "https://orcid.org/0000-0003-3041-096X"
     },
     {
       "@type": "Person",
-      "@id": "https://orcid.org/0000-0002-8947-1364",
       "name": "Yadyra de la Caridad Piñera Concepción",
       "jobTitle": "Doctora en Ciencias Pedagógicas",
-      "description": "Doctora en Ciencias Pedagógicas. Máster en Didáctica del Español y la Literatura. Asesora de tesis y artículos científicos. Coautora de libros y más de 80 publicaciones académicas indexadas. Premio Nacional de Investigación Científica, El Salvador, 2025.",
       "affiliation": {
         "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
+        "name": "TEXTUM"
       },
-      "worksFor": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      },
-      "url": "https://orcid.org/0000-0002-8947-1364",
-      "sameAs": "https://orcid.org/0000-0002-8947-1364",
-      "award": "Premio Nacional de Investigación Científica, El Salvador, 2025"
-    },
-    {
-      "@type": "WebSite",
-      "@id": "https://mentoriatextum.com/#website",
-      "url": "https://mentoriatextum.com",
-      "name": "TEXTUM — Mentoría Académica Internacional",
-      "description": "Mentoría académica personalizada para investigadores, doctorandos y estudiantes de posgrado.",
-      "about": {
-        "@type": "Thing",
-        "name": "Mentoría académica, investigación, tesis, publicación científica"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      }
-    },
+      "url": "https://orcid.org/0000-0002-8947-1364"
+    }
+  ],
+  "makesOffer": [
     {
       "@type": "Service",
-      "@id": "https://mentoriatextum.com/#service-flux",
       "name": "Mentoría Avanzada FLUX®",
-      "description": "Acompañamiento metodológico personalizado. Incluye diagnóstico, revisión de arquitectura, transferencia de criterio metodológico, sesión estratégica en vivo y acompañamiento híbrido con uso ético de IA.",
-      "provider": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      },
-      "serviceType": "Mentoría académica",
-      "category": "Titulación",
+      "description": "Acompañamiento metodológico personalizado para tesis y proyectos de investigación.",
       "offers": {
         "@type": "Offer",
         "price": "349",
-        "priceCurrency": "USD",
-        "priceSpecification": {
-          "@type": "PriceSpecification",
-          "price": "349",
-          "priceCurrency": "USD",
-          "valueAddedTaxIncluded": false
-        },
-        "availability": "https://schema.org/InStock",
-        "validFrom": "2024-01-01"
-      },
-      "audience": {
-        "@type": "Audience",
-        "audienceType": "Investigadores, doctorandos, estudiantes de posgrado"
+        "priceCurrency": "USD"
       }
     },
     {
       "@type": "Service",
-      "@id": "https://mentoriatextum.com/#service-ajuste-estilo",
-      "name": "Ajuste de Estilo y Norma",
-      "description": "Optimización ortotipográfica, adecuación a APA 7 / Vancouver, normalización de referencias.",
-      "provider": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      },
-      "serviceType": "Revisión editorial",
-      "category": "Titulación",
-      "offers": {
-        "@type": "Offer",
-        "price": "199",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "Service",
-      "@id": "https://mentoriatextum.com/#service-co-creacion",
-      "name": "Co-creación de Alta Intensidad",
-      "description": "Para proyectos complejos o con plazos ajustados. Co-diseño de estructura, aceleración metodológica, acompañamiento continuo hasta la entrega final.",
-      "provider": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      },
-      "serviceType": "Mentoría intensiva",
-      "category": "Titulación",
-      "offers": {
-        "@type": "Offer",
-        "price": "499",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "Service",
-      "@id": "https://mentoriatextum.com/#service-adaptacion-editorial",
-      "name": "Adaptación Editorial",
-      "description": "Revisión de estructura editorial, normalización de referencias, mejora del resumen y palabras clave, optimización para revista objetivo.",
-      "provider": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      },
-      "serviceType": "Adaptación editorial",
-      "category": "Publicación Científica",
-      "offers": {
-        "@type": "Offer",
-        "price": "299",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "Service",
-      "@id": "https://mentoriatextum.com/#service-pre-arbitraje",
       "name": "Pre-arbitraje Científico + FLUX®",
-      "description": "Revisión crítica IMRaD/IMRyD, auditoría de referencias, optimización con método TEXTUM FLUX, sesión de mentoría científica en vivo.",
-      "provider": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      },
-      "serviceType": "Pre-arbitraje científico",
-      "category": "Publicación Científica",
+      "description": "Revisión crítica y optimización para publicación en revistas indexadas.",
       "offers": {
         "@type": "Offer",
         "price": "499",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
+        "priceCurrency": "USD"
       }
     },
     {
       "@type": "Service",
-      "@id": "https://mentoriatextum.com/#service-premium",
-      "name": "Acompañamiento Editorial Premium",
-      "description": "Co-elaboración de respuestas a revisores, trazabilidad ética del uso de IA, soporte estratégico hasta la aceptación final.",
-      "provider": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      },
-      "serviceType": "Acompañamiento editorial",
-      "category": "Publicación Científica",
-      "offers": {
-        "@type": "Offer",
-        "price": "799",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "Service",
-      "@id": "https://mentoriatextum.com/#service-defensa",
       "name": "Alta Defensa y Oratoria Académica",
-      "description": "Estructuración del guion y discurso de apertura, optimización visual de diapositivas, entrenamiento en control de nervios y lenguaje corporal, banco simulado de preguntas difíciles del tribunal, sesión 1:1 en vivo.",
-      "provider": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      },
-      "serviceType": "Preparación de defensa",
-      "category": "Defensa Académica",
+      "description": "Preparación personalizada para defensa oral de tesis.",
       "offers": {
         "@type": "Offer",
         "price": "120",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "FAQPage",
-      "@id": "https://mentoriatextum.com/#faq",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "¿TEXTUM escribe tesis completas?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "No. TEXTUM desarrolla procesos de mentoría para que el investigador construya, comprenda y defienda su propia investigación. La autoría siempre es del investigador."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "¿TEXTUM vende trabajos académicos?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "No. Trabajamos exclusivamente mediante acompañamiento metodológico. No vendemos documentos ni suplantamos la autoría intelectual."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "¿TEXTUM usa inteligencia artificial?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Sí, pero nunca para sustituir la autoría del investigador. Usamos IA como herramienta de apoyo metodológico y editorial. La IA no genera contenido que se presente como producción original del autor."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "¿Cuál es la diferencia entre problema científico y problema profesional?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "El problema profesional es una dificultad práctica que enfrenta un profesional. El problema científico es una contradicción que se plantea en el campo del conocimiento. La tesis doctoral debe partir de un problema científico."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "¿Qué es el método TEXTUM FLUX®?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Es nuestro modelo metodológico propio que trabaja sobre cuatro dimensiones: Diagnóstico, Arquitectura Metodológica, Optimización Científica y Autonomía del Investigador. El objetivo es formar investigadores autónomos, no solo corregir documentos."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "¿Cómo cito ChatGPT en APA 7?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Formato: OpenAI. (2023). ChatGPT (Versión GPT-4) [Modelo de lenguaje]. https://chat.openai.com"
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "¿Qué requisitos pide Scopus para publicar?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Scopus es una base de datos que indexa revistas. Para publicar en una revista indexada en Scopus, el manuscrito debe cumplir con: estructura IMRaD/IMRyD, resumen estructurado, palabras clave, referencias actualizadas, originalidad y relevancia, y cumplimiento de normas editoriales de la revista."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "¿Cuánto cuesta una mentoría en TEXTUM?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Los precios varían según el servicio: Ajuste de Estilo y Norma: 199 USD, Mentoría Avanzada FLUX®: 349 USD, Co-creación: 499 USD, Adaptación Editorial: 299 USD, Pre-arbitraje + FLUX®: 499 USD, Acompañamiento Premium: 799 USD, Defensa: 120 USD. Pueden variar según extensión, complejidad y plazo."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "¿Cómo preparo mi defensa académica?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "TEXTUM ofrece el servicio 'Alta Defensa y Oratoria Académica' que incluye: estructuración del discurso, diseño de diapositivas, entrenamiento en lenguaje corporal, simulación de preguntas del tribunal y sesión 1:1 en vivo."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "¿TEXTUM trabaja con doctorandos internacionales?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Sí. Hemos trabajado con doctorandos de España, Perú, Ecuador, México, Colombia, Argentina, China y otros países. Las sesiones son 100% online en español e inglés."
-          }
-        }
-      ]
-    },
-    {
-      "@type": "Blog",
-      "@id": "https://mentoriatextum.com/blog/#blog",
-      "name": "Blog TEXTUM",
-      "description": "Artículos y guías sobre investigación, escritura científica, defensa académica e innovación metodológica.",
-      "url": "https://mentoriatextum.com/blog",
-      "publisher": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      }
-    },
-    {
-      "@type": "ItemList",
-      "@id": "https://mentoriatextum.com/colecciones/#collection",
-      "name": "Colecciones TEXTUM",
-      "description": "Colección editorial de recursos metodológicos estructurada en tres series: Principios TEXTUM, Categorías Metodológicas y Herramientas TEXTUM.",
-      "url": "https://mentoriatextum.com/colecciones",
-      "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "name": "Principios TEXTUM (PT)",
-          "description": "Fundamentos que explican las relaciones esenciales que organizan el proceso investigador."
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "Categorías Metodológicas (CM)",
-          "description": "Componentes estructurales del diseño de una investigación científica."
-        },
-        {
-          "@type": "ListItem",
-          "position": 3,
-          "name": "Herramientas TEXTUM (HT)",
-          "description": "Instrumentos de apoyo para formular, revisar, representar y evaluar la calidad metodológica de una investigación."
-        }
-      ]
-    },
-    {
-      "@type": "BreadcrumbList",
-      "@id": "https://mentoriatextum.com/#breadcrumb",
-      "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "name": "Inicio",
-          "item": "https://mentoriatextum.com"
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "Blog",
-          "item": "https://mentoriatextum.com/blog"
-        },
-        {
-          "@type": "ListItem",
-          "position": 3,
-          "name": "Colecciones",
-          "item": "https://mentoriatextum.com/colecciones"
-        }
-      ]
-    },
-    {
-      "@type": "Review",
-      "@id": "https://mentoriatextum.com/#review-tenorio",
-      "name": "Zulmi Consuelo Tenorio Polo",
-      "description": "Investigadora que publicó en Dialnet y Revista Podium tras recibir mentoría de TEXTUM.",
-      "reviewRating": {
-        "@type": "Rating",
-        "ratingValue": "5",
-        "bestRating": "5"
-      },
-      "author": {
-        "@type": "Person",
-        "name": "Zulmi Consuelo Tenorio Polo"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      }
-    },
-    {
-      "@type": "Review",
-      "@id": "https://mentoriatextum.com/#review-kong",
-      "name": "Xu Kong",
-      "description": "Investigador de la Universidad de Linyi (China) que publicó en REDIE tras recibir mentoría de TEXTUM.",
-      "reviewRating": {
-        "@type": "Rating",
-        "ratingValue": "5",
-        "bestRating": "5"
-      },
-      "author": {
-        "@type": "Person",
-        "name": "Xu Kong"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      }
-    },
-    {
-      "@type": "Review",
-      "@id": "https://mentoriatextum.com/#review-silva",
-      "name": "Omar Silva Ramos",
-      "description": "Doctor en Ciencias Pedagógicas que publicó en Mendive Vol. 23, 2025 tras recibir mentoría de TEXTUM.",
-      "reviewRating": {
-        "@type": "Rating",
-        "ratingValue": "5",
-        "bestRating": "5"
-      },
-      "author": {
-        "@type": "Person",
-        "name": "Omar Silva Ramos"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      }
-    },
-    {
-      "@type": "Course",
-      "@id": "https://mentoriatextum.com/#course",
-      "name": "Mentoría TEXTUM FLUX®",
-      "description": "Acompañamiento metodológico personalizado para investigadores, doctorandos y estudiantes de posgrado.",
-      "provider": {
-        "@type": "Organization",
-        "@id": "https://mentoriatextum.com/#organization"
-      },
-      "hasCourseInstance": {
-        "@type": "CourseInstance",
-        "courseMode": "online",
-        "courseWorkload": "PT2H",
-        "language": ["es", "en"]
-      }
-    },
-    {
-      "@type": "ContactPoint",
-      "@id": "https://mentoriatextum.com/#contact",
-      "email": "contacto@mentoriatextum.com",
-      "telephone": "+34614638406",
-      "contactType": "customer service",
-      "availableLanguage": ["Spanish", "English"],
-      "contactOption": "TollFree",
-      "areaServed": {
-        "@type": "Country",
-        "name": ["Spain", "Ecuador", "Peru", "Mexico", "Colombia", "Argentina", "Germany", "France", "Italy", "United Kingdom"]
+        "priceCurrency": "USD"
       }
     }
+  ],
+  "sameAs": [
+    "https://orcid.org/0000-0003-3041-096X",
+    "https://orcid.org/0000-0002-8947-1364"
   ]
 }
