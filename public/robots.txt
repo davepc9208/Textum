@@ -1,55 +1,46 @@
-# TEXTUM - Robots Exclusion Protocol
-# https://mentoriatextum.com/robots.txt
-
 User-agent: *
 Allow: /
 Disallow: /textum-redaccion-2026
 Disallow: /textum-redaccion-2026/
 
-# === Bots de IA (permisivos, queremos que nos indexen bien) ===
-
+# AI crawlers — archivos de conocimiento estructurado
 User-agent: GPTBot
-Allow: /
+Allow: /llms.txt
+Allow: /faq.md
+Allow: /services.md
+Allow: /schema.jsonld
 
-User-agent: ClaudeBot
-Allow: /
+User-agent: Claude-Web
+Allow: /llms.txt
+Allow: /faq.md
+Allow: /services.md
+Allow: /schema.jsonld
 
 User-agent: PerplexityBot
+Allow: /llms.txt
+Allow: /faq.md
+Allow: /services.md
+Allow: /schema.jsonld
+
+User-agent: Googlebot
 Allow: /
 
-User-agent: Google-Extended
-Allow: /
+User-agent: anthropic-ai
+Allow: /llms.txt
+Allow: /faq.md
+Allow: /services.md
+Allow: /schema.jsonld
 
-User-agent: ChatGPT-User
-Allow: /
+User-agent: cohere-ai
+Allow: /llms.txt
 
-User-agent: Gemini
-Allow: /
+User-agent: CCBot
+Allow: /llms.txt
 
-User-agent: FacebookBot
-Allow: /
-
-# === Bots que quizá queremos limitar (opcional) ===
-
-# User-agent: CCBot
-# Disallow: /
-
-# User-agent: AhrefsBot
-# Disallow: /
-
-# User-agent: SemrushBot
-# Disallow: /
-
-# === Sitemaps ===
-
-Sitemap: https://mentoriatextum.com/sitemap.xml
-
-# === Host (recomendado para algunos crawlers) ===
-
-Host: https://mentoriatextum.com
-
-# === Tiempo de rastreo (opcional, para bots que lo respeten) ===
-
-Crawl-delay: 1
+# Archivos de conocimiento para LLMs y buscadores semánticos
+# https://mentoriatextum.com/llms.txt
+# https://mentoriatextum.com/faq.md
+# https://mentoriatextum.com/services.md
+# https://mentoriatextum.com/schema.jsonld
 
 Sitemap: https://mentoriatextum.com/sitemap.xml

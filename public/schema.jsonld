@@ -1,79 +1,305 @@
 {
   "@context": "https://schema.org",
-  "@type": "EducationalOrganization",
-  "name": "TEXTUM — Mentoría Académica Internacional",
-  "url": "https://mentoriatextum.com",
-  "description": "Mentoría académica personalizada para investigadores, doctorandos y estudiantes de posgrado. Especialistas en metodología científica, titulación (TFG, TFM, tesis doctoral), publicación en revistas indexadas (Scopus, Latindex) y preparación para defensa oral.",
-  "foundingDate": "2024",
-  "address": {
-    "@type": "PostalAddress",
-    "addressCountry": "ES"
-  },
-  "contactPoint": {
-    "@type": "ContactPoint",
-    "email": "contacto@mentoriatextum.com",
-    "telephone": "+34614638406",
-    "contactType": "customer service",
-    "availableLanguage": ["Spanish", "English"]
-  },
-  "founder": [
+  "@graph": [
     {
-      "@type": "Person",
-      "name": "Vilma María Pérez Viñas",
-      "jobTitle": "Doctora en Ciencias Pedagógicas",
-      "description": "Doctora en Ciencias Pedagógicas. Máster en Didáctica de la Lengua Inglesa. Licenciada en Educación. Más de 40 años de experiencia en docencia universitaria, investigación, redacción académica, edición y traducción.",
-      "url": "https://orcid.org/0000-0003-3041-096X",
-      "sameAs": "https://orcid.org/0000-0003-3041-096X"
+      "@type": "EducationalOrganization",
+      "@id": "https://mentoriatextum.com/#organization",
+      "name": "TEXTUM — Mentoría Académica Internacional",
+      "alternateName": ["TEXTUM", "Mentoría TEXTUM", "TEXTUM Mentoría"],
+      "url": "https://mentoriatextum.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://mentoriatextum.com/favicon.svg"
+      },
+      "description": "Plataforma internacional de mentoría académica especializada en acompañamiento metodológico para investigadores, doctorandos y estudiantes de posgrado. Titulación, publicación científica y defensa oral. Método TEXTUM FLUX®.",
+      "foundingDate": "2024",
+      "email": "contacto@mentoriatextum.com",
+      "telephone": "+34614638406",
+      "areaServed": [
+        { "@type": "Country", "name": "España" },
+        { "@type": "Country", "name": "Ecuador" },
+        { "@type": "Country", "name": "Perú" },
+        { "@type": "Country", "name": "México" },
+        { "@type": "Country", "name": "Colombia" },
+        { "@type": "Country", "name": "Argentina" },
+        { "@type": "Country", "name": "Bolivia" },
+        { "@type": "Country", "name": "Chile" },
+        { "@type": "Country", "name": "Alemania" },
+        { "@type": "Country", "name": "Francia" },
+        { "@type": "Country", "name": "Italia" },
+        { "@type": "Country", "name": "Reino Unido" }
+      ],
+      "availableLanguage": ["Spanish", "English"],
+      "knowsAbout": [
+        "Metodología científica",
+        "Tesis doctoral",
+        "TFG",
+        "TFM",
+        "Publicación en Scopus",
+        "Normas APA 7",
+        "IMRaD",
+        "Defensa académica",
+        "Investigación cualitativa",
+        "Investigación cuantitativa",
+        "Métodos mixtos",
+        "Redacción académica",
+        "Oratoria académica"
+      ],
+      "founder": [
+        {
+          "@type": "Person",
+          "@id": "https://orcid.org/0000-0003-3041-096X",
+          "name": "Vilma María Pérez Viñas",
+          "jobTitle": "Doctora en Ciencias Pedagógicas",
+          "description": "Doctora en Ciencias Pedagógicas. Máster en Didáctica de la Lengua Inglesa. Más de 40 años de experiencia en docencia universitaria, investigación y redacción académica en Cuba, Perú, Ecuador y España.",
+          "sameAs": "https://orcid.org/0000-0003-3041-096X",
+          "knowsAbout": ["Metodología científica", "Didáctica universitaria", "Redacción académica", "Traducción científica", "Investigación educativa"],
+          "worksFor": { "@id": "https://mentoriatextum.com/#organization" }
+        },
+        {
+          "@type": "Person",
+          "@id": "https://orcid.org/0000-0002-8947-1364",
+          "name": "Yadyra de la Caridad Piñera Concepción",
+          "jobTitle": "Doctora en Ciencias Pedagógicas",
+          "description": "Doctora en Ciencias Pedagógicas. Máster en Didáctica del Español. Más de 80 publicaciones académicas indexadas. Premio Nacional de Investigación Científica El Salvador 2025.",
+          "sameAs": "https://orcid.org/0000-0002-8947-1364",
+          "award": "Premio Nacional de Investigación Científica, El Salvador, 2025",
+          "knowsAbout": ["Metodología científica", "Asesoría de tesis", "Publicación científica", "Escritura académica", "Investigación educativa"],
+          "worksFor": { "@id": "https://mentoriatextum.com/#organization" }
+        }
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Programas de Mentoría Académica TEXTUM",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Course",
+              "name": "Ajuste de Estilo y Norma",
+              "description": "Revisión ortotipográfica, normalización APA 7 / Vancouver, coherencia formal y referencias bibliográficas para manuscritos avanzados.",
+              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "educationalLevel": "Posgrado, Grado",
+              "teaches": "Normas académicas, APA 7, redacción formal, referencias bibliográficas",
+              "courseMode": "online"
+            },
+            "price": "189",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Course",
+              "name": "Mentoría Avanzada FLUX®",
+              "description": "Acompañamiento metodológico personalizado con revisión estructural, arquitectura metodológica, coherencia interna y transferencia de criterio científico.",
+              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "educationalLevel": "Doctorado, Maestría, Posgrado",
+              "teaches": "Metodología científica, diseño de investigación, coherencia interna, argumentación académica",
+              "courseMode": "online"
+            },
+            "price": "329",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Course",
+              "name": "Co-creación de Alta Intensidad",
+              "description": "Acompañamiento intensivo y continuo para proyectos complejos o bloqueados, con co-diseño de estructura y aceleración metodológica.",
+              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "educationalLevel": "Doctorado, Maestría",
+              "teaches": "Metodología científica avanzada, estructura de investigación, solvencia científica",
+              "courseMode": "online"
+            },
+            "price": "450",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Course",
+              "name": "Adaptación Editorial",
+              "description": "Adecuación técnica de artículos a revistas indexadas: estructura editorial, resumen, palabras clave y referencias.",
+              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "educationalLevel": "Investigador, Docente universitario",
+              "teaches": "Publicación científica, normas editoriales, APA 7, resumen científico",
+              "courseMode": "online"
+            },
+            "price": "279",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Course",
+              "name": "Pre-arbitraje Científico + FLUX®",
+              "description": "Revisión crítica completa del artículo antes del envío a revista Scopus o indexada: estructura IMRaD, coherencia, referencias y sesión de mentoría en vivo.",
+              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "educationalLevel": "Investigador, Doctorado",
+              "teaches": "Publicación en Scopus, IMRaD, arbitraje científico, metodología de artículo",
+              "courseMode": "online"
+            },
+            "price": "450",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Course",
+              "name": "Acompañamiento Editorial Premium",
+              "description": "Soporte editorial completo incluyendo respuesta a revisores, carta de presentación y seguimiento hasta la aceptación final.",
+              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "educationalLevel": "Investigador",
+              "teaches": "Respuesta a revisores, proceso editorial, publicación científica avanzada",
+              "courseMode": "online"
+            },
+            "price": "750",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Course",
+              "name": "Alta Defensa y Oratoria Académica",
+              "description": "Preparación completa para la defensa oral de tesis: guion, diapositivas, oratoria, control de nervios y simulación de preguntas del tribunal.",
+              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "educationalLevel": "Doctorado, Maestría, Grado",
+              "teaches": "Defensa oral, oratoria académica, sustentación, presentación científica",
+              "courseMode": "online"
+            },
+            "price": "110",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          }
+        ]
+      },
+      "sameAs": [
+        "https://orcid.org/0000-0003-3041-096X",
+        "https://orcid.org/0000-0002-8947-1364",
+        "https://www.linkedin.com/company/mentoría-textum",
+        "https://www.instagram.com/mentoria_textum/",
+        "https://www.facebook.com/MentoriaTextum"
+      ]
     },
     {
-      "@type": "Person",
-      "name": "Yadyra de la Caridad Piñera Concepción",
-      "jobTitle": "Doctora en Ciencias Pedagógicas",
-      "description": "Doctora en Ciencias Pedagógicas. Máster en Didáctica del Español y la Literatura. Asesora de tesis y artículos científicos. Coautora de libros y más de 80 publicaciones académicas indexadas. Premio Nacional de Investigación Científica, El Salvador, 2025.",
-      "url": "https://orcid.org/0000-0002-8947-1364",
-      "sameAs": "https://orcid.org/0000-0002-8947-1364"
+      "@type": "WebSite",
+      "@id": "https://mentoriatextum.com/#website",
+      "url": "https://mentoriatextum.com",
+      "name": "TEXTUM — Mentoría Académica Internacional",
+      "description": "Plataforma de mentoría académica internacional para investigadores y doctorandos.",
+      "publisher": { "@id": "https://mentoriatextum.com/#organization" },
+      "inLanguage": ["es", "en"],
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://mentoriatextum.com/blog?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://mentoriatextum.com/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿TEXTUM escribe tesis completas?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. TEXTUM acompaña metodológicamente al investigador para que sea el propio autor quien construya y firme su investigación. La autoría intelectual pertenece siempre al investigador."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿TEXTUM ayuda a publicar en Scopus?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí. El programa Pre-arbitraje Científico + FLUX® está diseñado específicamente para optimizar manuscritos antes del envío a revistas Scopus, maximizando la probabilidad de aceptación."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cuánto cuesta la mentoría de TEXTUM?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Los precios de referencia van desde 110 EUR (defensa oral) hasta 750 EUR (publicación premium). El diagnóstico inicial es gratuito. Todos los pagos son únicos, sin cuotas ni renovaciones."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿TEXTUM trabaja con doctorandos?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí. Los doctorandos son uno de los perfiles principales de TEXTUM, junto con maestrandos, tesistas de grado e investigadores que desean publicar en revistas indexadas."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿TEXTUM trabaja en inglés?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí. Los servicios están disponibles en español e inglés para investigadores que trabajan o publican en ese idioma."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo empieza el proceso con TEXTUM?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Con un diagnóstico académico gratuito donde se evalúa el estado del proyecto y se orienta al investigador hacia el programa más adecuado. Se puede solicitar en mentoriatextum.com o por WhatsApp."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "ItemList",
+      "name": "Publicaciones verificables de investigadores acompañados por TEXTUM",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "item": {
+            "@type": "ScholarlyArticle",
+            "name": "Artículo publicado en Dialnet por Zulmi Consuelo Tenorio Polo",
+            "author": { "@type": "Person", "name": "Zulmi Consuelo Tenorio Polo", "affiliation": "Universidad César Vallejo, Perú" },
+            "url": "https://dialnet.unirioja.es/servlet/articulo?codigo=10513571"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "item": {
+            "@type": "ScholarlyArticle",
+            "name": "Artículo publicado en Revista Podium (UPR) por Zulmi Consuelo Tenorio Polo",
+            "author": { "@type": "Person", "name": "Zulmi Consuelo Tenorio Polo", "affiliation": "Universidad César Vallejo, Perú" },
+            "url": "https://podium.upr.edu.cu/index.php/podium/article/view/1845"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "item": {
+            "@type": "ScholarlyArticle",
+            "name": "Artículo publicado en REDIE (UABC) por Xu Kong",
+            "author": { "@type": "Person", "name": "Xu Kong", "affiliation": "Universidad de Linyi, China" },
+            "url": "https://redie.uabc.mx/redie/article/view/6118/2689"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "item": {
+            "@type": "ScholarlyArticle",
+            "name": "Artículo publicado en Mendive Vol. 23 (2025) por Omar Silva Ramos",
+            "author": { "@type": "Person", "name": "Omar Silva Ramos" },
+            "url": "https://mendive.upr.edu.cu/index.php/MendiveUPR/article/view/3874"
+          }
+        }
+      ]
     }
-  ],
-  "makesOffer": [
-    {
-      "@type": "Offer",
-      "itemOffered": {
-        "@type": "Service",
-        "name": "Mentoría Avanzada FLUX®",
-        "description": "Acompañamiento metodológico personalizado. Incluye diagnóstico, revisión de arquitectura, transferencia de criterio metodológico, sesión estratégica en vivo y acompañamiento híbrido con uso ético de IA.",
-        "category": "Titulación"
-      },
-      "price": "349",
-      "priceCurrency": "USD",
-      "availability": "https://schema.org/InStock"
-    },
-    {
-      "@type": "Offer",
-      "itemOffered": {
-        "@type": "Service",
-        "name": "Pre-arbitraje Científico + FLUX®",
-        "description": "Revisión crítica IMRaD/IMRyD, auditoría de referencias, optimización con método TEXTUM FLUX, sesión de mentoría científica en vivo.",
-        "category": "Publicación Científica"
-      },
-      "price": "499",
-      "priceCurrency": "USD",
-      "availability": "https://schema.org/InStock"
-    },
-    {
-      "@type": "Offer",
-      "itemOffered": {
-        "@type": "Service",
-        "name": "Alta Defensa y Oratoria Académica",
-        "description": "Estructuración del guion y discurso de apertura, optimización visual de diapositivas, entrenamiento en control de nervios y lenguaje corporal, banco simulado de preguntas difíciles del tribunal, sesión 1:1 en vivo.",
-        "category": "Defensa Académica"
-      },
-      "price": "120",
-      "priceCurrency": "USD",
-      "availability": "https://schema.org/InStock"
-    }
-  ],
-  "sameAs": [
-    "https://orcid.org/0000-0003-3041-096X",
-    "https://orcid.org/0000-0002-8947-1364"
   ]
 }
