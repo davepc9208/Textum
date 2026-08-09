@@ -36,7 +36,10 @@ import BackToTop            from './components/BackToTop';
 import { useScrollReveal }  from './hooks/useScrollReveal';
 import { useSEO, injectSchema, removeSchema } from './hooks/useSEO';
 import { useLang }          from './i18n/LangContext';
+import Clarity from '@microsoft/clarity';
 
+const projectId = "xzsgo2fjo4" 
+Clarity.init(projectId);
 const BlogPage           = lazy(() => import('./pages/BlogPage'));
 const PostPage           = lazy(() => import('./pages/PostPage'));
 const AdminPage          = lazy(() => import('./pages/AdminPage'));
