@@ -1,6 +1,5 @@
 // src/components/Hero.tsx
-// Fix: h.subSecondary existía en el template pero no en translations.ts
-// Se lee con optional chaining; si no existe no rompe el render.
+// v3 — texto actualizado con subSecondary y cta1Sub
 // Fix Android: canvas desactivado en baja gama (sin cambios).
 
 import { useEffect, useRef, useState } from 'react';
@@ -107,10 +106,10 @@ export default function Hero() {
     };
   }, [showCanvas]);
 
-  // subSecondary es un campo que puede no estar en la versión actual de translations
-  // Lo leemos con optional chaining para que nunca rompa el render
+  // Campos opcionales — optional chaining para no romper si no existen en translations
   const subSecondary = (h as typeof h & { subSecondary?: string }).subSecondary;
   const cta1Micro    = (h as typeof h & { cta1Micro?: string }).cta1Micro;
+  const cta1Sub      = (h as typeof h & { cta1Sub?: string }).cta1Sub;
 
   return (
     <section
@@ -164,20 +163,27 @@ export default function Hero() {
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
         </div>
 
-        {/* Párrafo principal */}
-        <p className="font-serif italic text-lg sm:text-xl md:text-2xl font-light text-white/85 leading-relaxed mb-3 animate-[fadeInUp_1s_ease_0.7s_both] max-w-2xl">
+        {/* Titular principal — negrita, el gancho más importante */}
+        <p className="font-serif text-2xl sm:text-3xl md:text-4xl font-semibold text-white leading-tight mb-4 animate-[fadeInUp_1s_ease_0.7s_both] max-w-3xl">
           {h.sub}
         </p>
 
-        {/* Párrafo secundario — solo si existe en translations */}
+        {/* Subtítulo — metodología + IA */}
         {subSecondary && (
-          <p className="text-xs md:text-sm text-gold/60 font-light leading-relaxed mb-10 animate-[fadeIn_1s_ease_0.8s_both] max-w-xl">
+          <p className="text-sm md:text-base text-white/70 font-light leading-relaxed mb-3 animate-[fadeIn_1s_ease_0.8s_both] max-w-2xl">
             {subSecondary}
           </p>
         )}
 
+        {/* Línea de servicios en cursiva */}
+        {cta1Sub && (
+          <p className="font-serif italic text-sm text-gold/60 font-light leading-relaxed mb-8 animate-[fadeIn_1s_ease_0.85s_both] max-w-xl tracking-wide">
+            {cta1Sub}
+          </p>
+        )}
+
         {/* CTA */}
-        <div className={`flex flex-col items-center gap-2 animate-[fadeInUp_1s_ease_0.9s_both] ${subSecondary ? '' : 'mt-8'}`}>
+        <div className="flex flex-col items-center gap-2 animate-[fadeInUp_1s_ease_0.9s_both]">
           <a
             href="#contacto"
             onClick={(e) => {
