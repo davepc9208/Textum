@@ -37,6 +37,7 @@ import { useScrollReveal }  from './hooks/useScrollReveal';
 import { useSEO, injectSchema, removeSchema } from './hooks/useSEO';
 import { useLang }          from './i18n/LangContext';
 import Clarity from '@microsoft/clarity';
+import DescargaPage from './pages/DescargaPage';
 
 const projectId = "xzsgo2fjo4" 
 Clarity.init(projectId);
@@ -182,6 +183,7 @@ export default function App() {
       <Route path="/colecciones/:tipo" element={<Suspense fallback={<PageLoader />}><ColeccionListPage /></Suspense>} />
       <Route path="/colecciones/:tipo/:slug" element={<Suspense fallback={<PageLoader />}><ColeccionPiecePage /></Suspense>} />
       <Route path="/textum-redaccion-2026" element={<Suspense fallback={<PageLoader />}><AdminPage /></Suspense>} />
+      <Route path="/colecciones/:tipo/:slug/descargar" element={<DescargaPage />} />
     </Routes>
   );
 }

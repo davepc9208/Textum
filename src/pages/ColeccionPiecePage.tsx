@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, Clock, ArrowLeft, X } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, X, Download } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
 import { useLang } from '../i18n/LangContext';
 import { useSEO, injectSchema, removeSchema } from '../hooks/useSEO';
@@ -14,6 +14,7 @@ import Footer from '../components/Footer';
 import ShareButtons from '../components/ShareButtons';
 import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
+
 
 const SITE_URL = 'https://mentoriatextum.com';
 
@@ -183,6 +184,25 @@ export default function ColeccionPiecePage() {
             />
 
             {lightbox && <Lightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
+
+            {/* CTA Descarga PDF profesional */}
+<div className="mt-14 p-7 bg-navy/[0.03] border border-navy/10 rounded-2xl">
+  <h3 className="font-serif text-lg text-navy mb-2">
+    {lang === 'es' ? 'Versión PDF profesional' : 'Professional PDF version'}
+  </h3>
+  <p className="text-sm text-navy/65 mb-5 leading-relaxed">
+    {lang === 'es'
+      ? 'Formato listo para citar, imprimir y usar offline (incluye QR y referencia APA).'
+      : 'Ready-to-cite format for printing and offline use (includes QR and APA reference).'}
+  </p>
+  <Link
+    to={`/colecciones/${tipo}/${slug}/descargar`}
+    className="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-cream text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
+  >
+    <Download size={15} />
+    {lang === 'es' ? 'Descargar PDF' : 'Download PDF'}
+  </Link>
+</div>
 
             {/* CTA WhatsApp — al final de cada pieza de Colección */}
             <WhatsAppCTA />
