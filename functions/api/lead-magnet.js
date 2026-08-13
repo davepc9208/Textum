@@ -49,6 +49,8 @@ export async function onRequestPost(context) {
       );
     }
 
+    const normalisedLang = (lang || 'es').toLowerCase() === 'en' ? 'en' : 'es';
+
     // Supabase con service role (solo en server)
     const supabase = createClient(
       env.VITE_SUPABASE_URL || env.SUPABASE_URL,
@@ -67,7 +69,7 @@ export async function onRequestPost(context) {
         resource_slug,
         resource_type,
         resource_title,
-        lang,
+        lang: normalisedLang,
         source,
         utm_source,
         utm_medium,
@@ -85,11 +87,25 @@ export async function onRequestPost(context) {
       );
     }
 
-    // 2. Generar signed URL del PDF (15 minutos)
-    const filePath = `${resource_slug}.pdf`; // ej: pt-01.pdf
-    const { data: signed, error: signError } = await supabase.storage
+    // 2. Generar signed URL del PDF según idioma (fallback a ES)
+    // ES: pt-01.pdf  |  EN: pt-01-en.pdf
+    const preferredPath =
+      normalisedLang === 'en'
+        ? `${resource_slug}-en.pdf`
+        : `${resource_slug}.pdf`;
+
+    let { data: signed, error: signError } = await supabase.storage
       .from('colecciones-pdf')
-      .createSignedUrl(filePath, 60 * 15); // 15 min
+      .createSignedUrl(preferredPath, 60 * 15); // 15 min
+
+    // Si pide EN y no existe el archivo, servir el ES
+    if ((signError || !signed?.signedUrl) && normalisedLang === 'en') {
+      const fallback = await supabase.storage
+        .from('colecciones-pdf')
+        .createSignedUrl(`${resource_slug}.pdf`, 60 * 15);
+      signed = fallback.data;
+      signError = fallback.error;
+    }
 
     if (signError || !signed?.signedUrl) {
       console.error('Signed URL error:', signError);
@@ -105,7 +121,7 @@ export async function onRequestPost(context) {
       name,
       resourceTitle: resource_title || resource_slug,
       downloadUrl: signed.signedUrl,
-      lang,
+      lang: normalisedLang,
       resendApiKey: env.RESEND_API_KEY,
     });
 

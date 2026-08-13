@@ -72,18 +72,18 @@ export default function DescargaPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          institution: form.institution || null,
-          country: form.country || null,
-          role: form.role || null,
-          resource_slug: slug,
-          resource_type: resource.type,
-          resource_title: lang === 'es' ? resource.title_es : resource.title_en,
-          lang,
-          source: 'coleccion',
-          privacy_accepted: true,
-        }),
+  name: form.name,
+  email: form.email,
+  institution: form.institution || null,
+  country: form.country || null,
+  role: form.role || null,
+  resource_slug: slug,
+  resource_type: resource.type,
+  resource_title: lang === 'es' ? resource.title_es : resource.title_en,
+  lang,                    // ← ya lo tenías
+  source: 'coleccion',
+  privacy_accepted: true,
+}),
       });
 
       const data = await res.json();
