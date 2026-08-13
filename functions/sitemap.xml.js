@@ -17,7 +17,7 @@ export async function onRequest(context) {
 
   try {
     const res = await fetch(
-      `${supabaseUrl}/rest/v1/posts?select=slug,collection_type,updated_at,created_at&published=eq.true&order=created_at.desc`,
+      `${supabaseUrl}/rest/v1/posts?select=slug,collection_type,created_at&published=eq.true&order=created_at.desc`,
       {
         headers: {
           apikey: supabaseKey,
@@ -52,7 +52,7 @@ export async function onRequest(context) {
     ];
 
     const dynamicUrls = (posts || []).map((p) => {
-      const lastmod = (p.updated_at || p.created_at || today).toString().slice(0, 10);
+      const lastmod = (p.created_at || today).toString().slice(0, 10);
       if (p.collection_type) {
         return {
           loc: `${SITE}/colecciones/${p.collection_type}/${p.slug}`,
