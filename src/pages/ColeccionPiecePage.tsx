@@ -15,7 +15,6 @@ import ShareButtons from '../components/ShareButtons';
 import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 
-
 const SITE_URL = 'https://mentoriatextum.com';
 
 const TYPE_LABELS: Record<string, { es: string; en: string }> = {
@@ -60,9 +59,24 @@ export default function ColeccionPiecePage() {
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
-    el.querySelectorAll('img').forEach(img => { img.style.cursor = 'zoom-in'; });
+
+    el.querySelectorAll('img').forEach(img => {
+      img.style.cursor = 'zoom-in';
+      img.setAttribute('draggable', 'false');
+    });
+
+    const block = (e: Event) => e.preventDefault();
+    el.addEventListener('copy', block);
+    el.addEventListener('cut', block);
+    el.addEventListener('contextmenu', block);
     el.addEventListener('click', openLightbox);
-    return () => el.removeEventListener('click', openLightbox);
+
+    return () => {
+      el.removeEventListener('copy', block);
+      el.removeEventListener('cut', block);
+      el.removeEventListener('contextmenu', block);
+      el.removeEventListener('click', openLightbox);
+    };
   }, [post, openLightbox]);
 
   useEffect(() => {
@@ -156,10 +170,14 @@ export default function ColeccionPiecePage() {
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
               <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
-                <span className="flex items-center gap-1.5"><Calendar size={13} aria-hidden="true" />
+                <span className="flex items-center gap-1.5">
+                  <Calendar size={13} aria-hidden="true" />
                   {new Date(post.created_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
-                <span className="flex items-center gap-1.5"><Clock size={13} aria-hidden="true" />{post.reading_time} {t.blog.minRead}</span>
+                <span className="flex items-center gap-1.5">
+                  <Clock size={13} aria-hidden="true" />
+                  {post.reading_time} {t.blog.minRead}
+                </span>
                 <span className="text-gold font-medium">{post.author}</span>
               </div>
               <ShareButtons title={postTitle} url={canonicalUrl} />
@@ -176,39 +194,72 @@ export default function ColeccionPiecePage() {
               </svg>
             </div>
 
-            {/* SEGURIDAD: sanitizeHtml previene XSS del contenido de Supabase */}
+            {/* Contenido de solo lectura */}
             <div
               ref={contentRef}
-              className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:font-light prose-headings:text-navy prose-p:text-navy/75 prose-p:leading-relaxed prose-p:font-light prose-a:text-gold prose-a:no-underline hover:prose-a:underline prose-strong:text-navy prose-blockquote:border-l-gold prose-blockquote:text-navy/60 prose-blockquote:font-serif prose-blockquote:italic prose-li:text-navy/70 prose-img:rounded-sm prose-img:shadow-md"
+              className="prose prose-lg max-w-none
+                prose-headings:font-serif prose-headings:font-light prose-headings:text-navy
+                prose-p:text-navy/75 prose-p:leading-relaxed prose-p:font-light
+                prose-a:text-gold prose-a:no-underline hover:prose-a:underline
+                prose-strong:text-navy
+                prose-blockquote:border-l-gold prose-blockquote:text-navy/60 prose-blockquote:font-serif prose-blockquote:italic
+                prose-li:text-navy/70
+                prose-img:rounded-sm prose-img:shadow-md
+                select-none"
+              style={{
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none',
+                userSelect: 'none',
+              }}
+              onCopy={(e) => e.preventDefault()}
+              onCut={(e) => e.preventDefault()}
+              onContextMenu={(e) => e.preventDefault()}
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
             />
 
-            {lightbox && <Lightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
+            {lightbox && (
+              <Lightbox
+                src={lightbox.src}
+                alt={lightbox.alt}
+                onClose={() => setLightbox(null)}
+              />
+            )}
+
+            {/* Aviso de solo lectura */}
+            <p className="mt-10 text-xs text-navy/40 text-center font-light leading-relaxed">
+              {lang === 'es'
+                ? 'Este documento es de solo lectura en la web. Para citarlo o usarlo offline, descarga la versión PDF profesional.'
+                : 'This document is read-only on the web. To cite it or use it offline, download the professional PDF version.'}
+            </p>
 
             {/* CTA Descarga PDF profesional */}
-<div className="mt-14 p-7 bg-navy/[0.03] border border-navy/10 rounded-2xl">
-  <h3 className="font-serif text-lg text-navy mb-2">
-    {lang === 'es' ? 'Versión PDF profesional' : 'Professional PDF version'}
-  </h3>
-  <p className="text-sm text-navy/65 mb-5 leading-relaxed">
-    {lang === 'es'
-      ? 'Formato listo para citar, imprimir y usar offline (incluye QR y referencia APA).'
-      : 'Ready-to-cite format for printing and offline use (includes QR and APA reference).'}
-  </p>
-  <Link
-    to={`/colecciones/${tipo}/${slug}/descargar`}
-    className="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-cream text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
-  >
-    <Download size={15} />
-    {lang === 'es' ? 'Descargar PDF' : 'Download PDF'}
-  </Link>
-</div>
+            <div className="mt-6 p-7 bg-navy/[0.03] border border-navy/10 rounded-2xl">
+              <h3 className="font-serif text-lg text-navy mb-2">
+                {lang === 'es' ? 'Versión PDF profesional' : 'Professional PDF version'}
+              </h3>
+              <p className="text-sm text-navy/65 mb-5 leading-relaxed">
+                {lang === 'es'
+                  ? 'Formato listo para citar, imprimir y usar offline (incluye QR y referencia APA).'
+                  : 'Ready-to-cite format for printing and offline use (includes QR and APA reference).'}
+              </p>
+              <Link
+                to={`/colecciones/${tipo}/${slug}/descargar`}
+                className="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-cream text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
+              >
+                <Download size={15} />
+                {lang === 'es' ? 'Descargar PDF' : 'Download PDF'}
+              </Link>
+            </div>
 
-            {/* CTA WhatsApp — al final de cada pieza de Colección */}
+            {/* CTA WhatsApp — solo una vez */}
             <WhatsAppCTA />
 
             <div className="mt-10 pt-8 border-t border-navy/10">
-              <Link to={`/colecciones/${tipo}`} className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200">
+              <Link
+                to={`/colecciones/${tipo}`}
+                className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200"
+              >
                 <ArrowLeft size={14} aria-hidden="true" />
                 {lang === 'es' ? `Volver a ${typeLabel}` : `Back to ${typeLabel}`}
               </Link>
