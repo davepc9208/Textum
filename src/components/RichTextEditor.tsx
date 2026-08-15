@@ -58,6 +58,29 @@ async function uploadImage(file: File): Promise<{ url: string | null; error: str
   return { url: data.publicUrl, error: null };
 }
 
+/** Limpia HTML pegado desde Word / Google Docs / LibreOffice */
+function cleanPastedHtml(html: string): string {
+  return html
+    .replace(/<!--\[if[\s\S]*?endif\]-->/gi, '')
+    .replace(/<\/?o:[^>]*>/gi, '')
+    .replace(/<\/?w:[^>]*>/gi, '')
+    .replace(/<\/?m:[^>]*>/gi, '')
+    .replace(/<\/?v:[^>]*>/gi, '')
+    .replace(/\s*mso-[a-z-]+:[^;"]+;?/gi, '')
+    .replace(/\s*class="Mso[^"]*"/gi, '')
+    .replace(/<span[^>]*>\s*<\/span>/gi, '')
+    .replace(/\s*style="[^"]*"/gi, (match) => {
+      if (/text-align/i.test(match)) {
+        const align = match.match(/text-align:\s*([^;"]+)/i);
+        return align ? ` style="text-align: ${align[1].trim()}"` : '';
+      }
+      return '';
+    })
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 // ─── Toolbar button ─────────────────────────────────────────────────────────
 function ToolbarButton({
   onClick, active, disabled, title, children,
@@ -373,6 +396,46 @@ export default function RichTextEditor({
           'prose-pre:bg-navy prose-pre:text-white prose-pre:rounded-sm prose-pre:p-4 prose-pre:overflow-x-auto ' +
           // Subíndice/Superíndice
           'prose-sub:align-sub prose-sup:align-super',
+      },
+      transformPastedHTML: (html) => cleanPastedHtml(html),
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+
+        const imageFiles: File[] = [];
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.type.startsWith('image/')) {
+            const file = item.getAsFile();
+            if (file) imageFiles.push(file);
+          }
+        }
+
+        const html = event.clipboardData?.getData('text/html') ?? '';
+        const hasSubstantialHtml = html.length > 50 && /<(p|h[1-6]|ul|ol|table|div)[\s>]/i.test(html);
+
+        if (imageFiles.length > 0 && !hasSubstantialHtml) {
+          event.preventDefault();
+          (async () => {
+            for (const file of imageFiles) {
+              const { url, error } = await uploadImage(file);
+              if (error) {
+                onUploadError?.(`Error al pegar imagen: ${error}`);
+                continue;
+              }
+              if (url) {
+                const { state } = view;
+                const node = state.schema.nodes.image?.create({ src: url });
+                if (node) {
+                  const tr = state.tr.replaceSelectionWith(node);
+                  view.dispatch(tr);
+                }
+              }
+            }
+          })();
+          return true;
+        }
+        return false;
       },
     },
   });

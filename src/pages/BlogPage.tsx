@@ -57,11 +57,12 @@ export default function BlogPage() {
 
   const categories = CATEGORIES[lang];
 
-  useEffect(() => {
+    useEffect(() => {
     supabase
       .from('posts')
       .select('*')
       .eq('published', true)
+      .is('collection_type', null) // solo artículos de blog, no piezas de colección
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         setPosts(data ?? []);

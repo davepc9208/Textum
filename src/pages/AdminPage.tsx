@@ -581,21 +581,21 @@ function PostEditor({
               <p className="text-xs text-navy/40 mt-1.5">Define en qué sección del blog aparecerá este artículo.</p>
             </div>
             <div>
-  <label className={labelCls}>Tipo de Colección</label>
-  <select
-    className={inputCls}
-    value={form.collection_type ?? ''}
-    onChange={e => set('collection_type', e.target.value || null as unknown as string)}
-  >
-    <option value="">Blog — artículo normal</option>
-    <option value="principio">PT — Principios TEXTUM</option>
-    <option value="categoria">CM — Categorías Metodológicas</option>
-    <option value="herramienta">HT — Herramientas TEXTUM</option>
-  </select>
-  <p className="text-xs text-navy/40 mt-1.5">
-    Si seleccionas un tipo de Colección, la pieza no aparecerá en el Blog.
-  </p>
-</div>
+              <label className={labelCls}>Tipo de contenido</label>
+              <select
+                className={inputCls}
+                value={form.collection_type ?? ''}
+                onChange={e => set('collection_type', (e.target.value || null) as unknown as string)}
+              >
+                <option value="">Blog — artículo normal</option>
+                <option value="principio">Colección · Principio (PT)</option>
+                <option value="categoria">Colección · Categoría (CM)</option>
+                <option value="herramienta">Colección · Herramienta (HT)</option>
+              </select>
+              <p className="text-xs text-navy/40 mt-1.5">
+                Si eliges colección, la pieza no aparece en /blog; solo en /colecciones/...
+              </p>
+            </div>
 
             <div>
               <label className={labelCls}>Imagen de portada</label>
@@ -993,9 +993,18 @@ export default function AdminPage() {
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-serif text-navy truncate">{post.title_es}</p>
-                  <p className="text-xs text-navy/40 mt-0.5">{post.author} · {new Date(post.created_at).toLocaleDateString('es-ES')} · {post.reading_time} min{post.category ? ` · ${post.category}` : ''}</p>
+                  <p className="text-xs text-navy/40 mt-0.5">
+                    {post.author} · {new Date(post.created_at).toLocaleDateString('es-ES')} · {post.reading_time} min
+                    {post.category ? ` · ${post.category}` : ''}
+                    {post.collection_type ? ` · ${post.collection_type}` : ''}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  {post.collection_type && (
+                    <span className="text-[10px] tracking-widest px-2 py-0.5 rounded-full border border-gold/40 text-gold bg-gold/5">
+                      {post.collection_type === 'principio' ? 'PT' : post.collection_type === 'categoria' ? 'CM' : post.collection_type === 'herramienta' ? 'HT' : post.collection_type.toUpperCase()}
+                    </span>
+                  )}
                   <span className={`text-[10px] tracking-widest px-2 py-0.5 rounded-full border ${post.published ? 'text-green-700 border-green-200 bg-green-50' : 'text-navy/40 border-navy/15 bg-navy/5'}`}>
                     {post.published ? 'PUBLICADO' : 'BORRADOR'}
                   </span>
