@@ -143,9 +143,6 @@ export default function Hero() {
           {h.eyebrow}
         </p>
 
-        {/* H1 semántico invisible — SEO */}
-        <h1 className="sr-only">{h.tagline}</h1>
-
         {/* TEXTUM — protagonista visual */}
         <p
           aria-hidden="true"
@@ -163,10 +160,10 @@ export default function Hero() {
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
         </div>
 
-        {/* Titular principal — negrita, el gancho más importante */}
-        <p className="font-serif text-2xl sm:text-3xl md:text-4xl font-semibold text-white leading-tight mb-4 animate-[fadeInUp_1s_ease_0.7s_both] max-w-3xl">
+        {/* H1 visible — titular principal (SEO + accesibilidad) */}
+        <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-semibold text-white leading-tight mb-4 animate-[fadeInUp_1s_ease_0.7s_both] max-w-3xl">
           {h.sub}
-        </p>
+        </h1>
 
         {/* Subtítulo — metodología + IA */}
         {subSecondary && (
