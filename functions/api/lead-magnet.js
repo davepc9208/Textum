@@ -92,10 +92,30 @@ export async function onRequestPost(context) {
     }
 
     // 2. Signed URL del PDF (15 min)
-    const filePath = `${resource_slug}.pdf`;
-    const { data: signed, error: signError } = await supabase.storage
-      .from('colecciones-pdf')
-      .createSignedUrl(filePath, 60 * 15);
+    // Inglés: {slug}-en.pdf ; si no existe, fallback al PDF en español
+    const isEn = String(lang).toLowerCase() === 'en';
+    const primaryPath = isEn ? `${resource_slug}-en.pdf` : `${resource_slug}.pdf`;
+    const fallbackPath = `${resource_slug}.pdf`;
+
+    let signed = null;
+    let signError = null;
+
+    {
+      const res = await supabase.storage
+        .from('colecciones-pdf')
+        .createSignedUrl(primaryPath, 60 * 15);
+      signed = res.data;
+      signError = res.error;
+    }
+
+    if ((signError || !signed?.signedUrl) && isEn && primaryPath !== fallbackPath) {
+      console.warn('EN PDF missing, fallback to ES:', primaryPath, signError);
+      const res = await supabase.storage
+        .from('colecciones-pdf')
+        .createSignedUrl(fallbackPath, 60 * 15);
+      signed = res.data;
+      signError = res.error;
+    }
 
     if (signError || !signed?.signedUrl) {
       console.error('Signed URL error:', signError);
