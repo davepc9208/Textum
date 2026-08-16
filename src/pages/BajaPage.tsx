@@ -1,24 +1,22 @@
 // src/pages/BajaPage.tsx
-// Página pública de baja de comunicaciones / newsletter
+// Baja de comunicaciones: con enlace del email (token) o introduciendo el correo
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
 export default function BajaPage() {
   const [params] = useSearchParams();
-  const email = params.get('email') || '';
-  const token = params.get('token') || '';
+  const emailParam = params.get('email') || '';
+  const tokenParam = params.get('token') || '';
+
+  const [email, setEmail] = useState(emailParam);
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (!email || !token) {
-      setStatus('error');
-      setMessage('Enlace incompleto. Usa el enlace de baja que aparece en el correo de TEXTUM.');
-      return;
-    }
+    if (!emailParam || !tokenParam) return;
 
     let cancelled = false;
     (async () => {
@@ -27,13 +25,13 @@ export default function BajaPage() {
         const res = await fetch('/api/unsubscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, token }),
+          body: JSON.stringify({ email: emailParam, token: tokenParam }),
         });
         const data = await res.json().catch(() => ({}));
         if (cancelled) return;
         if (!res.ok) {
           setStatus('error');
-          setMessage(data.error || 'No se pudo completar la baja. Inténtalo de nuevo o escríbenos.');
+          setMessage(data.error || 'No se pudo completar la baja. Inténtalo de nuevo o usa el formulario.');
           return;
         }
         setStatus('ok');
@@ -52,7 +50,43 @@ export default function BajaPage() {
     return () => {
       cancelled = true;
     };
-  }, [email, token]);
+  }, [emailParam, tokenParam]);
+
+  const submitForm = async (e: FormEvent) => {
+    e.preventDefault();
+    const clean = email.trim().toLowerCase();
+    if (!clean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+      setStatus('error');
+      setMessage('Introduce un correo electrónico válido.');
+      return;
+    }
+
+    setStatus('loading');
+    setMessage('');
+    try {
+      const res = await fetch('/api/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: clean }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setStatus('error');
+        setMessage(data.error || 'No se pudo completar la baja.');
+        return;
+      }
+      setStatus('ok');
+      setMessage(
+        data.message ||
+          'Te has dado de baja correctamente. No recibirás más comunicaciones comerciales de TEXTUM.'
+      );
+    } catch {
+      setStatus('error');
+      setMessage('Error de red. Revisa tu conexión e inténtalo de nuevo.');
+    }
+  };
+
+  const showForm = status === 'idle' || status === 'error' || (status === 'loading' && !tokenParam);
 
   return (
     <div className="min-h-screen bg-cream flex flex-col">
@@ -71,6 +105,10 @@ export default function BajaPage() {
         <div className="w-full max-w-md bg-white border border-navy/10 rounded-sm shadow-lg p-8 text-center">
           <p className="text-[11px] tracking-[0.3em] text-gold uppercase mb-3">Comunicaciones</p>
           <h1 className="font-serif text-2xl text-navy mb-4">Baja de la lista</h1>
+          <p className="text-sm text-navy/55 leading-relaxed mb-6 font-light">
+            Dejarás de recibir emails de novedades y mentoría de TEXTUM. Podrás seguir usando la web
+            y descargar recursos si lo necesitas.
+          </p>
 
           {status === 'loading' && (
             <div className="flex flex-col items-center gap-3 py-6">
@@ -88,28 +126,45 @@ export default function BajaPage() {
                 ✓
               </div>
               <p className="text-sm text-navy/70 leading-relaxed">{message}</p>
-              {email && (
+              {(email || emailParam) && (
                 <p className="text-xs text-navy/40">
-                  Email: <span className="text-navy/60">{email}</span>
+                  Email: <span className="text-navy/60">{email || emailParam}</span>
                 </p>
               )}
-              <p className="text-xs text-navy/40 leading-relaxed">
-                Seguirás pudiendo usar la web y descargar documentos. Solo dejamos de enviarte
-                emails de novedades y mentoría no solicitados.
-              </p>
             </div>
           )}
 
-          {status === 'error' && (
-            <div className="py-4 space-y-4">
-              <p className="text-sm text-red-600 leading-relaxed">{message}</p>
-              <p className="text-xs text-navy/50">
-                Si el problema continúa, escribe a{' '}
-                <a href="mailto:contacto@mentoriatextum.com" className="text-gold underline">
-                  contacto@mentoriatextum.com
-                </a>
+          {showForm && status !== 'loading' && (
+            <form onSubmit={submitForm} className="text-left space-y-4">
+              {status === 'error' && message && (
+                <p className="text-sm text-red-600 leading-relaxed text-center">{message}</p>
+              )}
+              <div>
+                <label htmlFor="baja-email" className="block text-xs tracking-widest uppercase text-navy/50 mb-2">
+                  Correo electrónico
+                </label>
+                <input
+                  id="baja-email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  className="w-full border border-navy/15 rounded-sm px-4 py-3 text-sm text-navy focus:outline-none focus:border-gold/60 bg-cream/40"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full btn-primary py-3 text-xs tracking-widest rounded-sm"
+              >
+                <span>Confirmar baja</span>
+              </button>
+              <p className="text-[11px] text-navy/40 text-center leading-relaxed">
+                Si llegaste desde un correo de TEXTUM, también puedes usar el enlace de baja de ese
+                mensaje.
               </p>
-            </div>
+            </form>
           )}
 
           <Link

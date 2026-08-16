@@ -1,5 +1,5 @@
 // functions/api/unsubscribe.js
-// Baja de comunicaciones / newsletter (RGPD)
+// Baja: con token (email) o solo con email (formulario web)
 import { createClient } from '@supabase/supabase-js';
 
 const corsHeaders = {
@@ -26,21 +26,30 @@ export async function onRequestPost(context) {
     const email = String(body.email || '').trim().toLowerCase();
     const token = String(body.token || '').trim();
 
-    if (!email || !token) {
-      return new Response(JSON.stringify({ error: 'Faltan email o token' }), {
+    if (!email) {
+      return new Response(JSON.stringify({ error: 'Indica tu correo electrónico' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const secret = env.UNSUBSCRIBE_SECRET || env.SUPABASE_SERVICE_ROLE_KEY || 'textum-unsub';
-    const expected = await makeToken(email, secret);
-
-    if (token !== expected) {
-      return new Response(JSON.stringify({ error: 'Enlace de baja no válido o caducado' }), {
-        status: 403,
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(JSON.stringify({ error: 'Email no válido' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    if (token) {
+      const secret = env.UNSUBSCRIBE_SECRET || env.SUPABASE_SERVICE_ROLE_KEY || 'textum-unsub';
+      const expected = await makeToken(email, secret);
+      if (token !== expected) {
+        return new Response(JSON.stringify({ error: 'Enlace de baja no válido o caducado' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const supabase = createClient(
@@ -50,8 +59,34 @@ export async function onRequestPost(context) {
 
     const now = new Date().toISOString();
 
-    // Marca todos los leads de ese email como dados de baja
-    const { error, count } = await supabase
+    const { data: existing, error: findError } = await supabase
+      .from('leads')
+      .select('id')
+      .eq('email', email)
+      .limit(1);
+
+    if (findError) {
+      console.error('unsubscribe find error:', findError);
+      return new Response(
+        JSON.stringify({
+          error: 'No se pudo consultar la base de datos. Contacta con contacto@mentoriatextum.com',
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!existing || existing.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message:
+            'Si ese correo estaba en nuestra lista, ya no recibirá más comunicaciones comerciales de TEXTUM.',
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { error } = await supabase
       .from('leads')
       .update({ unsubscribed_at: now })
       .eq('email', email)
@@ -59,11 +94,9 @@ export async function onRequestPost(context) {
 
     if (error) {
       console.error('unsubscribe update error:', error);
-      // Si la columna no existe aún, intentamos no romper del todo
       return new Response(
         JSON.stringify({
-          error:
-            'No se pudo registrar la baja en la base de datos. Contacta con contacto@mentoriatextum.com',
+          error: 'No se pudo registrar la baja. Contacta con contacto@mentoriatextum.com',
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -74,7 +107,6 @@ export async function onRequestPost(context) {
         success: true,
         message:
           'Te has dado de baja correctamente. No recibirás más comunicaciones comerciales de TEXTUM.',
-        updated: count ?? undefined,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
