@@ -58,9 +58,10 @@ async function uploadImage(file: File): Promise<{ url: string | null; error: str
   return { url: data.publicUrl, error: null };
 }
 
-/** Limpia HTML pegado desde Word / Google Docs / LibreOffice */
+/** Limpia HTML pegado desde Word / Google Docs / LibreOffice (sin destruir el texto) */
 function cleanPastedHtml(html: string): string {
-  return html
+  if (!html) return html;
+  let out = html
     .replace(/<!--\[if[\s\S]*?endif\]-->/gi, '')
     .replace(/<\/?o:[^>]*>/gi, '')
     .replace(/<\/?w:[^>]*>/gi, '')
@@ -69,16 +70,18 @@ function cleanPastedHtml(html: string): string {
     .replace(/\s*mso-[a-z-]+:[^;"]+;?/gi, '')
     .replace(/\s*class="Mso[^"]*"/gi, '')
     .replace(/<span[^>]*>\s*<\/span>/gi, '')
-    .replace(/\s*style="[^"]*"/gi, (match) => {
-      if (/text-align/i.test(match)) {
-        const align = match.match(/text-align:\s*([^;"]+)/i);
-        return align ? ` style="text-align: ${align[1].trim()}"` : '';
-      }
-      return '';
+    // Quitar estilos salvo text-align (no colapsar todo el whitespace del HTML)
+    .replace(/\s*style="([^"]*)"/gi, (_m, styles: string) => {
+      const align = String(styles).match(/text-align:\s*([^;"]+)/i);
+      return align ? ` style="text-align: ${align[1].trim()}"` : '';
     })
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+    .replace(/&nbsp;/g, ' ');
+  // Si tras limpiar no queda texto visible, devolver original
+  const textOnly = out.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  if (!textOnly && html.replace(/<[^>]+>/g, '').trim()) {
+    return html;
+  }
+  return out.trim();
 }
 
 // ─── Toolbar button ─────────────────────────────────────────────────────────
@@ -288,6 +291,7 @@ export default function RichTextEditor({
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showImageUrlInput, setShowImageUrlInput] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const lastEmitted = useRef<string | null>(null);
 
   // FIX: cargar CSS de syntax highlighting dinámicamente
   // para evitar que bloquee el render en la homepage
@@ -372,7 +376,11 @@ export default function RichTextEditor({
       Placeholder.configure({ placeholder }),
     ],
     content,
-    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      lastEmitted.current = html;
+      onChange(html);
+    },
     editorProps: {
       attributes: {
         class:
@@ -398,23 +406,28 @@ export default function RichTextEditor({
           'prose-sub:align-sub prose-sup:align-super',
       },
       transformPastedHTML: (html) => cleanPastedHtml(html),
+      transformPastedText: (text) => text, // texto plano siempre permitido
       handlePaste: (view, event) => {
-        const items = event.clipboardData?.items;
-        if (!items) return false;
+        const cd = event.clipboardData;
+        if (!cd) return false;
 
+        const html = cd.getData('text/html') ?? '';
+        const plain = cd.getData('text/plain') ?? '';
+        const hasText = plain.trim().length > 0 || /<(p|h[1-6]|ul|ol|table|div|span|br)[\s>]/i.test(html);
+
+        // Solo interceptar pegado de imagen PURA (sin texto significativo)
+        const items = cd.items;
         const imageFiles: File[] = [];
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          if (item.type.startsWith('image/')) {
-            const file = item.getAsFile();
-            if (file) imageFiles.push(file);
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type.startsWith('image/')) {
+              const file = items[i].getAsFile();
+              if (file) imageFiles.push(file);
+            }
           }
         }
 
-        const html = event.clipboardData?.getData('text/html') ?? '';
-        const hasSubstantialHtml = html.length > 50 && /<(p|h[1-6]|ul|ol|table|div)[\s>]/i.test(html);
-
-        if (imageFiles.length > 0 && !hasSubstantialHtml) {
+        if (imageFiles.length > 0 && !hasText) {
           event.preventDefault();
           (async () => {
             for (const file of imageFiles) {
@@ -435,18 +448,22 @@ export default function RichTextEditor({
           })();
           return true;
         }
+
+        // HTML o texto: dejar que TipTap lo inserte (transformPastedHTML limpia Word)
         return false;
       },
     },
   });
 
-  // Sincroniza contenido
+  // Sincroniza contenido externo → editor sin pisar un pegado reciente
   useEffect(() => {
     if (!editor) return;
     const current = editor.getHTML();
-    if (current !== content) {
-      editor.commands.setContent(content, { emitUpdate: false });
-    }
+    if (lastEmitted.current !== null && content === lastEmitted.current) return;
+    if (content === current) return;
+    const currentText = editor.getText().trim();
+    if ((!content || content === '<p></p>') && currentText.length > 0) return;
+    editor.commands.setContent(content || '', { emitUpdate: false });
   }, [content, editor]);
 
   const handleImagePick = useCallback(() => {
