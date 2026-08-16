@@ -58,28 +58,49 @@ async function uploadImage(file: File): Promise<{ url: string | null; error: str
   return { url: data.publicUrl, error: null };
 }
 
-/** Limpia HTML pegado desde Word / Google Docs / LibreOffice (sin destruir el texto) */
+/** Limpia HTML pegado desde Word / Google Docs y lo deja legible para TipTap */
 function cleanPastedHtml(html: string): string {
   if (!html) return html;
-  let out = html
+  let out = html;
+  // Extraer body si viene documento completo
+  const body = out.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  if (body) out = body[1];
+  out = out
     .replace(/<!--\[if[\s\S]*?endif\]-->/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<\/?(html|head|meta|link|body|xml)[^>]*>/gi, '')
     .replace(/<\/?o:[^>]*>/gi, '')
     .replace(/<\/?w:[^>]*>/gi, '')
     .replace(/<\/?m:[^>]*>/gi, '')
     .replace(/<\/?v:[^>]*>/gi, '')
     .replace(/\s*mso-[a-z-]+:[^;"]+;?/gi, '')
     .replace(/\s*class="Mso[^"]*"/gi, '')
+    .replace(/\s*class='Mso[^']*'/gi, '')
+    // Convertir divs de Word a párrafos
+    .replace(/<div(\s[^>]*)?>/gi, '<p>')
+    .replace(/<\/div>/gi, '</p>')
+    // Encabezados Word a veces vienen como p + bold — dejar b/strong
     .replace(/<span[^>]*>\s*<\/span>/gi, '')
-    // Quitar estilos salvo text-align (no colapsar todo el whitespace del HTML)
+    // Conservar negrita/cursiva/subrayado/listas/enlaces; quitar resto de estilos
     .replace(/\s*style="([^"]*)"/gi, (_m, styles: string) => {
-      const align = String(styles).match(/text-align:\s*([^;"]+)/i);
-      return align ? ` style="text-align: ${align[1].trim()}"` : '';
+      const s = String(styles);
+      const parts: string[] = [];
+      const align = s.match(/text-align:\s*([^;"]+)/i);
+      if (align) parts.push(`text-align: ${align[1].trim()}`);
+      const fw = s.match(/font-weight:\s*(bold|[6-9]00)/i);
+      if (fw) parts.push('font-weight: bold');
+      const fs = s.match(/font-style:\s*italic/i);
+      if (fs) parts.push('font-style: italic');
+      return parts.length ? ` style="${parts.join('; ')}"` : '';
     })
-    .replace(/&nbsp;/g, ' ');
-  // Si tras limpiar no queda texto visible, devolver original
+    .replace(/&nbsp;/g, ' ')
+    // Colapsar párrafos vacíos repetidos
+    .replace(/(<p>\s*<\/p>\s*){2,}/gi, '<p></p>');
   const textOnly = out.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-  if (!textOnly && html.replace(/<[^>]+>/g, '').trim()) {
-    return html;
+  if (!textOnly) {
+    // último recurso: el llamador usará text/plain
+    return '';
   }
   return out.trim();
 }
@@ -292,6 +313,7 @@ export default function RichTextEditor({
   const [showImageUrlInput, setShowImageUrlInput] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const lastEmitted = useRef<string | null>(null);
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null);
 
   // FIX: cargar CSS de syntax highlighting dinámicamente
   // para evitar que bloquee el render en la homepage
@@ -405,17 +427,15 @@ export default function RichTextEditor({
           // Subíndice/Superíndice
           'prose-sub:align-sub prose-sup:align-super',
       },
-      transformPastedHTML: (html) => cleanPastedHtml(html),
-      transformPastedText: (text) => text, // texto plano siempre permitido
+      // Pegado controlado: Word/Docs a menudo falla con el parser por defecto
       handlePaste: (view, event) => {
         const cd = event.clipboardData;
         if (!cd) return false;
 
-        const html = cd.getData('text/html') ?? '';
+        const htmlRaw = cd.getData('text/html') ?? '';
         const plain = cd.getData('text/plain') ?? '';
-        const hasText = plain.trim().length > 0 || /<(p|h[1-6]|ul|ol|table|div|span|br)[\s>]/i.test(html);
 
-        // Solo interceptar pegado de imagen PURA (sin texto significativo)
+        // Imágenes puras (sin texto)
         const items = cd.items;
         const imageFiles: File[] = [];
         if (items) {
@@ -426,7 +446,7 @@ export default function RichTextEditor({
             }
           }
         }
-
+        const hasText = plain.trim().length > 0 || htmlRaw.replace(/<[^>]+>/g, '').trim().length > 0;
         if (imageFiles.length > 0 && !hasText) {
           event.preventDefault();
           (async () => {
@@ -437,23 +457,43 @@ export default function RichTextEditor({
                 continue;
               }
               if (url) {
-                const { state } = view;
-                const node = state.schema.nodes.image?.create({ src: url });
-                if (node) {
-                  const tr = state.tr.replaceSelectionWith(node);
-                  view.dispatch(tr);
-                }
+                const node = view.state.schema.nodes.image?.create({ src: url });
+                if (node) view.dispatch(view.state.tr.replaceSelectionWith(node));
               }
             }
           })();
           return true;
         }
 
-        // HTML o texto: dejar que TipTap lo inserte (transformPastedHTML limpia Word)
+        // HTML con formato: limpiar e insertar nosotros (evita el "no pega nada")
+        if (htmlRaw && htmlRaw.length > 10) {
+          event.preventDefault();
+          const cleaned = cleanPastedHtml(htmlRaw);
+          const ed = editorRef.current;
+          if (ed) {
+            if (cleaned) {
+              ed.chain().focus().insertContent(cleaned).run();
+            } else if (plain.trim()) {
+              // Fallback: párrafos desde texto plano
+              const paragraphs = plain
+                .split(/\n{2,}/)
+                .map((p) => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+                .join('');
+              ed.chain().focus().insertContent(paragraphs || `<p>${plain}</p>`).run();
+            }
+          }
+          return true;
+        }
+
+        // Solo texto plano: TipTap por defecto
         return false;
       },
     },
   });
+
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
 
   // Sincroniza contenido externo → editor sin pisar un pegado reciente
   useEffect(() => {
