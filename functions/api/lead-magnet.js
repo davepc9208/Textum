@@ -11,6 +11,12 @@ export async function onRequestOptions() {
   return new Response(null, { headers: corsHeaders });
 }
 
+async function makeUnsubToken(email, secret) {
+  const data = new TextEncoder().encode(String(email).toLowerCase().trim() + '|' + secret);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 24);
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -33,43 +39,41 @@ export async function onRequestPost(context) {
       privacy_accepted = true,
     } = body;
 
-    // Validación básica
     if (!name?.trim() || !email?.trim() || !resource_slug || !resource_type) {
-      return new Response(
-        JSON.stringify({ error: 'Faltan campos obligatorios' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ error: 'Email no válido' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Email no válido' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const normalisedLang = (lang || 'es').toLowerCase() === 'en' ? 'en' : 'es';
-
-    // Supabase con service role (solo en server)
     const supabase = createClient(
       env.VITE_SUPABASE_URL || env.SUPABASE_URL,
       env.SUPABASE_SERVICE_ROLE_KEY
     );
+
+    const cleanEmail = email.trim().toLowerCase();
 
     // 1. Guardar lead
     const { data: lead, error: insertError } = await supabase
       .from('leads')
       .insert({
         name: name.trim(),
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         institution: institution?.trim() || null,
         country: country?.trim() || null,
         role,
         resource_slug,
         resource_type,
         resource_title,
-        lang: normalisedLang,
+        lang,
         source,
         utm_source,
         utm_medium,
@@ -81,51 +85,41 @@ export async function onRequestPost(context) {
 
     if (insertError) {
       console.error('Insert error:', insertError);
-      return new Response(
-        JSON.stringify({ error: 'Error al guardar el lead' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Error al guardar el lead' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // 2. Generar signed URL del PDF según idioma (fallback a ES)
-    // ES: pt-01.pdf  |  EN: pt-01-en.pdf
-    const preferredPath =
-      normalisedLang === 'en'
-        ? `${resource_slug}-en.pdf`
-        : `${resource_slug}.pdf`;
-
-    let { data: signed, error: signError } = await supabase.storage
+    // 2. Signed URL del PDF (15 min)
+    const filePath = `${resource_slug}.pdf`;
+    const { data: signed, error: signError } = await supabase.storage
       .from('colecciones-pdf')
-      .createSignedUrl(preferredPath, 60 * 15); // 15 min
-
-    // Si pide EN y no existe el archivo, servir el ES
-    if ((signError || !signed?.signedUrl) && normalisedLang === 'en') {
-      const fallback = await supabase.storage
-        .from('colecciones-pdf')
-        .createSignedUrl(`${resource_slug}.pdf`, 60 * 15);
-      signed = fallback.data;
-      signError = fallback.error;
-    }
+      .createSignedUrl(filePath, 60 * 15);
 
     if (signError || !signed?.signedUrl) {
       console.error('Signed URL error:', signError);
-      return new Response(
-        JSON.stringify({ error: 'No se pudo generar el enlace de descarga' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'No se pudo generar el enlace de descarga' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // 3. Enviar email con Resend
+    // 3. Token de baja + email
+    const secret = env.UNSUBSCRIBE_SECRET || env.SUPABASE_SERVICE_ROLE_KEY || 'textum-unsub';
+    const unsubToken = await makeUnsubToken(cleanEmail, secret);
+    const unsubscribeUrl = `https://www.mentoriatextum.com/baja?email=${encodeURIComponent(cleanEmail)}&token=${unsubToken}`;
+
     const emailSent = await sendDownloadEmail({
-      to: email,
+      to: cleanEmail,
       name,
       resourceTitle: resource_title || resource_slug,
       downloadUrl: signed.signedUrl,
-      lang: normalisedLang,
+      unsubscribeUrl,
+      lang,
       resendApiKey: env.RESEND_API_KEY,
     });
 
-    // Actualizar flag
     if (emailSent) {
       await supabase
         .from('leads')
@@ -137,25 +131,47 @@ export async function onRequestPost(context) {
       JSON.stringify({
         success: true,
         downloadUrl: signed.signedUrl,
-        expiresIn: 900, // segundos
+        expiresIn: 900,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
     console.error('lead-magnet error:', err);
-    return new Response(
-      JSON.stringify({ error: 'Error interno del servidor' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: 'Error interno del servidor' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 }
 
-async function sendDownloadEmail({ to, name, resourceTitle, downloadUrl, lang, resendApiKey }) {
+async function sendDownloadEmail({
+  to,
+  name,
+  resourceTitle,
+  downloadUrl,
+  unsubscribeUrl,
+  lang,
+  resendApiKey,
+}) {
   const isEs = lang !== 'en';
 
   const subject = isEs
     ? `Tu documento TEXTUM listo: ${resourceTitle}`
     : `Your TEXTUM document is ready: ${resourceTitle}`;
+
+  const unsubBlockEs = `
+        <p style="font-size:12px;color:#999;margin-top:32px;line-height:1.5;">
+          Recibes este correo porque descargaste un recurso de TEXTUM.
+          Si no deseas recibir más comunicaciones, puedes
+          <a href="${unsubscribeUrl}" style="color:#888;text-decoration:underline;">darte de baja aquí</a>.
+        </p>`;
+
+  const unsubBlockEn = `
+        <p style="font-size:12px;color:#999;margin-top:32px;line-height:1.5;">
+          You received this email because you downloaded a TEXTUM resource.
+          If you no longer wish to receive communications, you can
+          <a href="${unsubscribeUrl}" style="color:#888;text-decoration:underline;">unsubscribe here</a>.
+        </p>`;
 
   const html = isEs
     ? `
@@ -179,6 +195,7 @@ async function sendDownloadEmail({ to, name, resourceTitle, downloadUrl, lang, r
           TEXTUM · Mentoría Académica<br>
           <a href="https://mentoriatextum.com" style="color:#888;">mentoriatextum.com</a>
         </p>
+        ${unsubBlockEs}
       </div>
     `
     : `
@@ -202,6 +219,7 @@ async function sendDownloadEmail({ to, name, resourceTitle, downloadUrl, lang, r
           TEXTUM · Academic Mentoring<br>
           <a href="https://mentoriatextum.com" style="color:#888;">mentoriatextum.com</a>
         </p>
+        ${unsubBlockEn}
       </div>
     `;
 
@@ -217,6 +235,11 @@ async function sendDownloadEmail({ to, name, resourceTitle, downloadUrl, lang, r
         to: [to],
         subject,
         html,
+        headers: {
+          // Cabecera estándar de baja (algunos clientes de correo la usan)
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       }),
     });
 

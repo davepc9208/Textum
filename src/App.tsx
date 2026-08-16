@@ -36,11 +36,11 @@ import BackToTop            from './components/BackToTop';
 import { useScrollReveal }  from './hooks/useScrollReveal';
 import { useSEO, injectSchema, removeSchema } from './hooks/useSEO';
 import { useLang }          from './i18n/LangContext';
-import Clarity from '@microsoft/clarity';
 import DescargaPage from './pages/DescargaPage';
+import CookieBanner from './components/CookieBanner';
+import BajaPage from './pages/BajaPage';
+import PrivacidadPage from './pages/PrivacidadPage';
 
-const projectId = "xzsgo2fjo4" 
-Clarity.init(projectId);
 const BlogPage           = lazy(() => import('./pages/BlogPage'));
 const PostPage           = lazy(() => import('./pages/PostPage'));
 const AdminPage          = lazy(() => import('./pages/AdminPage'));
@@ -175,6 +175,8 @@ function BlogListPage() {
 
 export default function App() {
   return (
+    <>
+    <CookieBanner />
     <Routes>
       <Route path="/"    element={<HomePage />} />
       <Route path="/blog" element={<BlogListPage />} />
@@ -184,6 +186,9 @@ export default function App() {
       <Route path="/colecciones/:tipo/:slug" element={<Suspense fallback={<PageLoader />}><ColeccionPiecePage /></Suspense>} />
       <Route path="/textum-redaccion-2026" element={<Suspense fallback={<PageLoader />}><AdminPage /></Suspense>} />
       <Route path="/colecciones/:tipo/:slug/descargar" element={<DescargaPage />} />
+      <Route path="/baja" element={<BajaPage />} />
+      <Route path="/privacidad" element={<PrivacidadPage />} />
     </Routes>
+    </>
   );
 }

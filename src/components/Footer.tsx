@@ -1,6 +1,6 @@
 // src/components/Footer.tsx
 import { Mail, Linkedin, Instagram, Facebook } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useLang } from '../i18n/LangContext';
 
 const socialLinks = [
@@ -109,7 +109,24 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 text-xs text-white/40 tracking-wide">
-          <p>© {new Date().getFullYear()} TEXTUM — Mentoría Académica. {f.rights}</p>
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-5 text-center sm:text-left">
+            <p>© {new Date().getFullYear()} TEXTUM — Mentoría Académica. {f.rights}</p>
+            <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+              <Link
+                to="/privacidad"
+                className="text-white/45 hover:text-gold transition-colors"
+              >
+                {lang === 'es' ? 'Privacidad' : 'Privacy'}
+              </Link>
+              <span className="text-white/20 hidden sm:inline" aria-hidden>|</span>
+              <Link
+                to="/baja"
+                className="text-white/45 hover:text-gold transition-colors"
+              >
+                {lang === 'es' ? 'Baja de comunicaciones' : 'Unsubscribe'}
+              </Link>
+            </nav>
+          </div>
           <p className="text-gold/30">{f.designed}</p>
         </div>
       </div>

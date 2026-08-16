@@ -1,7 +1,7 @@
 // AdminPage.tsx
 import { useState, useEffect, useRef } from 'react';
 import { supabase, Post } from '../lib/supabase';
-import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, ShieldCheck } from 'lucide-react';
+import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, ShieldCheck, Users, Download, Search } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import RichTextEditor from '../components/RichTextEditor';
 import AdminDistribute from '../components/AdminDistribute';
@@ -581,21 +581,21 @@ function PostEditor({
               <p className="text-xs text-navy/40 mt-1.5">Define en qué sección del blog aparecerá este artículo.</p>
             </div>
             <div>
-              <label className={labelCls}>Tipo de contenido</label>
-              <select
-                className={inputCls}
-                value={form.collection_type ?? ''}
-                onChange={e => set('collection_type', (e.target.value || null) as unknown as string)}
-              >
-                <option value="">Blog — artículo normal</option>
-                <option value="principio">Colección · Principio (PT)</option>
-                <option value="categoria">Colección · Categoría (CM)</option>
-                <option value="herramienta">Colección · Herramienta (HT)</option>
-              </select>
-              <p className="text-xs text-navy/40 mt-1.5">
-                Si eliges colección, la pieza no aparece en /blog; solo en /colecciones/...
-              </p>
-            </div>
+  <label className={labelCls}>Tipo de Colección</label>
+  <select
+    className={inputCls}
+    value={form.collection_type ?? ''}
+    onChange={e => set('collection_type', e.target.value || null as unknown as string)}
+  >
+    <option value="">Blog — artículo normal</option>
+    <option value="principio">PT — Principios TEXTUM</option>
+    <option value="categoria">CM — Categorías Metodológicas</option>
+    <option value="herramienta">HT — Herramientas TEXTUM</option>
+  </select>
+  <p className="text-xs text-navy/40 mt-1.5">
+    Si seleccionas un tipo de Colección, la pieza no aparecerá en el Blog.
+  </p>
+</div>
 
             <div>
               <label className={labelCls}>Imagen de portada</label>
@@ -910,6 +910,226 @@ function DistributeModal({
   );
 }
 
+
+// ─── Leads panel ────────────────────────────────────────────────────────────
+type Lead = {
+  id: string;
+  name: string;
+  email: string;
+  institution: string | null;
+  country: string | null;
+  role: string | null;
+  resource_slug: string | null;
+  resource_type: string | null;
+  resource_title: string | null;
+  lang: string | null;
+  source: string | null;
+  created_at: string;
+  email_sent?: boolean | null;
+  downloaded_at?: string | null;
+  unsubscribed_at?: string | null;
+};
+
+function LeadsPanel() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+  const [q, setQ] = useState('');
+  const [filterResource, setFilterResource] = useState('');
+
+  const fetchLeads = async () => {
+    setLoading(true);
+    setErr('');
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(500);
+    if (error) {
+      setErr(error.message + ' — ¿Tienes política SELECT para authenticated en la tabla leads?');
+      setLeads([]);
+    } else {
+      setLeads((data as Lead[]) ?? []);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchLeads(); }, []);
+
+  const resources = Array.from(new Set(leads.map(l => l.resource_slug).filter(Boolean))) as string[];
+
+  const filtered = leads.filter(l => {
+    if (filterResource && l.resource_slug !== filterResource) return false;
+    if (!q.trim()) return true;
+    const s = q.toLowerCase();
+    return (
+      l.name?.toLowerCase().includes(s) ||
+      l.email?.toLowerCase().includes(s) ||
+      l.country?.toLowerCase().includes(s) ||
+      l.institution?.toLowerCase().includes(s) ||
+      l.resource_slug?.toLowerCase().includes(s) ||
+      l.resource_title?.toLowerCase().includes(s)
+    );
+  });
+
+  const activeCount = leads.filter(l => !l.unsubscribed_at).length;
+  const unsubCount = leads.filter(l => !!l.unsubscribed_at).length;
+
+  const exportCsv = () => {
+    const header = ['fecha', 'nombre', 'email', 'institucion', 'pais', 'rol', 'recurso', 'tipo', 'idioma', 'baja'];
+    const rows = filtered.map(l => [
+      new Date(l.created_at).toISOString(),
+      JSON.stringify(l.name ?? ''),
+      JSON.stringify(l.email ?? ''),
+      JSON.stringify(l.institution ?? ''),
+      JSON.stringify(l.country ?? ''),
+      JSON.stringify(l.role ?? ''),
+      JSON.stringify(l.resource_slug ?? ''),
+      JSON.stringify(l.resource_type ?? ''),
+      JSON.stringify(l.lang ?? ''),
+      l.unsubscribed_at ? 'si' : 'no',
+    ].join(','));
+    const csv = [header.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `textum-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="font-serif text-3xl text-navy">Leads</h1>
+          <p className="text-sm text-navy/50 mt-1">
+            {leads.length} registros · {activeCount} activos · {unsubCount} dados de baja
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchLeads}
+            className="px-4 py-2 text-xs tracking-widest border border-navy/15 rounded-sm text-navy/60 hover:border-gold/40 hover:text-navy transition-colors"
+          >
+            ACTUALIZAR
+          </button>
+          <button
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+            className="btn-primary flex items-center gap-2 px-5 py-2.5 text-xs tracking-widest rounded-sm disabled:opacity-50"
+          >
+            <Download size={14} />
+            <span>CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy/30" />
+          <input
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            placeholder="Buscar nombre, email, país, recurso…"
+            className="w-full bg-white border border-navy/15 rounded-sm pl-9 pr-4 py-2.5 text-sm text-navy focus:outline-none focus:border-gold/60"
+          />
+        </div>
+        <select
+          value={filterResource}
+          onChange={e => setFilterResource(e.target.value)}
+          className="bg-white border border-navy/15 rounded-sm px-4 py-2.5 text-sm text-navy focus:outline-none focus:border-gold/60"
+        >
+          <option value="">Todos los recursos</option>
+          {resources.map(r => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+      </div>
+
+      {err && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-sm">
+          {err}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="animate-spin text-gold" size={28} />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20 border border-dashed border-navy/15 rounded-sm">
+          <p className="text-navy/40 font-serif italic text-lg">No hay leads todavía.</p>
+          <p className="text-xs text-navy/30 mt-2">Aparecerán cuando alguien descargue un PDF de colecciones.</p>
+        </div>
+      ) : (
+        <div className="bg-white border border-navy/8 rounded-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-navy/10 bg-navy/[0.03] text-left text-[10px] tracking-widest uppercase text-navy/45">
+                  <th className="px-4 py-3 font-medium">Fecha</th>
+                  <th className="px-4 py-3 font-medium">Nombre</th>
+                  <th className="px-4 py-3 font-medium">Email</th>
+                  <th className="px-4 py-3 font-medium">País</th>
+                  <th className="px-4 py-3 font-medium">Recurso</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(l => (
+                  <tr key={l.id} className="border-b border-navy/5 hover:bg-gold/[0.04] transition-colors">
+                    <td className="px-4 py-3 text-navy/50 whitespace-nowrap text-xs">
+                      {new Date(l.created_at).toLocaleString('es-ES', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit',
+                      })}
+                    </td>
+                    <td className="px-4 py-3 text-navy font-medium">
+                      {l.name}
+                      {l.institution && (
+                        <span className="block text-[11px] text-navy/40 font-normal truncate max-w-[160px]">
+                          {l.institution}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <a href={`mailto:${l.email}`} className="text-navy/70 hover:text-gold text-xs break-all">
+                        {l.email}
+                      </a>
+                    </td>
+                    <td className="px-4 py-3 text-navy/60 text-xs whitespace-nowrap">
+                      {l.country || '—'}
+                      {l.role && <span className="text-navy/35"> · {l.role}</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-[10px] tracking-widest px-2 py-0.5 rounded-full border border-gold/30 text-gold bg-gold/5">
+                        {(l.resource_slug || '—').toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {l.unsubscribed_at ? (
+                        <span className="text-[10px] tracking-widest px-2 py-0.5 rounded-full border border-red-200 text-red-600 bg-red-50">
+                          BAJA
+                        </span>
+                      ) : (
+                        <span className="text-[10px] tracking-widest px-2 py-0.5 rounded-full border border-green-200 text-green-700 bg-green-50">
+                          ACTIVO
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main admin panel ─────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
@@ -918,6 +1138,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [showMfaSetup, setShowMfaSetup] = useState(false);
   const [distributingPost, setDistributingPost] = useState<Post | null>(null);
+  const [tab, setTab] = useState<'posts' | 'leads'>('posts');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -962,6 +1183,35 @@ export default function AdminPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-12">
+        {/* Tabs */}
+        <div className="flex items-center gap-1 mb-8 border-b border-navy/10">
+          <button
+            onClick={() => setTab('posts')}
+            className={`px-5 py-3 text-xs tracking-widest uppercase transition-colors border-b-2 -mb-px ${
+              tab === 'posts'
+                ? 'border-gold text-navy font-medium'
+                : 'border-transparent text-navy/40 hover:text-navy'
+            }`}
+          >
+            Artículos
+          </button>
+          <button
+            onClick={() => setTab('leads')}
+            className={`flex items-center gap-2 px-5 py-3 text-xs tracking-widest uppercase transition-colors border-b-2 -mb-px ${
+              tab === 'leads'
+                ? 'border-gold text-navy font-medium'
+                : 'border-transparent text-navy/40 hover:text-navy'
+            }`}
+          >
+            <Users size={13} />
+            Leads
+          </button>
+        </div>
+
+        {tab === 'leads' ? (
+          <LeadsPanel />
+        ) : (
+        <>
         <div className="flex items-center justify-between mb-10">
           <h1 className="font-serif text-3xl text-navy">Artículos del blog</h1>
           <button onClick={() => setEditing(EMPTY)}
@@ -993,18 +1243,9 @@ export default function AdminPage() {
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-serif text-navy truncate">{post.title_es}</p>
-                  <p className="text-xs text-navy/40 mt-0.5">
-                    {post.author} · {new Date(post.created_at).toLocaleDateString('es-ES')} · {post.reading_time} min
-                    {post.category ? ` · ${post.category}` : ''}
-                    {post.collection_type ? ` · ${post.collection_type}` : ''}
-                  </p>
+                  <p className="text-xs text-navy/40 mt-0.5">{post.author} · {new Date(post.created_at).toLocaleDateString('es-ES')} · {post.reading_time} min{post.category ? ` · ${post.category}` : ''}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {post.collection_type && (
-                    <span className="text-[10px] tracking-widest px-2 py-0.5 rounded-full border border-gold/40 text-gold bg-gold/5">
-                      {post.collection_type === 'principio' ? 'PT' : post.collection_type === 'categoria' ? 'CM' : post.collection_type === 'herramienta' ? 'HT' : post.collection_type.toUpperCase()}
-                    </span>
-                  )}
                   <span className={`text-[10px] tracking-widest px-2 py-0.5 rounded-full border ${post.published ? 'text-green-700 border-green-200 bg-green-50' : 'text-navy/40 border-navy/15 bg-navy/5'}`}>
                     {post.published ? 'PUBLICADO' : 'BORRADOR'}
                   </span>
@@ -1030,6 +1271,8 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        )}
+        </>
         )}
       </div>
 
