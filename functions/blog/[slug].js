@@ -16,7 +16,7 @@
 //   SUPABASE_URL        → tu URL de Supabase (misma que VITE_SUPABASE_URL)
 //   SUPABASE_ANON_KEY   → tu anon key de Supabase (misma que VITE_SUPABASE_ANON_KEY)
 
-const SITE_URL = 'https://mentoriatextum.com';
+const SITE_URL = 'https://www.mentoriatextum.com';
 const SITE_NAME = 'TEXTUM — Mentoría Académica Internacional';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`;
 
@@ -349,11 +349,14 @@ export async function onRequest(context) {
 
   const userAgent = request.headers.get('user-agent') || '';
 
-  // Si no es un bot, servir la SPA React normal (index.html)
-  // Cloudflare Pages sirve automáticamente index.html para rutas SPA
+  // Humanos: no interceptar. Dejar que Pages sirva la SPA en LA MISMA URL
+  // (ASSETS.fetch(index.html) provocaba 308 → / y rompía deep links + GSC)
   if (!isBot(userAgent)) {
-    // Pasar al siguiente handler (SPA fallback de Cloudflare Pages)
-    return env.ASSETS.fetch(new Request(`${new URL(request.url).origin}/index.html`, request));
+    if (typeof context.next === 'function') {
+      return context.next();
+    }
+    // Fallback por si next no existe en el runtime
+    return env.ASSETS.fetch(request);
   }
 
   // Es un bot → generar HTML completo con el contenido del artículo
@@ -364,7 +367,8 @@ export async function onRequest(context) {
   if (!supabaseUrl || !supabaseKey) {
     console.error('[SSR] Faltan variables de entorno: SUPABASE_URL y SUPABASE_ANON_KEY');
     // Fallback a la SPA si faltan variables
-    return env.ASSETS.fetch(new Request(`${new URL(request.url).origin}/index.html`, request));
+    if (typeof context.next === 'function') return context.next();
+    return env.ASSETS.fetch(request);
   }
 
   try {
@@ -397,6 +401,7 @@ export async function onRequest(context) {
   } catch (error) {
     console.error('[SSR] Error fetching post:', error);
     // En caso de error, fallback a la SPA
-    return env.ASSETS.fetch(new Request(`${new URL(request.url).origin}/index.html`, request));
+    if (typeof context.next === 'function') return context.next();
+    return env.ASSETS.fetch(request);
   }
 }

@@ -1,10 +1,1 @@
-# Cloudflare Pages — SPA fallback
-# Sin este archivo, cualquier ruta que no sea / devuelve 404 en Cloudflare Pages.
-# En Android Chrome esto causa que los Links de React Router redirijan a /
-# porque el browser recibe un 404 y Cloudflare sirve index.html desde /.
-
-# Rutas de API y funciones — NO redirigir, dejar que Cloudflare Pages Functions las maneje
-/api/*  /api/:splat  200
-
-# SPA fallback — todas las demás rutas sirven index.html con status 200
-/*  /index.html  200
+/*    /index.html   200
