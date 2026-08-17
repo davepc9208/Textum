@@ -58,13 +58,35 @@ async function uploadImage(file: File): Promise<{ url: string | null; error: str
   return { url: data.publicUrl, error: null };
 }
 
-/** Limpia HTML pegado desde Word / Google Docs y lo deja legible para TipTap */
+
+
+/** Convierte texto plano en párrafos HTML */
+function plainToParagraphs(plain: string): string {
+  const lines = plain.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split(/\n+/);
+  const parts = lines.map((l) => l.trim()).filter(Boolean);
+  if (parts.length === 0) return '<p></p>';
+  return parts.map((l) => `<p>${escapeHtml(l)}</p>`).join('');
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Limpia HTML de Word/Docs para TipTap.
+ * Word de escritorio a menudo trae color blanco, theme colors y basura MSO
+ * que hace que el pegado "no se vea" o se descarte entero.
+ */
 function cleanPastedHtml(html: string): string {
-  if (!html) return html;
+  if (!html) return '';
   let out = html;
-  // Extraer body si viene documento completo
-  const body = out.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  const body = out.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
   if (body) out = body[1];
+
   out = out
     .replace(/<!--\[if[\s\S]*?endif\]-->/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -75,34 +97,45 @@ function cleanPastedHtml(html: string): string {
     .replace(/<\/?m:[^>]*>/gi, '')
     .replace(/<\/?v:[^>]*>/gi, '')
     .replace(/\s*mso-[a-z-]+:[^;"]+;?/gi, '')
-    .replace(/\s*class="Mso[^"]*"/gi, '')
-    .replace(/\s*class='Mso[^']*'/gi, '')
-    // Convertir divs de Word a párrafos
+    .replace(/\s*class="[^"]*Mso[^"]*"/gi, '')
+    .replace(/\s*class='[^']*Mso[^']*'/gi, '')
+    // Quitar TODOS los estilos inline (colores de Word = texto invisible)
+    .replace(/\s*style="[^"]*"/gi, '')
+    .replace(/\s*style='[^']*'/gi, '')
+    // Quitar color/face en font legacy
+    .replace(/<\/?font[^>]*>/gi, '')
     .replace(/<div(\s[^>]*)?>/gi, '<p>')
     .replace(/<\/div>/gi, '</p>')
-    // Encabezados Word a veces vienen como p + bold — dejar b/strong
-    .replace(/<span[^>]*>\s*<\/span>/gi, '')
-    // Conservar negrita/cursiva/subrayado/listas/enlaces; quitar resto de estilos
-    .replace(/\s*style="([^"]*)"/gi, (_m, styles: string) => {
-      const s = String(styles);
-      const parts: string[] = [];
-      const align = s.match(/text-align:\s*([^;"]+)/i);
-      if (align) parts.push(`text-align: ${align[1].trim()}`);
-      const fw = s.match(/font-weight:\s*(bold|[6-9]00)/i);
-      if (fw) parts.push('font-weight: bold');
-      const fs = s.match(/font-style:\s*italic/i);
-      if (fs) parts.push('font-style: italic');
-      return parts.length ? ` style="${parts.join('; ')}"` : '';
-    })
+    // spans vacíos o solo con formato → mantener contenido
+    .replace(/<span[^>]*>/gi, '')
+    .replace(/<\/span>/gi, '')
     .replace(/&nbsp;/g, ' ')
-    // Colapsar párrafos vacíos repetidos
-    .replace(/(<p>\s*<\/p>\s*){2,}/gi, '<p></p>');
+    .replace(/(<p>\s*<\/p>\s*)+/gi, '<p></p>');
+
+  // Normalizar etiquetas de formato que TipTap sí entiende
+  out = out
+    .replace(/<b(\s[^>]*)?>/gi, '<strong>')
+    .replace(/<\/b>/gi, '</strong>')
+    .replace(/<i(\s[^>]*)?>/gi, '<em>')
+    .replace(/<\/i>/gi, '</em>');
+
   const textOnly = out.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-  if (!textOnly) {
-    // último recurso: el llamador usará text/plain
-    return '';
+  return textOnly ? out.trim() : '';
+}
+
+/** Decide HTML final a insertar: limpio si conserva el texto; si no, plano */
+function htmlForPaste(htmlRaw: string, plain: string): string {
+  const cleaned = cleanPastedHtml(htmlRaw);
+  const cleanedLen = cleaned.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().length;
+  const plainLen = plain.replace(/\s+/g, ' ').trim().length;
+
+  // Si el HTML limpio pierde demasiado texto → usar plano con párrafos
+  if (plainLen > 0 && (cleanedLen === 0 || cleanedLen < plainLen * 0.5)) {
+    return plainToParagraphs(plain);
   }
-  return out.trim();
+  if (cleaned) return cleaned;
+  if (plainLen > 0) return plainToParagraphs(plain);
+  return '';
 }
 
 // ─── Toolbar button ─────────────────────────────────────────────────────────
@@ -428,14 +461,14 @@ export default function RichTextEditor({
           'prose-sub:align-sub prose-sup:align-super',
       },
       // Pegado controlado: Word/Docs a menudo falla con el parser por defecto
-      handlePaste: (view, event) => {
+            handlePaste: (_view, event) => {
         const cd = event.clipboardData;
         if (!cd) return false;
 
         const htmlRaw = cd.getData('text/html') ?? '';
         const plain = cd.getData('text/plain') ?? '';
 
-        // Imágenes puras (sin texto)
+        // Imágenes puras
         const items = cd.items;
         const imageFiles: File[] = [];
         if (items) {
@@ -446,46 +479,54 @@ export default function RichTextEditor({
             }
           }
         }
-        const hasText = plain.trim().length > 0 || htmlRaw.replace(/<[^>]+>/g, '').trim().length > 0;
+        const hasText =
+          plain.trim().length > 0 ||
+          htmlRaw.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim().length > 0;
+
         if (imageFiles.length > 0 && !hasText) {
           event.preventDefault();
           (async () => {
+            const ed = editorRef.current;
             for (const file of imageFiles) {
               const { url, error } = await uploadImage(file);
               if (error) {
                 onUploadError?.(`Error al pegar imagen: ${error}`);
                 continue;
               }
-              if (url) {
-                const node = view.state.schema.nodes.image?.create({ src: url });
-                if (node) view.dispatch(view.state.tr.replaceSelectionWith(node));
-              }
+              if (url && ed) ed.chain().focus().setImage({ src: url }).run();
             }
           })();
           return true;
         }
 
-        // HTML con formato: limpiar e insertar nosotros (evita el "no pega nada")
-        if (htmlRaw && htmlRaw.length > 10) {
+        // Word / Docs / HTML con formato (+ imágenes del portapapeles si hay)
+        if (htmlRaw.length > 10 || plain.trim().length > 0) {
           event.preventDefault();
-          const cleaned = cleanPastedHtml(htmlRaw);
+          const toInsert = htmlForPaste(htmlRaw, plain);
           const ed = editorRef.current;
-          if (ed) {
-            if (cleaned) {
-              ed.chain().focus().insertContent(cleaned).run();
-            } else if (plain.trim()) {
-              // Fallback: párrafos desde texto plano
-              const paragraphs = plain
-                .split(/\n{2,}/)
-                .map((p) => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-                .join('');
-              ed.chain().focus().insertContent(paragraphs || `<p>${plain}</p>`).run();
-            }
+          if (ed && toInsert) {
+            ed.chain().focus().insertContent(toInsert).run();
+          } else if (ed && plain.trim()) {
+            ed.chain().focus().insertContent(plainToParagraphs(plain)).run();
+          }
+          // Imágenes embebidas en el pegado de Word (archivos del clipboard)
+          if (imageFiles.length > 0) {
+            (async () => {
+              for (const file of imageFiles) {
+                const { url, error } = await uploadImage(file);
+                if (error) {
+                  onUploadError?.(`Error al pegar imagen: ${error}`);
+                  continue;
+                }
+                if (url && editorRef.current) {
+                  editorRef.current.chain().focus().setImage({ src: url }).run();
+                }
+              }
+            })();
           }
           return true;
         }
 
-        // Solo texto plano: TipTap por defecto
         return false;
       },
     },

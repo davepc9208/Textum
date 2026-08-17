@@ -14,6 +14,7 @@ import ShareButtons from '../components/ShareButtons';
 import ShareCard from '../components/ShareCard';
 import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
+import { sanitizeHtml } from '../lib/sanitize';
 
 const SITE_URL = 'https://mentoriatextum.com';
 
@@ -196,19 +197,22 @@ export default function PostPage() {
         </div>
       ) : (
         <>
-          {post.cover_url && (
-            <div className="relative h-72 md:h-96 overflow-hidden">
-              <img
-                src={post.cover_url}
-                alt={post.cover_alt ?? postTitle}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/20 to-transparent" />
-            </div>
-          )}
+          {/* Offset bajo navbar fija: evita que la portada suba y tape botones */}
+          <div className="pt-16 md:pt-20">
+            {post.cover_url && (
+              <div className="relative w-full h-56 sm:h-72 md:h-96 overflow-hidden bg-navy/10">
+                <img
+                  src={post.cover_url}
+                  alt={post.cover_alt ?? postTitle}
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
+                  className="absolute inset-0 w-full h-full object-cover object-center"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/20 to-transparent pointer-events-none" />
+              </div>
+            )}
+          </div>
 
           <div className="max-w-3xl mx-auto px-6 py-16">
             <Link
@@ -262,7 +266,7 @@ export default function PostPage() {
                 prose-blockquote:border-l-gold prose-blockquote:text-navy/60 prose-blockquote:font-serif prose-blockquote:italic
                 prose-li:text-navy/70
                 prose-img:rounded-sm prose-img:shadow-md prose-img:transition-opacity prose-img:hover:opacity-90"
-              dangerouslySetInnerHTML={{ __html: content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
             />
 
             {lightbox && (

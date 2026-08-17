@@ -1,6 +1,33 @@
 // functions/api/lead-magnet.js
 import { createClient } from '@supabase/supabase-js';
 
+
+/** Rate limit simple vía Cache API (por IP). 8 req / 10 min */
+async function enforceRateLimit(request, max = 8, windowSec = 600) {
+  try {
+    const ip = request.headers.get('CF-Connecting-IP')
+      || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || 'unknown';
+    const cache = caches.default;
+    const key = new Request(`https://textum.internal/rate/lead-magnet/${ip}`);
+    const hit = await cache.match(key);
+    let count = 0;
+    if (hit) {
+      count = parseInt(await hit.text(), 10) || 0;
+    }
+    if (count >= max) {
+      return false;
+    }
+    const res = new Response(String(count + 1), {
+      headers: { 'Cache-Control': `max-age=${windowSec}`, 'Content-Type': 'text/plain' },
+    });
+    await cache.put(key, res);
+    return true;
+  } catch {
+    return true; // no bloquear si Cache API falla
+  }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -19,6 +46,16 @@ async function makeUnsubToken(email, secret) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+
+  // Rate limit por IP
+  const allowed = await enforceRateLimit(request);
+  if (!allowed) {
+    return new Response(JSON.stringify({ error: 'Too many requests. Try again later.' }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '600' },
+    });
+  }
+
 
   try {
     const body = await request.json();

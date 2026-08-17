@@ -1,6 +1,19 @@
-/*
-  Access-Control-Allow-Origin: *
+# Cloudflare Pages — security headers
+# Colocar en /public/_headers o raíz estática según config Vite (public/_headers)
 
-/schema.jsonld
-  Content-Type: application/json
-  Access-Control-Allow-Origin: *
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Cross-Origin-Opener-Policy: same-origin
+  X-XSS-Protection: 0
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+# CSP: ajusta si usas scripts externos extra (Clarity, Resend widgets, etc.)
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.clarity.ms https://scripts.clarity.ms; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://api.resend.com https://www.clarity.ms https://*.clarity.ms https://api.groq.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+/api/*
+  Access-Control-Allow-Methods: POST, OPTIONS
+  X-Content-Type-Options: nosniff
