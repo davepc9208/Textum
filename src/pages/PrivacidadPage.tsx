@@ -1,4 +1,4 @@
-// src/pages/PrivacidadPage.tsx
+﻿// src/pages/PrivacidadPage.tsx
 // Política de privacidad — RGPD (UE/España) + buenas prácticas LATAM
 
 import { Link } from 'react-router-dom';
@@ -84,7 +84,7 @@ function ContentEs() {
       <Section title="1. Responsable del tratamiento">
         <p>
           El responsable del tratamiento de los datos personales recogidos a través del sitio web{' '}
-          <strong className="font-medium text-navy">https://mentoriatextum.com</strong> (en adelante,
+          <strong className="font-medium text-navy">https://www.mentoriatextum.com</strong> (en adelante,
           el «Sitio») es:
         </p>
         <ul className="list-disc pl-5 space-y-1 text-navy/70">
@@ -328,7 +328,7 @@ function ContentEn() {
       <Section title="1. Data controller">
         <p>
           The controller of personal data collected through{' '}
-          <strong className="font-medium text-navy">https://mentoriatextum.com</strong> (the “Site”) is:
+          <strong className="font-medium text-navy">https://www.mentoriatextum.com</strong> (the “Site”) is:
         </p>
         <ul className="list-disc pl-5 space-y-1 text-navy/70">
           <li>

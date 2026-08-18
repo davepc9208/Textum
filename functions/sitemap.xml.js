@@ -1,5 +1,6 @@
 // functions/sitemap.xml.js
-const SITE = 'https://mentoriatextum.com';
+// SITE canónico: siempre https://www.mentoriatextum.com
+const SITE = 'https://www.mentoriatextum.com';
 
 export async function onRequest(context) {
   const { env } = context;
@@ -7,7 +8,6 @@ export async function onRequest(context) {
   const supabaseUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL;
   const supabaseKey = env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY;
 
-  // Diagnóstico rápido de variables
   if (!supabaseUrl || !supabaseKey) {
     return new Response(
       `Missing env vars. URL: ${supabaseUrl ? 'OK' : 'MISSING'}, KEY: ${supabaseKey ? 'OK' : 'MISSING'}`,
@@ -46,6 +46,7 @@ export async function onRequest(context) {
       { loc: `${SITE}/colecciones/categoria`, lastmod: today, changefreq: 'weekly', priority: '0.8' },
       { loc: `${SITE}/colecciones/herramienta`, lastmod: today, changefreq: 'weekly', priority: '0.8' },
       { loc: `${SITE}/contacto`, lastmod: today, changefreq: 'monthly', priority: '0.6' },
+      { loc: `${SITE}/privacidad`, lastmod: today, changefreq: 'yearly', priority: '0.3' },
       { loc: `${SITE}/llms.txt`, lastmod: today, changefreq: 'monthly', priority: '0.9' },
       { loc: `${SITE}/faq.md`, lastmod: today, changefreq: 'monthly', priority: '0.7' },
       { loc: `${SITE}/services.md`, lastmod: today, changefreq: 'monthly', priority: '0.7' },

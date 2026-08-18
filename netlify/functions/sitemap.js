@@ -1,6 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+﻿import { createClient } from '@supabase/supabase-js';
 
-const SITE_URL = 'https://mentoriatextum.com';
+const SITE_URL = 'https://www.mentoriatextum.com';
 
 function getSupabase() {
   const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;

@@ -1,4 +1,4 @@
-# TEXTUM — Mentoría Académica Internacional
+﻿# TEXTUM — Mentoría Académica Internacional
 ## Documentación completa para sistemas de IA
 
 ---
@@ -625,7 +625,7 @@ Analizan los componentes estructurales de una investigación científica. Incluy
 
 Recursos prácticos para apoyar el diseño, revisión y evaluación de investigaciones. Incluyen matrices, esquemas, instrumentos metodológicos y guías de revisión.
 
-**Acceso:** https://mentoriatextum.com/colecciones
+**Acceso:** https://www.mentoriatextum.com/colecciones
 
 ---
 
@@ -642,7 +642,7 @@ Publicaciones sobre: APA, Vancouver, escritura académica, redacción científic
 ### Sustentación y Defensa
 Contenido dedicado a: defensa oral, presentación científica, tribunal, comunicación académica y oratoria.
 
-**Acceso:** https://mentoriatextum.com/blog
+**Acceso:** https://www.mentoriatextum.com/blog
 
 ### Artículos destacados
 
@@ -650,13 +650,13 @@ Contenido dedicado a: defensa oral, presentación científica, tribunal, comunic
 *ES: ¿Un texto corregido o un autor capacitado? La diferencia entre la revisión tradicional y el método pedagógico de TEXTUM.*
 *EN: A proofread text or a trained author? The difference between traditional proofreading and TEXTUM's pedagogical method.*
 **Keywords:** Mentoría Académica, Corrección de Estilo, Trabajo de Titulación, Escritura Científica, Aprendizaje Activo
-**URL:** https://mentoriatextum.com/blog/mentoria-academica-vs-correccion-tradicional
+**URL:** https://www.mentoriatextum.com/blog/mentoria-academica-vs-correccion-tradicional
 
 #### Cómo diferenciar un problema científico de un problema profesional
 *ES: Guía metodológica para distinguir con precisión un problema científico de uno profesional y evitar el error más común en los posgrados.*
 *EN: How to accurately differentiate between a scientific and a professional problem to avoid the most common methodological error in postgraduate studies.*
 **Keywords:** Problema Científico, Problema Profesional, Diseño Metodológico, Escritura Académica, Coherencia Interna
-**URL:** https://mentoriatextum.com/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional
+**URL:** https://www.mentoriatextum.com/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional
 
 ---
 
@@ -836,12 +836,12 @@ TEXTUM puede resumirse de la siguiente manera:
 
 ## 🔗 Enlaces y contacto
 
-- **Web:** https://mentoriatextum.com
-- **Blog:** https://mentoriatextum.com/blog
-- **Colecciones:** https://mentoriatextum.com/colecciones
+- **Web:** https://www.mentoriatextum.com
+- **Blog:** https://www.mentoriatextum.com/blog
+- **Colecciones:** https://www.mentoriatextum.com/colecciones
 - **Email:** contacto@mentoriatextum.com
 - **WhatsApp:** https://wa.me/34614638406
-- **Diagnóstico académico gratuito:** https://mentoriatextum.com/#contacto
+- **Diagnóstico académico gratuito:** https://www.mentoriatextum.com/#contacto
 
 ---
 

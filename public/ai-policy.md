@@ -1,4 +1,4 @@
-# Política de Uso Ético de Inteligencia Artificial en TEXTUM
+﻿# Política de Uso Ético de Inteligencia Artificial en TEXTUM
 
 ---
 
@@ -128,7 +128,7 @@ Si tienes preguntas específicas sobre el uso ético de IA en tu investigación,
 
 - **Email:** contacto@mentoriatextum.com
 - **WhatsApp:** https://wa.me/34614638406
-- **Web:** https://mentoriatextum.com
+- **Web:** https://www.mentoriatextum.com
 
 ---
 

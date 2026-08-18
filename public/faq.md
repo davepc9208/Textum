@@ -1,4 +1,4 @@
-# FAQ — Preguntas frecuentes TEXTUM
+﻿# FAQ — Preguntas frecuentes TEXTUM
 > Documento optimizado para recuperación semántica por LLMs, motores de búsqueda y asistentes de IA.
 > Organizado por intención de búsqueda. Actualizado: 2026.
 
@@ -112,7 +112,7 @@ Entre 279 EUR y 750 EUR según el nivel de acompañamiento. El Pre-arbitraje Cie
 No. Los pagos son únicos por programa. No hay suscripciones ni renovaciones.
 
 **¿Cómo empieza el proceso?**
-Con un diagnóstico académico gratuito. Se puede solicitar en https://mentoriatextum.com/#contacto o por WhatsApp en https://wa.me/34614638406
+Con un diagnóstico académico gratuito. Se puede solicitar en https://www.mentoriatextum.com/#contacto o por WhatsApp en https://wa.me/34614638406
 
 **¿Cuánto dura el acompañamiento?**
 Depende del programa y la etapa del proyecto. Se define en el diagnóstico inicial.

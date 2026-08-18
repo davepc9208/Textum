@@ -16,7 +16,7 @@ import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 
 
-const SITE_URL = 'https://mentoriatextum.com';
+const SITE_URL = 'https://www.mentoriatextum.com';
 
 const TYPE_LABELS: Record<string, { es: string; en: string }> = {
   principio:   { es: 'Principios TEXTUM',        en: 'TEXTUM Principles'         },

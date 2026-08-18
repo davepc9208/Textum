@@ -1,15 +1,15 @@
-{
+﻿{
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "EducationalOrganization",
-      "@id": "https://mentoriatextum.com/#organization",
+      "@id": "https://www.mentoriatextum.com/#organization",
       "name": "TEXTUM — Mentoría Académica Internacional",
       "alternateName": ["TEXTUM", "Mentoría TEXTUM", "TEXTUM Mentoría"],
-      "url": "https://mentoriatextum.com",
+      "url": "https://www.mentoriatextum.com",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://mentoriatextum.com/favicon.svg"
+        "url": "https://www.mentoriatextum.com/favicon.svg"
       },
       "description": "Plataforma internacional de mentoría académica especializada en acompañamiento metodológico para investigadores, doctorandos y estudiantes de posgrado. Titulación, publicación científica y defensa oral. Método TEXTUM FLUX®.",
       "foundingDate": "2024",
@@ -54,7 +54,7 @@
           "description": "Doctora en Ciencias Pedagógicas. Máster en Didáctica de la Lengua Inglesa. Más de 40 años de experiencia en docencia universitaria, investigación y redacción académica en Cuba, Perú, Ecuador y España.",
           "sameAs": "https://orcid.org/0000-0003-3041-096X",
           "knowsAbout": ["Metodología científica", "Didáctica universitaria", "Redacción académica", "Traducción científica", "Investigación educativa"],
-          "worksFor": { "@id": "https://mentoriatextum.com/#organization" }
+          "worksFor": { "@id": "https://www.mentoriatextum.com/#organization" }
         },
         {
           "@type": "Person",
@@ -65,7 +65,7 @@
           "sameAs": "https://orcid.org/0000-0002-8947-1364",
           "award": "Premio Nacional de Investigación Científica, El Salvador, 2025",
           "knowsAbout": ["Metodología científica", "Asesoría de tesis", "Publicación científica", "Escritura académica", "Investigación educativa"],
-          "worksFor": { "@id": "https://mentoriatextum.com/#organization" }
+          "worksFor": { "@id": "https://www.mentoriatextum.com/#organization" }
         }
       ],
       "hasOfferCatalog": {
@@ -78,7 +78,7 @@
               "@type": "Course",
               "name": "Ajuste de Estilo y Norma",
               "description": "Revisión ortotipográfica, normalización APA 7 / Vancouver, coherencia formal y referencias bibliográficas para manuscritos avanzados.",
-              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
               "educationalLevel": "Posgrado, Grado",
               "teaches": "Normas académicas, APA 7, redacción formal, referencias bibliográficas",
               "courseMode": "online"
@@ -93,7 +93,7 @@
               "@type": "Course",
               "name": "Mentoría Avanzada FLUX®",
               "description": "Acompañamiento metodológico personalizado con revisión estructural, arquitectura metodológica, coherencia interna y transferencia de criterio científico.",
-              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
               "educationalLevel": "Doctorado, Maestría, Posgrado",
               "teaches": "Metodología científica, diseño de investigación, coherencia interna, argumentación académica",
               "courseMode": "online"
@@ -108,7 +108,7 @@
               "@type": "Course",
               "name": "Co-creación de Alta Intensidad",
               "description": "Acompañamiento intensivo y continuo para proyectos complejos o bloqueados, con co-diseño de estructura y aceleración metodológica.",
-              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
               "educationalLevel": "Doctorado, Maestría",
               "teaches": "Metodología científica avanzada, estructura de investigación, solvencia científica",
               "courseMode": "online"
@@ -123,7 +123,7 @@
               "@type": "Course",
               "name": "Adaptación Editorial",
               "description": "Adecuación técnica de artículos a revistas indexadas: estructura editorial, resumen, palabras clave y referencias.",
-              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
               "educationalLevel": "Investigador, Docente universitario",
               "teaches": "Publicación científica, normas editoriales, APA 7, resumen científico",
               "courseMode": "online"
@@ -138,7 +138,7 @@
               "@type": "Course",
               "name": "Pre-arbitraje Científico + FLUX®",
               "description": "Revisión crítica completa del artículo antes del envío a revista Scopus o indexada: estructura IMRaD, coherencia, referencias y sesión de mentoría en vivo.",
-              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
               "educationalLevel": "Investigador, Doctorado",
               "teaches": "Publicación en Scopus, IMRaD, arbitraje científico, metodología de artículo",
               "courseMode": "online"
@@ -153,7 +153,7 @@
               "@type": "Course",
               "name": "Acompañamiento Editorial Premium",
               "description": "Soporte editorial completo incluyendo respuesta a revisores, carta de presentación y seguimiento hasta la aceptación final.",
-              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
               "educationalLevel": "Investigador",
               "teaches": "Respuesta a revisores, proceso editorial, publicación científica avanzada",
               "courseMode": "online"
@@ -168,7 +168,7 @@
               "@type": "Course",
               "name": "Alta Defensa y Oratoria Académica",
               "description": "Preparación completa para la defensa oral de tesis: guion, diapositivas, oratoria, control de nervios y simulación de preguntas del tribunal.",
-              "provider": { "@id": "https://mentoriatextum.com/#organization" },
+              "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
               "educationalLevel": "Doctorado, Maestría, Grado",
               "teaches": "Defensa oral, oratoria académica, sustentación, presentación científica",
               "courseMode": "online"
@@ -189,21 +189,21 @@
     },
     {
       "@type": "WebSite",
-      "@id": "https://mentoriatextum.com/#website",
-      "url": "https://mentoriatextum.com",
+      "@id": "https://www.mentoriatextum.com/#website",
+      "url": "https://www.mentoriatextum.com",
       "name": "TEXTUM — Mentoría Académica Internacional",
       "description": "Plataforma de mentoría académica internacional para investigadores y doctorandos.",
-      "publisher": { "@id": "https://mentoriatextum.com/#organization" },
+      "publisher": { "@id": "https://www.mentoriatextum.com/#organization" },
       "inLanguage": ["es", "en"],
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://mentoriatextum.com/blog?q={search_term_string}",
+        "target": "https://www.mentoriatextum.com/blog?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     },
     {
       "@type": "FAQPage",
-      "@id": "https://mentoriatextum.com/#faq",
+      "@id": "https://www.mentoriatextum.com/#faq",
       "mainEntity": [
         {
           "@type": "Question",

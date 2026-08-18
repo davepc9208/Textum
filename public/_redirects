@@ -1,1 +1,12 @@
+# Prefijos de idioma fantasma (SPA shell → titles/meta duplicados en Bing)
+/es      /   301
+/en      /   301
+/es/     /   301
+/en/     /   301
+
+# Posts antiguos bajo /es/blog/... → URL canónica /blog/...
+/es/blog/*   /blog/:splat   301
+/en/blog/*   /blog/:splat   301
+
+# SPA fallback
 /*    /index.html   200

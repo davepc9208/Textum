@@ -1,4 +1,4 @@
-# Método TEXTUM FLUX® — Libro Blanco
+﻿# Método TEXTUM FLUX® — Libro Blanco
 
 ---
 
@@ -236,9 +236,9 @@ Instrumentos de apoyo para formular, revisar, representar y evaluar la calidad m
 
 Las colecciones editoriales complementan el método:
 
-- **Principios TEXTUM (PT):** https://mentoriatextum.com/colecciones#principios
-- **Categorías Metodológicas (CM):** https://mentoriatextum.com/colecciones#categorias
-- **Herramientas TEXTUM (HT):** https://mentoriatextum.com/colecciones#herramientas
+- **Principios TEXTUM (PT):** https://www.mentoriatextum.com/colecciones#principios
+- **Categorías Metodológicas (CM):** https://www.mentoriatextum.com/colecciones#categorias
+- **Herramientas TEXTUM (HT):** https://www.mentoriatextum.com/colecciones#herramientas
 
 ---
 
@@ -285,8 +285,8 @@ Un investigador que ha completado una mentoría FLUX® debería:
 
 ## 📖 Lectura recomendada
 
-- Blog TEXTUM: https://mentoriatextum.com/blog
-- Colecciones: https://mentoriatextum.com/colecciones
+- Blog TEXTUM: https://www.mentoriatextum.com/blog
+- Colecciones: https://www.mentoriatextum.com/colecciones
 
 ---
 

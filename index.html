@@ -4,21 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Favicon -->
+    <!-- Favicon: SVG + PNG/ICO para Google SERP -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
     <!-- SEO base -->
-    <title>TEXTUM — Mentoría Académica Internacional</title>
-    <meta name="description" content="Mentoría académica para titulación (TFG, TFM, tesis doctoral), publicación científica en Scopus y Latindex, y defensa oral. Método TEXTUM FLUX®. Diagnóstico gratuito." />
+    <title>TEXTUM — Mentoría Académica Internacional | Tesis, publicación y defensa</title>
+    <meta name="description" content="Mentoría académica para TFG, TFM y tesis doctoral: metodología TEXTUM FLUX®, publicación en Scopus/Latindex y defensa oral. Diagnóstico gratuito. España y Latinoamérica." />
     <meta name="robots" content="index, follow" />
     <meta name="author" content="TEXTUM — Mentoría Académica Internacional" />
     <meta name="keywords" content="mentoría académica, tesis doctoral, TFG, TFM, publicar en Scopus, APA 7, redacción académica, defensa oral, asesoría metodológica, TEXTUM FLUX" />
 
-    <!-- Canonical base -->
-    <link rel="canonical" href="https://mentoriatextum.com/" />
+    <!-- Canonical: siempre https://www -->
+    <link rel="canonical" href="https://www.mentoriatextum.com/" />
 
-    <!-- Archivos de conocimiento para LLMs y buscadores semánticos -->
     <link rel="alternate" type="text/plain" href="/llms.txt" title="TEXTUM AI Knowledge Base" />
     <link rel="alternate" type="text/markdown" href="/faq.md" title="TEXTUM FAQ" />
     <link rel="alternate" type="text/markdown" href="/services.md" title="TEXTUM Services" />
@@ -26,34 +28,30 @@
     <!-- Open Graph -->
     <meta property="og:type"         content="website" />
     <meta property="og:site_name"    content="TEXTUM — Mentoría Académica" />
-    <meta property="og:title"        content="TEXTUM — Mentoría Académica Internacional" />
-    <meta property="og:description"  content="Mentoría académica para titulación, publicación científica y defensa oral. Método TEXTUM FLUX®. Diagnóstico gratuito." />
-    <meta property="og:url"          content="https://mentoriatextum.com/" />
-    <meta property="og:image"        content="https://mentoriatextum.com/og-default.png" />
+    <meta property="og:title"        content="TEXTUM — Mentoría Académica Internacional | Tesis, publicación y defensa" />
+    <meta property="og:description"  content="Mentoría académica para TFG, TFM y tesis doctoral: metodología TEXTUM FLUX®, publicación en Scopus/Latindex y defensa oral. Diagnóstico gratuito." />
+    <meta property="og:url"          content="https://www.mentoriatextum.com/" />
+    <meta property="og:image"        content="https://www.mentoriatextum.com/og-default.png" />
     <meta property="og:image:alt"    content="TEXTUM — Mentoría Académica Internacional" />
     <meta property="og:image:width"  content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:locale"       content="es_ES" />
+    <meta property="og:locale:alternate" content="en_GB" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card"        content="summary_large_image" />
-    <meta name="twitter:title"       content="TEXTUM — Mentoría Académica Internacional" />
-    <meta name="twitter:description" content="Mentoría académica para titulación, publicación científica y defensa oral. Método TEXTUM FLUX®." />
-    <meta name="twitter:image"       content="https://mentoriatextum.com/og-default.png" />
+    <meta name="twitter:title"       content="TEXTUM — Mentoría Académica Internacional | Tesis, publicación y defensa" />
+    <meta name="twitter:description" content="Mentoría académica para TFG, TFM y tesis doctoral. Método TEXTUM FLUX®. Diagnóstico gratuito." />
+    <meta name="twitter:image"       content="https://www.mentoriatextum.com/og-default.png" />
     <meta name="twitter:image:alt"   content="TEXTUM — Mentoría Académica Internacional" />
 
-    <!-- Theme -->
     <meta name="theme-color" content="#0d1f3c" />
 
-    <!-- Preconnect: SOLO los orígenes críticos para el render inicial -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <!-- DNS prefetch: orígenes usados después de la carga inicial -->
     <link rel="dns-prefetch" href="https://images.pexels.com" />
     <link rel="dns-prefetch" href="https://didxrqnhnxbhskdazkzz.supabase.co" />
 
-    <!-- Fuentes: preload no bloqueante -->
     <link
       rel="preload"
       as="style"
@@ -67,19 +65,22 @@
       />
     </noscript>
 
-    <!-- JSON-LD: EducationalOrganization — para Google Knowledge Panel y AI Overviews -->
+    <!-- JSON-LD: EducationalOrganization — logo PNG (no SVG) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "EducationalOrganization",
-      "@id": "https://mentoriatextum.com/#organization",
+      "@id": "https://www.mentoriatextum.com/#organization",
       "name": "TEXTUM — Mentoría Académica Internacional",
       "alternateName": ["TEXTUM", "Mentoría TEXTUM"],
-      "url": "https://mentoriatextum.com",
+      "url": "https://www.mentoriatextum.com",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://mentoriatextum.com/favicon.svg"
+        "url": "https://www.mentoriatextum.com/logo-512.png",
+        "width": 512,
+        "height": 512
       },
+      "image": "https://www.mentoriatextum.com/og-default.png",
       "description": "Plataforma internacional de mentoría académica especializada en acompañamiento metodológico para investigadores, doctorandos y estudiantes de posgrado. Titulación, publicación científica y defensa oral. Método TEXTUM FLUX®.",
       "foundingDate": "2024",
       "email": "contacto@mentoriatextum.com",
@@ -115,7 +116,6 @@
     }
     </script>
 
-    <!-- JSON-LD: FAQPage — aparece en Google como fragmento enriquecido -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -150,7 +150,7 @@
           "name": "¿Cómo empieza el proceso con TEXTUM?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Con un diagnóstico académico gratuito donde se evalúa el estado del proyecto y se orienta al investigador hacia el programa más adecuado. Se puede solicitar en mentoriatextum.com o por WhatsApp al +34 614 63 84 06."
+            "text": "Con un diagnóstico académico gratuito donde se evalúa el estado del proyecto y se orienta al investigador hacia el programa más adecuado. Se puede solicitar en www.mentoriatextum.com o por WhatsApp al +34 614 63 84 06."
           }
         },
         {
@@ -173,13 +173,12 @@
     }
     </script>
 
-    <!-- JSON-LD: ItemList de servicios — para rich results de productos/servicios -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "ItemList",
       "name": "Programas de Mentoría Académica TEXTUM",
-      "url": "https://mentoriatextum.com/#servicios",
+      "url": "https://www.mentoriatextum.com/#servicios",
       "itemListElement": [
         {
           "@type": "ListItem",
@@ -188,7 +187,7 @@
             "@type": "Course",
             "name": "Ajuste de Estilo y Norma",
             "description": "Revisión ortotipográfica, normalización APA 7 / Vancouver y coherencia formal para manuscritos avanzados.",
-            "provider": { "@id": "https://mentoriatextum.com/#organization" },
+            "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
             "offers": { "@type": "Offer", "price": "189", "priceCurrency": "EUR" },
             "courseMode": "online"
           }
@@ -200,7 +199,7 @@
             "@type": "Course",
             "name": "Mentoría Avanzada FLUX®",
             "description": "Acompañamiento metodológico personalizado con revisión estructural, arquitectura metodológica y transferencia de criterio científico.",
-            "provider": { "@id": "https://mentoriatextum.com/#organization" },
+            "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
             "offers": { "@type": "Offer", "price": "329", "priceCurrency": "EUR" },
             "courseMode": "online"
           }
@@ -212,7 +211,7 @@
             "@type": "Course",
             "name": "Pre-arbitraje Científico + FLUX®",
             "description": "Revisión crítica completa del artículo antes del envío a revista Scopus o indexada. Estructura IMRaD, coherencia y sesión en vivo.",
-            "provider": { "@id": "https://mentoriatextum.com/#organization" },
+            "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
             "offers": { "@type": "Offer", "price": "450", "priceCurrency": "EUR" },
             "courseMode": "online"
           }
@@ -224,7 +223,7 @@
             "@type": "Course",
             "name": "Alta Defensa y Oratoria Académica",
             "description": "Preparación completa para la defensa oral de tesis: guion, diapositivas, oratoria y simulación de preguntas del tribunal.",
-            "provider": { "@id": "https://mentoriatextum.com/#organization" },
+            "provider": { "@id": "https://www.mentoriatextum.com/#organization" },
             "offers": { "@type": "Offer", "price": "110", "priceCurrency": "EUR" },
             "courseMode": "online"
           }
@@ -235,7 +234,6 @@
 
   </head>
   <body>
-    <!-- h1 estático para crawlers (Bing). Estilos inline para que no parpadee antes de cargar CSS -->
     <h1 style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;clip-path:inset(50%)">TEXTUM — Mentoría Académica Internacional para TFG, TFM, tesis doctoral, publicación científica y defensa oral</h1>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

@@ -1,4 +1,4 @@
-// src/App.tsx
+﻿// src/App.tsx
 // v5 — Testimonios añadidos entre Services y Contact
 //
 // ORDEN FINAL Y FONDOS:
@@ -63,8 +63,8 @@ const ORG_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'EducationalOrganization',
   name: 'TEXTUM — Mentoría Académica Internacional',
-  url: 'https://mentoriatextum.com',
-  logo: 'https://mentoriatextum.com/favicon.svg',
+  url: 'https://www.mentoriatextum.com',
+  logo: 'https://www.mentoriatextum.com/favicon.svg',
   foundingDate: '2024',
   description: 'Programas de mentoría académica internacional para titulación, publicación científica y defensa académica con rigor metodológico y uso ético de IA.',
   areaServed: ['ES', 'EC', 'PE', 'MX', 'CO', 'AR', 'GB', 'DE', 'FR', 'IT'],
@@ -81,13 +81,13 @@ const SERVICES_SCHEMA = {
   '@type': 'ItemList',
   name: 'Programas de Mentoría Académica TEXTUM',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Titulación — Ajuste de Estilo y Norma',          url: 'https://mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 2, name: 'Titulación — Mentoría Avanzada FLUX',            url: 'https://mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 3, name: 'Titulación — Co-creación de Alta Intensidad',    url: 'https://mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 4, name: 'Publicación — Adaptación Editorial',             url: 'https://mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 5, name: 'Publicación — Pre-arbitraje Científico + FLUX',  url: 'https://mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 6, name: 'Publicación — Acompañamiento Editorial Premium', url: 'https://mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 7, name: 'Defensa — Alta Defensa y Oratoria Académica',   url: 'https://mentoriatextum.com/#servicios' },
+    { '@type': 'ListItem', position: 1, name: 'Titulación — Ajuste de Estilo y Norma',          url: 'https://www.mentoriatextum.com/#servicios' },
+    { '@type': 'ListItem', position: 2, name: 'Titulación — Mentoría Avanzada FLUX',            url: 'https://www.mentoriatextum.com/#servicios' },
+    { '@type': 'ListItem', position: 3, name: 'Titulación — Co-creación de Alta Intensidad',    url: 'https://www.mentoriatextum.com/#servicios' },
+    { '@type': 'ListItem', position: 4, name: 'Publicación — Adaptación Editorial',             url: 'https://www.mentoriatextum.com/#servicios' },
+    { '@type': 'ListItem', position: 5, name: 'Publicación — Pre-arbitraje Científico + FLUX',  url: 'https://www.mentoriatextum.com/#servicios' },
+    { '@type': 'ListItem', position: 6, name: 'Publicación — Acompañamiento Editorial Premium', url: 'https://www.mentoriatextum.com/#servicios' },
+    { '@type': 'ListItem', position: 7, name: 'Defensa — Alta Defensa y Oratoria Académica',   url: 'https://www.mentoriatextum.com/#servicios' },
   ],
 };
 
@@ -95,9 +95,9 @@ const BLOG_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'Blog',
   name: 'Blog TEXTUM — Mentoría Académica',
-  url: 'https://mentoriatextum.com/blog',
+  url: 'https://www.mentoriatextum.com/blog',
   description: 'Artículos y guías académicas sobre investigación, redacción científica y defensa oral.',
-  publisher: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica', logo: { '@type': 'ImageObject', url: 'https://mentoriatextum.com/favicon.svg' } },
+  publisher: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica', logo: { '@type': 'ImageObject', url: 'https://www.mentoriatextum.com/favicon.svg' } },
 };
 
 function HomePage() {

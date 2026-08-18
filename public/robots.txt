@@ -1,4 +1,4 @@
-User-agent: *
+﻿User-agent: *
 Allow: /
 Disallow: /textum-redaccion-2026
 Disallow: /textum-redaccion-2026/
@@ -38,9 +38,9 @@ User-agent: CCBot
 Allow: /llms.txt
 
 # Archivos de conocimiento para LLMs y buscadores semánticos
-# https://mentoriatextum.com/llms.txt
-# https://mentoriatextum.com/faq.md
-# https://mentoriatextum.com/services.md
-# https://mentoriatextum.com/schema.jsonld
+# https://www.mentoriatextum.com/llms.txt
+# https://www.mentoriatextum.com/faq.md
+# https://www.mentoriatextum.com/services.md
+# https://www.mentoriatextum.com/schema.jsonld
 
-Sitemap: https://mentoriatextum.com/sitemap.xml
+Sitemap: https://www.mentoriatextum.com/sitemap.xml

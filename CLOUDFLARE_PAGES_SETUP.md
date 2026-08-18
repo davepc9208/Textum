@@ -1,10 +1,10 @@
-# Cloudflare Pages — Blog SEO Dinámico
+﻿# Cloudflare Pages — Blog SEO Dinámico
 
 Esta solución genera automáticamente metadatos Open Graph dinámicos para los posts del blog cuando se comparten en redes sociales.
 
 ## Cómo funciona
 
-1. Cuando alguien comparte un link de blog (ej: `https://mentoriatextum.com/blog/como-escribir-bien`)
+1. Cuando alguien comparte un link de blog (ej: `https://www.mentoriatextum.com/blog/como-escribir-bien`)
 2. La función serverless en `functions/blog/[slug].js` intercepta el request
 3. Fetch de los datos del post desde Supabase usando el slug
 4. Genera HTML con metadatos OG dinámicos (título, descripción, imagen, etc.)

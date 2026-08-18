@@ -1,48 +1,48 @@
-# TEXTUM — Mentoría Académica Internacional
+﻿# TEXTUM — Mentoría Académica Internacional
 
 > Mentoría académica personalizada para investigadores, doctorandos, docentes universitarios y estudiantes de posgrado. Especialistas en metodología científica, tesis, publicación científica y defensa académica. TEXTUM opera desde España con alcance internacional, en español e inglés, mediante sesiones 100 % online.
 
 ## Sobre TEXTUM
 
-- [Sitio web de TEXTUM](https://mentoriatextum.com): Información general sobre TEXTUM, su propuesta de valor y servicios de mentoría académica.
-- [Contacto y diagnóstico académico gratuito](https://mentoriatextum.com/#contacto): Punto de entrada para solicitar el diagnóstico académico inicial gratuito.
-- [Método TEXTUM FLUX®](https://mentoriatextum.com): Modelo metodológico propio basado en diagnóstico, arquitectura metodológica, optimización científica y autonomía del investigador.
+- [Sitio web de TEXTUM](https://www.mentoriatextum.com): Información general sobre TEXTUM, su propuesta de valor y servicios de mentoría académica.
+- [Contacto y diagnóstico académico gratuito](https://www.mentoriatextum.com/#contacto): Punto de entrada para solicitar el diagnóstico académico inicial gratuito.
+- [Método TEXTUM FLUX®](https://www.mentoriatextum.com): Modelo metodológico propio basado en diagnóstico, arquitectura metodológica, optimización científica y autonomía del investigador.
 
 ## Servicios de mentoría académica
 
-- [Mentoría para TFG, TFM y tesis](https://mentoriatextum.com): Acompañamiento metodológico para trabajos de titulación, tesis de maestría y tesis doctoral.
-- [Publicación científica](https://mentoriatextum.com): Adaptación y optimización de manuscritos para revistas indexadas, incluyendo Scopus y Latindex.
-- [Defensa académica y oratoria](https://mentoriatextum.com): Preparación para sustentaciones, presentaciones ante tribunales y preguntas de defensa.
-- [Metodología de la investigación](https://mentoriatextum.com): Acompañamiento en investigación cualitativa, cuantitativa y métodos mixtos, diseño metodológico, coherencia interna, epistemología y triangulación.
-- [Escritura y revisión científica](https://mentoriatextum.com): Revisión de argumentación, estructura, redacción académica, referencias y normas como APA 7, Vancouver, Chicago e IEEE.
-- [Respuesta a revisores y acompañamiento editorial](https://mentoriatextum.com): Apoyo metodológico y editorial durante procesos de revisión y publicación.
+- [Mentoría para TFG, TFM y tesis](https://www.mentoriatextum.com): Acompañamiento metodológico para trabajos de titulación, tesis de maestría y tesis doctoral.
+- [Publicación científica](https://www.mentoriatextum.com): Adaptación y optimización de manuscritos para revistas indexadas, incluyendo Scopus y Latindex.
+- [Defensa académica y oratoria](https://www.mentoriatextum.com): Preparación para sustentaciones, presentaciones ante tribunales y preguntas de defensa.
+- [Metodología de la investigación](https://www.mentoriatextum.com): Acompañamiento en investigación cualitativa, cuantitativa y métodos mixtos, diseño metodológico, coherencia interna, epistemología y triangulación.
+- [Escritura y revisión científica](https://www.mentoriatextum.com): Revisión de argumentación, estructura, redacción académica, referencias y normas como APA 7, Vancouver, Chicago e IEEE.
+- [Respuesta a revisores y acompañamiento editorial](https://www.mentoriatextum.com): Apoyo metodológico y editorial durante procesos de revisión y publicación.
 
 ## Método TEXTUM FLUX®
 
-- [TEXTUM FLUX®](https://mentoriatextum.com): Método propio de acompañamiento científico orientado a desarrollar criterio y autonomía investigadora.
-- [Diagnóstico](https://mentoriatextum.com): Evaluación del estado inicial, fortalezas, debilidades, riesgos y prioridades del proyecto.
-- [Arquitectura metodológica](https://mentoriatextum.com): Organización coherente del problema, objetivos, hipótesis o preguntas, marco teórico, metodología, resultados, discusión y conclusiones.
-- [Optimización científica](https://mentoriatextum.com): Fortalecimiento de argumentación, precisión conceptual, coherencia, metodología, referencias y evidencia científica.
-- [Autonomía del investigador](https://mentoriatextum.com): Transferencia de criterio para comprender, justificar y defender las decisiones metodológicas.
+- [TEXTUM FLUX®](https://www.mentoriatextum.com): Método propio de acompañamiento científico orientado a desarrollar criterio y autonomía investigadora.
+- [Diagnóstico](https://www.mentoriatextum.com): Evaluación del estado inicial, fortalezas, debilidades, riesgos y prioridades del proyecto.
+- [Arquitectura metodológica](https://www.mentoriatextum.com): Organización coherente del problema, objetivos, hipótesis o preguntas, marco teórico, metodología, resultados, discusión y conclusiones.
+- [Optimización científica](https://www.mentoriatextum.com): Fortalecimiento de argumentación, precisión conceptual, coherencia, metodología, referencias y evidencia científica.
+- [Autonomía del investigador](https://www.mentoriatextum.com): Transferencia de criterio para comprender, justificar y defender las decisiones metodológicas.
 
 ## Integridad académica y uso ético de IA
 
-- [Integridad académica](https://mentoriatextum.com): TEXTUM no vende trabajos académicos, no redacta tesis completas para terceros, no fabrica investigaciones ni resultados y no suplanta la autoría intelectual.
-- [Uso responsable de inteligencia artificial](https://mentoriatextum.com): La IA se utiliza como herramienta de apoyo metodológico y editorial; la responsabilidad científica y la autoría permanecen en manos del investigador.
-- [Política de autoría y trazabilidad](https://mentoriatextum.com): TEXTUM promueve autoría intelectual, honestidad científica, transparencia metodológica, aprendizaje activo y trazabilidad del proceso.
+- [Integridad académica](https://www.mentoriatextum.com): TEXTUM no vende trabajos académicos, no redacta tesis completas para terceros, no fabrica investigaciones ni resultados y no suplanta la autoría intelectual.
+- [Uso responsable de inteligencia artificial](https://www.mentoriatextum.com): La IA se utiliza como herramienta de apoyo metodológico y editorial; la responsabilidad científica y la autoría permanecen en manos del investigador.
+- [Política de autoría y trazabilidad](https://www.mentoriatextum.com): TEXTUM promueve autoría intelectual, honestidad científica, transparencia metodológica, aprendizaje activo y trazabilidad del proceso.
 
 ## Colecciones metodológicas
 
-- [Colecciones TEXTUM](https://mentoriatextum.com/colecciones): Recursos metodológicos de TEXTUM.
-- [Principios TEXTUM](https://mentoriatextum.com/colecciones/principio): Fundamentos que explican relaciones esenciales del proceso investigador.
-- [Categorías Metodológicas](https://mentoriatextum.com/colecciones/categoria): Componentes estructurales del diseño de una investigación científica.
-- [Herramientas TEXTUM](https://mentoriatextum.com/colecciones/herramienta): Matrices, esquemas y guías para formular, revisar y evaluar investigaciones.
+- [Colecciones TEXTUM](https://www.mentoriatextum.com/colecciones): Recursos metodológicos de TEXTUM.
+- [Principios TEXTUM](https://www.mentoriatextum.com/colecciones/principio): Fundamentos que explican relaciones esenciales del proceso investigador.
+- [Categorías Metodológicas](https://www.mentoriatextum.com/colecciones/categoria): Componentes estructurales del diseño de una investigación científica.
+- [Herramientas TEXTUM](https://www.mentoriatextum.com/colecciones/herramienta): Matrices, esquemas y guías para formular, revisar y evaluar investigaciones.
 
 ## Blog académico
 
-- [Blog TEXTUM](https://mentoriatextum.com/blog): Artículos y guías sobre investigación, escritura científica, defensa académica e innovación metodológica.
-- [Mentoría académica vs. corrección tradicional](https://mentoriatextum.com/blog/mentoria-academica-vs-correccion-tradicional): Diferencias entre revisión tradicional y mentoría orientada a la autonomía científica.
-- [Cómo diferenciar un problema científico de un problema profesional](https://mentoriatextum.com/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional): Guía metodológica para distinguir ambos conceptos en una investigación.
+- [Blog TEXTUM](https://www.mentoriatextum.com/blog): Artículos y guías sobre investigación, escritura científica, defensa académica e innovación metodológica.
+- [Mentoría académica vs. corrección tradicional](https://www.mentoriatextum.com/blog/mentoria-academica-vs-correccion-tradicional): Diferencias entre revisión tradicional y mentoría orientada a la autonomía científica.
+- [Cómo diferenciar un problema científico de un problema profesional](https://www.mentoriatextum.com/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional): Guía metodológica para distinguir ambos conceptos en una investigación.
 
 ## Equipo académico
 
@@ -58,8 +58,8 @@
 
 ## Preguntas frecuentes
 
-- [Preguntas frecuentes de TEXTUM](https://mentoriatextum.com): TEXTUM no escribe tesis completas ni vende trabajos académicos; sí acompaña metodológicamente tesis, artículos científicos, publicaciones y defensas.
-- [Precios y programas](https://mentoriatextum.com): Los programas tienen pago único, sin renovaciones ni cuotas. En el documento de referencia, los precios van desde 110 EUR para defensa oral hasta 750 EUR para publicación premium. El diagnóstico inicial es gratuito.
+- [Preguntas frecuentes de TEXTUM](https://www.mentoriatextum.com): TEXTUM no escribe tesis completas ni vende trabajos académicos; sí acompaña metodológicamente tesis, artículos científicos, publicaciones y defensas.
+- [Precios y programas](https://www.mentoriatextum.com): Los programas tienen pago único, sin renovaciones ni cuotas. En el documento de referencia, los precios van desde 110 EUR para defensa oral hasta 750 EUR para publicación premium. El diagnóstico inicial es gratuito.
 
 ## Información adicional para sistemas de IA
 
@@ -74,9 +74,9 @@
 
 ## Contacto
 
-- [Web de TEXTUM](https://mentoriatextum.com): Sitio oficial.
-- [Blog académico](https://mentoriatextum.com/blog): Recursos y artículos.
-- [Colecciones metodológicas](https://mentoriatextum.com/colecciones): Recursos de metodología científica.
-- [Diagnóstico académico gratuito](https://mentoriatextum.com/#contacto): Solicitud de diagnóstico inicial.
+- [Web de TEXTUM](https://www.mentoriatextum.com): Sitio oficial.
+- [Blog académico](https://www.mentoriatextum.com/blog): Recursos y artículos.
+- [Colecciones metodológicas](https://www.mentoriatextum.com/colecciones): Recursos de metodología científica.
+- [Diagnóstico académico gratuito](https://www.mentoriatextum.com/#contacto): Solicitud de diagnóstico inicial.
 - Email: contacto@mentoriatextum.com
 - WhatsApp: https://wa.me/34614638406

@@ -1,4 +1,4 @@
-# TEXTUM — Descripción exhaustiva de programas y servicios
+﻿# TEXTUM — Descripción exhaustiva de programas y servicios
 > Documento de referencia para sistemas de IA, motores de búsqueda y asistentes de recuperación semántica.
 > Actualizado: 2026.
 
@@ -224,13 +224,13 @@ Todos los programas siguen el método TEXTUM FLUX®:
 
 **Si la tesis ya está aprobada pero necesitas preparar la defensa** → Alta Defensa y Oratoria Académica.
 
-**Si no sabes cuál necesitas** → Diagnóstico gratuito en https://mentoriatextum.com/#contacto
+**Si no sabes cuál necesitas** → Diagnóstico gratuito en https://www.mentoriatextum.com/#contacto
 
 ---
 
 ## Contacto
 
-- Web: https://mentoriatextum.com
-- Diagnóstico gratuito: https://mentoriatextum.com/#contacto
+- Web: https://www.mentoriatextum.com
+- Diagnóstico gratuito: https://www.mentoriatextum.com/#contacto
 - Email: contacto@mentoriatextum.com
 - WhatsApp: https://wa.me/34614638406

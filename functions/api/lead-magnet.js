@@ -1,4 +1,4 @@
-// functions/api/lead-magnet.js
+﻿// functions/api/lead-magnet.js
 import { createClient } from '@supabase/supabase-js';
 
 
@@ -244,13 +244,13 @@ async function sendDownloadEmail({
         <hr style="border:none;border-top:1px solid #e5e5e5;margin:32px 0;">
         <p style="font-size:15px;">¿Quieres que revisemos juntos la coherencia metodológica de tu investigación?</p>
         <p>
-          <a href="https://mentoriatextum.com/#diagnostico" style="color:#0f766e;font-weight:600;">
+          <a href="https://www.mentoriatextum.com/#diagnostico" style="color:#0f766e;font-weight:600;">
             Solicita tu diagnóstico gratuito →
           </a>
         </p>
         <p style="font-size:13px;color:#888;margin-top:40px;">
           TEXTUM · Mentoría Académica<br>
-          <a href="https://mentoriatextum.com" style="color:#888;">mentoriatextum.com</a>
+          <a href="https://www.mentoriatextum.com" style="color:#888;">mentoriatextum.com</a>
         </p>
         ${unsubBlockEs}
       </div>
@@ -268,13 +268,13 @@ async function sendDownloadEmail({
         <hr style="border:none;border-top:1px solid #e5e5e5;margin:32px 0;">
         <p style="font-size:15px;">Would you like us to review the methodological coherence of your research together?</p>
         <p>
-          <a href="https://mentoriatextum.com/#diagnostico" style="color:#0f766e;font-weight:600;">
+          <a href="https://www.mentoriatextum.com/#diagnostico" style="color:#0f766e;font-weight:600;">
             Request your free diagnosis →
           </a>
         </p>
         <p style="font-size:13px;color:#888;margin-top:40px;">
           TEXTUM · Academic Mentoring<br>
-          <a href="https://mentoriatextum.com" style="color:#888;">mentoriatextum.com</a>
+          <a href="https://www.mentoriatextum.com" style="color:#888;">mentoriatextum.com</a>
         </p>
         ${unsubBlockEn}
       </div>

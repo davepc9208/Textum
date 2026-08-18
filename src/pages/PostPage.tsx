@@ -16,7 +16,7 @@ import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 import { sanitizeHtml } from '../lib/sanitize';
 
-const SITE_URL = 'https://mentoriatextum.com';
+const SITE_URL = 'https://www.mentoriatextum.com';
 
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
   useEffect(() => {

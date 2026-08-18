@@ -25,7 +25,7 @@ interface SEOProps {
   keywords?: string;
 }
 
-const SITE_URL = 'https://mentoriatextum.com';
+const SITE_URL = 'https://www.mentoriatextum.com';
 const DEFAULT_IMAGE = `${SITE_URL}/og-default.png`;
 const DEFAULT_IMAGE_ALT = 'TEXTUM — Mentoría Académica Internacional';
 

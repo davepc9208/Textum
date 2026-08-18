@@ -1,4 +1,4 @@
-# Sobre TEXTUM — Mentoría Académica Internacional
+﻿# Sobre TEXTUM — Mentoría Académica Internacional
 
 ---
 
@@ -205,12 +205,12 @@ Las mentorías se adaptan a diferentes estándares nacionales e internacionales:
 
 ## 🔗 Enlaces
 
-- **Web:** https://mentoriatextum.com
-- **Blog:** https://mentoriatextum.com/blog
-- **Colecciones:** https://mentoriatextum.com/colecciones
+- **Web:** https://www.mentoriatextum.com
+- **Blog:** https://www.mentoriatextum.com/blog
+- **Colecciones:** https://www.mentoriatextum.com/colecciones
 - **Email:** contacto@mentoriatextum.com
 - **WhatsApp:** https://wa.me/34614638406
-- **Diagnóstico gratuito:** https://mentoriatextum.com/#contacto
+- **Diagnóstico gratuito:** https://www.mentoriatextum.com/#contacto
 
 ---
 
