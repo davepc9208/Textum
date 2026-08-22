@@ -39,6 +39,34 @@ test('catch-all returns English 404 when lang=en', async () => {
   assert.match(html, /This page does not exist/i);
 });
 
+test('catch-all passes static assets through instead of 404ing them', async () => {
+  let nextCalled = false;
+  const response = await catchAll({
+    request: new Request(`${origin}/assets/index-abc123.js`),
+    env: {},
+    next: async () => {
+      nextCalled = true;
+      return new Response('console.log(1)', { status: 200, headers: { 'Content-Type': 'application/javascript' } });
+    },
+  });
+  assert.equal(response.status, 200);
+  assert.equal(nextCalled, true);
+  assert.match(response.headers.get('Content-Type'), /javascript/);
+});
+
+test('catch-all passes CSS assets through via ASSETS when next is unavailable', async () => {
+  const response = await catchAll({
+    request: new Request(`${origin}/assets/index-abc123.css`),
+    env: {
+      ASSETS: {
+        fetch: async () => new Response('body{}', { status: 200, headers: { 'Content-Type': 'text/css' } }),
+      },
+    },
+  });
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('Content-Type'), /css/);
+});
+
 test('catch-all serves SPA shell for known app routes', async () => {
   let nextCalled = false;
   const response = await catchAll({

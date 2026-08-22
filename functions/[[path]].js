@@ -50,6 +50,19 @@ export async function onRequest(context) {
     });
   }
 
+  // Pass static assets (JS, CSS, images, fonts, favicons, sitemaps...) through
+  // unchanged. The catch-all runs for every request, so without this guard a
+  // browser request for e.g. /assets/index-abc123.js would be answered with an
+  // HTML 404 instead of the real file, the module script would never execute
+  // and the page would render blank after deploy.
+  const lastSegment = url.pathname.split('/').pop() || '';
+  const hasFileExtension = lastSegment.includes('.') && !lastSegment.endsWith('.');
+  if (hasFileExtension) {
+    return typeof context.next === 'function'
+      ? await context.next()
+      : await env.ASSETS.fetch(request);
+  }
+
   const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'es';
   return new Response(notFoundHtml(lang), {
     status: 404,

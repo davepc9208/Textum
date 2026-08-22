@@ -6,5 +6,7 @@
 /es/blog/*   /blog/:splat   301
 /en/blog/*   /blog/:splat?lang=en   301
 
-# SPA fallback — static assets and React Router handle all other routes
-/*    /index.html   200
+# NO global SPA fallback here: Cloudflare Pages already serves index.html for
+# unmatched paths (default SPA behavior), and functions/[[path]].js handles the
+# known app routes plus a branded 404. Adding a /* /index.html 200 rule here
+# would run after the catch-all function and interfere with static assets.
