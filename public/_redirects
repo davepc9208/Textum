@@ -1,12 +1,9 @@
-# Prefijos de idioma fantasma (SPA shell → titles/meta duplicados en Bing)
+# Legacy language prefixes → canonical root plus query-based English
 /es      /   301
-/en      /   301
+/en      /?lang=en   301
 /es/     /   301
-/en/     /   301
-
-# Posts antiguos bajo /es/blog/... → URL canónica /blog/...
+/en/     /?lang=en   301
 /es/blog/*   /blog/:splat   301
-/en/blog/*   /blog/:splat   301
+/en/blog/*   /blog/:splat?lang=en   301
 
-# SPA fallback
-/*    /index.html   200
+# Application routes and real 404 responses are handled by functions/[[path]].js

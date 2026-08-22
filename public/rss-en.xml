@@ -1,27 +1,8 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0">
-<channel>
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0"><channel>
   <title>Blog (en)</title>
-  <link>https://www.mentoriatextum.com/en</link>
-  <description>Contenido actualizado</description>
-  
-  <item>
-    <title><![CDATA[How to tell a scientific problem from a professional problem (and why it matters in academic writing)]]></title>
-    <link>https://www.mentoriatextum.com/en/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional</link>
-    <description><![CDATA["Stuck on defining your problem? Learn how to accurately differentiate between a scientific and a professional problem to avoid the most common methodological error in postgraduate studies. Discover how to structure the appropriate research pathway for your project, ensure the internal consistency of your chapters, and successfully pass the demanding evaluation of the university committee. 
-
-Scientific Problem, Professional Problem, Research Design, Academic Writing, Graduation Project, Internal Consistency]]></description>
-    <pubDate>Wed, 01 Jul 2026 18:16:41 GMT</pubDate>
-    <guid>https://www.mentoriatextum.com/en/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional</guid>
-  </item>
-  <item>
-    <title><![CDATA[Academic Mentoring vs. Traditional Proofreading: Which One Do You Really Need?]]></title>
-    <link>https://www.mentoriatextum.com/en/blog/mentoria-academica-vs-correccion-tradicional</link>
-    <description><![CDATA[A proofread text or a trained author? Discover the subtle difference between traditional proofreading and Textum's pedagogical method. We analyze the advantages, disadvantages, and real impact of each service on your academic autonomy so you can choose the ideal strategy to ensure your graduation project is approved without relying on third parties. 
-
-Academic Mentoring, Proofreading, Graduation Project, Scientific Writing, Active Learning]]></description>
-    <pubDate>Tue, 30 Jun 2026 20:03:02 GMT</pubDate>
-    <guid>https://www.mentoriatextum.com/en/blog/mentoria-academica-vs-correccion-tradicional</guid>
-  </item>
-</channel>
-</rss>
+  <link>https://www.mentoriatextum.com/?lang=en</link>
+  <description>Updated academic content from TEXTUM</description>
+  <item><title><![CDATA[How to tell a scientific problem from a professional problem]]></title><link>https://www.mentoriatextum.com/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional?lang=en</link><guid>https://www.mentoriatextum.com/blog/como-diferenciar-un-problema-cientifico-de-un-problema-profesional?lang=en</guid><pubDate>Wed, 01 Jul 2026 18:16:41 GMT</pubDate></item>
+  <item><title><![CDATA[Academic Mentoring vs. Traditional Proofreading]]></title><link>https://www.mentoriatextum.com/blog/mentoria-academica-vs-correccion-tradicional?lang=en</link><guid>https://www.mentoriatextum.com/blog/mentoria-academica-vs-correccion-tradicional?lang=en</guid><pubDate>Tue, 30 Jun 2026 20:03:02 GMT</pubDate></item>
+</channel></rss>

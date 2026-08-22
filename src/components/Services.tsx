@@ -35,6 +35,8 @@ import { Check, Calendar } from 'lucide-react';
 import { useLang } from '../i18n/LangContext';
 import { useCurrency, formatPrice } from '../hooks/useCurrency';
 import { SERVICE_LINES, type Tier } from '../data/services';
+import { diagnosisHref, trackConversion } from '../lib/conversion';
+import { getExperimentVariant } from '../lib/experiments';
 
 function CurrencyBadge({ currency, loading }: { currency: 'USD' | 'EUR'; loading: boolean }) {
   if (loading) return (
@@ -77,7 +79,6 @@ function TierCard({
   const note     = lang === 'es' ? tier.priceNote_es: tier.priceNote_en;
   const price    = formatPrice(tier.usd, tier.eur, currency);
   const diagCta  = lang === 'es' ? 'Diagnóstico gratuito' : 'Free diagnosis';
-  const infoCta  = lang === 'es' ? 'Ver detalles' : 'See details';
 
   return (
     <div className={`relative flex flex-col rounded-sm transition-all duration-300 hover:-translate-y-1 ${
@@ -137,7 +138,8 @@ function TierCard({
       {/* CTAs — diagnóstico gratuito es el primario */}
       <div className={`px-6 pb-6 flex flex-col gap-2`}>
         <a
-          href="#contacto"
+          href={diagnosisHref()}
+          onClick={() => trackConversion('diagnosis_cta_click', { placement: 'services' })}
           className={`flex items-center justify-center gap-2 text-xs tracking-[0.12em] py-3 rounded-sm transition-all duration-200 font-semibold ${
             highlight
               ? 'bg-gold text-navy hover:bg-gold-light'
@@ -185,7 +187,8 @@ function DefensaCard({ lang, currency }: { lang: 'es' | 'en'; currency: 'USD' | 
             <p className="text-xs text-navy/35 mt-0.5">{note}</p>
             <PriceAnchor lang={lang} />
             <a
-              href="#contacto"
+              href={diagnosisHref()}
+              onClick={() => trackConversion('diagnosis_cta_click', { placement: 'defence' })}
               className="mt-5 flex items-center justify-center gap-2 text-xs tracking-[0.12em] py-3 rounded-sm bg-navy text-gold font-semibold hover:bg-navy-light transition-all duration-200"
             >
               <Calendar size={12} />
@@ -214,6 +217,7 @@ export default function Services() {
 
   const mainLines = SERVICE_LINES.filter(l => l.id !== 'defensa');
   const [activeTab, setActiveTab] = useState(0);
+  const [ctaVariant] = useState(() => getExperimentVariant('diagnosis_cta', ['diagnosis', 'conversation']));
   const panelId = (i: number) => `servicios-panel-${i}`;
   const tabId   = (i: number) => `servicios-tab-${i}`;
 
@@ -345,12 +349,15 @@ export default function Services() {
                 : "Not sure which programme suits your project? The free diagnosis is the first step."}
             </p>
             <a
-              href="#contacto"
+              href={diagnosisHref()}
+              onClick={() => trackConversion('diagnosis_cta_click', { placement: 'services-final', variant: ctaVariant })}
               className="btn-primary flex items-center gap-2 px-10 py-4 text-xs tracking-[0.18em] rounded-sm"
             >
               <Calendar size={14} />
               <span>
-                {lang === 'es' ? 'SOLICITAR DIAGNÓSTICO GRATUITO' : 'REQUEST FREE DIAGNOSIS'}
+                {ctaVariant === 'conversation'
+                  ? (lang === 'es' ? 'HABLAR SOBRE MI INVESTIGACIÓN' : 'TALK ABOUT MY RESEARCH')
+                  : (lang === 'es' ? 'SOLICITAR DIAGNÓSTICO GRATUITO' : 'REQUEST FREE DIAGNOSIS')}
               </span>
             </a>
             <p className="text-[10px] text-navy/30 font-light">

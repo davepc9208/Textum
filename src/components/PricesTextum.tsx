@@ -5,6 +5,7 @@
 import { useLang } from '../i18n/LangContext';
 import { useCurrency } from '../hooks/useCurrency';
 import { PRICE_TABLE, PRICE_LEGAL } from '../data/services';
+import { diagnosisHref, trackConversion } from '../lib/conversion';
 
 export default function PricesTextum() {
   const { lang } = useLang();
@@ -88,7 +89,8 @@ export default function PricesTextum() {
         {/* CTA */}
         <div className="text-center mt-10 reveal">
           <a
-            href="#contacto"
+            href={diagnosisHref()}
+            onClick={() => trackConversion('diagnosis_cta_click', { placement: 'prices' })}
             className="btn-primary inline-block px-10 py-4 text-xs tracking-[0.18em] rounded-sm"
           >
             <span>

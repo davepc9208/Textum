@@ -11,6 +11,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+export const POST_SUMMARY_FIELDS = [
+  'id', 'slug', 'title_es', 'title_en', 'excerpt_es', 'excerpt_en',
+  'author', 'cover_url', 'cover_alt', 'published', 'created_at',
+  'reading_time', 'category', 'collection_type',
+].join(',');
+
+export type PostCursor = Pick<Post, 'created_at' | 'id'>;
+
 export type Post = {
   id: string;
   slug: string;

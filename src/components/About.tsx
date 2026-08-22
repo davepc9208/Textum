@@ -18,6 +18,7 @@
 // 3. width/height actualizados para reflejar el aspecto real (4/5).
 
 import { useLang } from '../i18n/LangContext';
+import { diagnosisHref, trackConversion } from '../lib/conversion';
 
 const memberImages = [
   {
@@ -127,7 +128,7 @@ export default function About() {
               ))}
             </div>
 
-            <a href="#contacto" className="inline-block btn-primary px-8 py-3.5 text-xs tracking-[0.15em] rounded-sm mt-2">
+            <a href={diagnosisHref()} onClick={() => trackConversion('diagnosis_cta_click', { placement: 'about' })} className="inline-block btn-primary px-8 py-3.5 text-xs tracking-[0.15em] rounded-sm mt-2">
               <span>{ab.cta}</span>
             </a>
           </div>

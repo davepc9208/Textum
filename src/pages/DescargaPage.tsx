@@ -1,10 +1,13 @@
 // src/pages/DescargaPage.tsx
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Loader2, Download, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useLang } from '../i18n/LangContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import TurnstileWidget from '../components/TurnstileWidget';
+import { turnstileConfigured } from '../lib/turnstile';
+import { diagnosisHref, trackConversion } from '../lib/conversion';
 
 const RESOURCES: Record<string, { title_es: string; title_en: string; type: string }> = {
   'pt-01': {
@@ -45,6 +48,8 @@ export default function DescargaPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const onTurnstileToken = useCallback((token: string) => setTurnstileToken(token), []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -61,6 +66,10 @@ export default function DescargaPage() {
 
     if (!form.privacy) {
       setErrorMsg(lang === 'es' ? 'Debes aceptar la política de privacidad.' : 'You must accept the privacy policy.');
+      return;
+    }
+    if (turnstileConfigured && !turnstileToken) {
+      setErrorMsg(lang === 'es' ? 'Completa la verificación de seguridad.' : 'Complete the security check.');
       return;
     }
 
@@ -83,6 +92,7 @@ export default function DescargaPage() {
   lang,                    // ← ya lo tenías
   source: 'coleccion',
   privacy_accepted: true,
+  turnstileToken,
 }),
       });
 
@@ -94,8 +104,9 @@ export default function DescargaPage() {
 
       setDownloadUrl(data.downloadUrl);
       setStatus('success');
-    } catch (err: any) {
-      setErrorMsg(err.message || (lang === 'es' ? 'Error inesperado' : 'Unexpected error'));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      setErrorMsg(message || (lang === 'es' ? 'Error inesperado' : 'Unexpected error'));
       setStatus('error');
     }
   };
@@ -167,9 +178,13 @@ export default function DescargaPage() {
                       ? '¿Quieres que revisemos la coherencia de tu investigación?'
                       : 'Would you like us to review the coherence of your research?'}
                   </p>
-                  <Link to="/#diagnostico" className="text-gold font-medium hover:underline text-sm">
+                  <a
+                    href={diagnosisHref()}
+                    onClick={() => trackConversion('diagnosis_cta_click', { placement: 'download-success' })}
+                    className="text-gold font-medium hover:underline text-sm"
+                  >
                     {lang === 'es' ? 'Solicita tu diagnóstico gratuito →' : 'Request your free diagnosis →'}
-                  </Link>
+                  </a>
                 </div>
               </div>
             ) : (
@@ -269,6 +284,8 @@ export default function DescargaPage() {
                         : 'I agree to receive the document and communications from TEXTUM. I can unsubscribe at any time. *'}
                     </label>
                   </div>
+
+                  <TurnstileWidget onToken={onTurnstileToken} />
 
                   {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
 

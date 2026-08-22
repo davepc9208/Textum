@@ -20,7 +20,37 @@ create table if not exists public.posts (
   created_at   timestamptz not null default now()
 );
 
--- 2. Administradores autorizados
+create index if not exists posts_published_cursor_idx
+  on public.posts (published, collection_type, created_at desc, id desc);
+
+-- 2. Leads captados desde recursos y formularios (PII; nunca público)
+create table if not exists public.leads (
+  id               uuid primary key default gen_random_uuid(),
+  name             text not null,
+  email            text not null,
+  institution      text,
+  country          text,
+  role             text,
+  resource_slug    text,
+  resource_type    text,
+  resource_title   text,
+  lang             text not null default 'es',
+  source           text,
+  utm_source       text,
+  utm_medium       text,
+  utm_campaign     text,
+  privacy_accepted boolean not null default false,
+  email_sent       boolean not null default false,
+  downloaded_at    timestamptz,
+  unsubscribed_at  timestamptz,
+  created_at       timestamptz not null default now()
+);
+
+create index if not exists leads_created_at_idx on public.leads (created_at desc);
+create index if not exists leads_email_idx on public.leads (lower(email));
+alter table public.leads enable row level security;
+
+-- 3. Administradores autorizados
 create table if not exists public.admins (
   email text primary key check (email ~* '^[^@]+@[^@]+\.[^@]+$')
 );
@@ -48,7 +78,20 @@ $$;
 revoke all on function public.is_admin() from public;
 grant execute on function public.is_admin() to authenticated;
 
--- 3. Row Level Security — posts
+create or replace function public.is_admin_mfa()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select (auth.jwt() ->> 'aal') = 'aal2' and public.is_admin();
+$$;
+
+revoke all on function public.is_admin_mfa() from public;
+grant execute on function public.is_admin_mfa() to authenticated;
+
+-- 4. Row Level Security — posts
 alter table public.posts enable row level security;
 
 create policy "Public can read published posts"
@@ -63,20 +106,27 @@ create policy "Admins can read all posts"
 create policy "Admins can insert posts"
   on public.posts for insert
   to authenticated
-  with check (public.is_admin());
+  with check (public.is_admin_mfa());
 
 create policy "Admins can update posts"
   on public.posts for update
   to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
+  using (public.is_admin_mfa())
+  with check (public.is_admin_mfa());
 
 create policy "Admins can delete posts"
   on public.posts for delete
   to authenticated
-  using (public.is_admin());
+  using (public.is_admin_mfa());
 
--- 4. Storage: bucket blog-images
+-- 5. Leads: solo el administrador con MFA puede leer datos personales
+drop policy if exists "Admins can read leads" on public.leads;
+create policy "Admins can read leads"
+  on public.leads for select
+  to authenticated
+  using (public.is_admin_mfa());
+
+-- 6. Storage: bucket blog-images
 insert into storage.buckets (id, name, public)
 values ('blog-images', 'blog-images', true)
 on conflict (id) do nothing;
@@ -88,14 +138,14 @@ create policy "Public read blog images"
 create policy "Admins upload blog images"
   on storage.objects for insert
   to authenticated
-  with check (bucket_id = 'blog-images' and public.is_admin());
+  with check (bucket_id = 'blog-images' and public.is_admin_mfa());
 
 create policy "Admins update blog images"
   on storage.objects for update
   to authenticated
-  using (bucket_id = 'blog-images' and public.is_admin());
+  using (bucket_id = 'blog-images' and public.is_admin_mfa());
 
 create policy "Admins delete blog images"
   on storage.objects for delete
   to authenticated
-  using (bucket_id = 'blog-images' and public.is_admin());
+  using (bucket_id = 'blog-images' and public.is_admin_mfa());

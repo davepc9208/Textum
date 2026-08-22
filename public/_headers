@@ -11,8 +11,7 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
 # CSP: ajusta si usas scripts externos extra (Clarity, Resend widgets, etc.)
-/*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.clarity.ms https://scripts.clarity.ms; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://api.resend.com https://www.clarity.ms https://*.clarity.ms https://api.groq.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.clarity.ms https://scripts.clarity.ms https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://api.resend.com https://www.clarity.ms https://*.clarity.ms https://api.groq.com https://*.sentry.io; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 
 /api/*
   Access-Control-Allow-Methods: POST, OPTIONS

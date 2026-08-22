@@ -1,8 +1,11 @@
 // functions/api/contact.js
-// Cloudflare Pages Function — reemplaza netlify/functions/contact.js
+// Cloudflare Pages Function para el formulario de contacto.
+import { enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
+
+const MAX_BODY_BYTES = 32 * 1024;
 
 function escapeHtml(str) {
-  return str
+  return String(str ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -12,18 +15,52 @@ function escapeHtml(str) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  const requestId = getRequestId(request);
+
+  if (Number(request.headers.get('Content-Length') || 0) > MAX_BODY_BYTES) {
+    return jsonResponse({ error: 'La solicitud supera el tamaño permitido.' }, 413, request, env, requestId);
+  }
+  if (!await enforceRateLimit(request, 'contact', 5, 600)) {
+    return jsonResponse({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, 429, request, env, requestId, { 'Retry-After': '600' });
+  }
 
   try {
-    const { name, email, service, message } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(JSON.stringify({ error: 'Body JSON inválido.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return jsonResponse({ error: 'Body inválido.' }, 400, request, env, requestId);
+    }
 
-    if (!name || !email || !message) {
+    const { name, email, service, message, turnstileToken } = body;
+
+    if (!validateText(name, { min: 2, max: 120 })
+      || !validateText(email, { min: 3, max: 254 })
+      || !validateText(message, { min: 5, max: 5000 })
+      || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
       return new Response(
         JSON.stringify({ error: 'Faltan campos obligatorios.' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const res = await fetch('https://api.resend.com/emails', {
+    const captcha = await verifyTurnstile(turnstileToken, request, env);
+    if (!captcha.ok) {
+      return jsonResponse({ error: 'Completa la verificación de seguridad e inténtalo de nuevo.' }, 403, request, env, requestId);
+    }
+
+    if (!env.RESEND_API_KEY) {
+      log('error', 'contact.configuration_missing', { requestId });
+      return jsonResponse({ error: 'Servicio de correo no configurado.' }, 503, request, env, requestId);
+    }
+
+    const res = await fetchWithRetry('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -43,11 +80,11 @@ export async function onRequestPost(context) {
           <p>${escapeHtml(message).replace(/\n/g, '<br/>')}</p>
         `,
       }),
-    });
+    }, { retries: 0, timeoutMs: 8000 });
 
     if (!res.ok) {
-      const error = await res.json();
-      console.error('Resend error:', error);
+      const error = await res.json().catch(() => ({}));
+      log('error', 'contact.email_failed', { requestId, status: res.status, error });
       return new Response(
         JSON.stringify({ error: 'No se pudo enviar el correo. Inténtalo de nuevo.' }),
         { status: 502, headers: { 'Content-Type': 'application/json' } }
@@ -56,11 +93,11 @@ export async function onRequestPost(context) {
 
     return new Response(
       JSON.stringify({ success: true }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId } }
     );
 
   } catch (err) {
-    console.error('Contact function error:', err);
+    log('error', 'contact.failed', { requestId, message: err instanceof Error ? err.message : String(err) });
     return new Response(
       JSON.stringify({ error: 'Error del servidor. Inténtalo de nuevo más tarde.' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

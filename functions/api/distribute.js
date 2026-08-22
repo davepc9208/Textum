@@ -1,4 +1,5 @@
 // functions/api/distribute.js
+import { fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
 // Fix: fechas de republicación ahora se generan dinámicamente desde new Date()
 // en lugar de estar hardcodeadas en julio 2026.
 
@@ -140,7 +141,7 @@ IMPORTANTE: Responde SOLO con JSON válido sin markdown. Sigue EXACTAMENTE esta 
 }`;
 
   try {
-    const response = await fetch(GROQ_API_URL, {
+    const response = await fetchWithRetry(GROQ_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -180,8 +181,10 @@ IMPORTANTE: Responde SOLO con JSON válido sin markdown. Sigue EXACTAMENTE esta 
 }
 
 export async function onRequest(context) {
+  const { request, env } = context;
+  const requestId = getRequestId(request);
+
   try {
-    const { request, env } = context;
 
     if (request.method === 'OPTIONS') {
       return new Response(null, {
@@ -203,6 +206,12 @@ export async function onRequest(context) {
     } catch {
       return json({ error: 'Body inválido.' }, 400);
     }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return json({ error: 'Body inválido.' }, 400);
+    }
+
+    const auth = await requireAdmin(request, env);
+    if (!auth.ok) return auth.response;
 
     const apiKey = env.GROQ_API_KEY;
 
@@ -219,7 +228,7 @@ export async function onRequest(context) {
 
     if (body.step === 'test_groq') {
       if (!apiKey) return json({ error: 'Sin API key.' }, 500);
-      const res = await fetch(GROQ_API_URL, {
+      const res = await fetchWithRetry(GROQ_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -277,9 +286,10 @@ export async function onRequest(context) {
     });
 
   } catch (error) {
+    log('error', 'distribute.failed', { requestId, message: error instanceof Error ? error.message : String(error) });
     return json({
       error: 'Error en el generador de contenido',
-      detail: error.message,
+      requestId,
       version: VERSION,
     }, 500);
   }

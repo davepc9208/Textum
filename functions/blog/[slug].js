@@ -1,4 +1,5 @@
 // functions/blog/[slug].js
+import { fetchWithRetry } from '../_shared/security.js';
 // Cloudflare Pages Function — SSR para Googlebot y bots de redes sociales
 //
 // PROBLEMA QUE RESUELVE:
@@ -76,6 +77,14 @@ function stripHtml(html) {
     .trim();
 }
 
+function sanitizeArticleHtml(html) {
+  return String(html || '')
+    .replace(/<\/?(?:script|style|iframe|object|embed|form)[^>]*>/gi, '')
+    .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/\s(?:href|src)\s*=\s*(['"])\s*javascript:[\\s\\S]*?\1/gi, '')
+    .replace(/\s(?:href|src)\s*=\s*javascript:[^\s>]+/gi, '');
+}
+
 function truncate(text, maxLength) {
   if (!text || text.length <= maxLength) return text;
   return text.slice(0, maxLength - 3) + '...';
@@ -101,22 +110,53 @@ function detectLang(request, post) {
   return 'es';
 }
 
+function notFoundResponse(request) {
+  const isEnglish = new URL(request.url).searchParams.get('lang') === 'en';
+  const copy = isEnglish
+    ? { lang: 'en', title: 'This page does not exist', description: 'The article may have been moved, unpublished, or no longer be available.', home: 'Back to home', blog: 'Explore the blog' }
+    : { lang: 'es', title: 'Esta página no existe', description: 'El artículo puede haber cambiado, no estar publicado o ya no estar disponible.', home: 'Volver al inicio', blog: 'Explorar el blog' };
+  const html = `<!doctype html><html lang="${copy.lang}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>404 — TEXTUM</title><style>:root{color-scheme:light;--navy:#0d1f3c;--gold:#c9a84c;--cream:#faf7f2}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--cream);color:var(--navy);font-family:Inter,Arial,sans-serif;text-align:center}main{max-width:560px}p{color:#5b6575;line-height:1.7;font-size:15px}h1{font:300 clamp(42px,8vw,72px)/1.1 Georgia,serif;margin:12px 0 16px}a{display:inline-block;margin:12px 6px;padding:13px 22px;background:var(--navy);color:var(--cream);text-decoration:none;font-size:12px;letter-spacing:.12em;text-transform:uppercase;border-radius:3px}a.secondary{background:transparent;color:var(--navy);border:1px solid #cfd3da}</style></head><body><main><div style="font-size:12px;letter-spacing:.35em;color:var(--gold);text-transform:uppercase">Error 404</div><h1>${copy.title}</h1><p>${copy.description}</p><a href="/">${copy.home}</a><a class="secondary" href="/blog">${copy.blog}</a></main></body></html>`;
+  return new Response(html, {
+    status: 404,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Robots-Tag': 'noindex, nofollow',
+    },
+  });
+}
+
 async function fetchPost(supabaseUrl, supabaseKey, slug) {
   const url = `${supabaseUrl}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&published=eq.true&select=*&limit=1`;
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const cacheKey = new Request(url, { method: 'GET' });
 
-  const response = await fetch(url, {
+  if (cache) {
+    const cached = await cache.match(cacheKey);
+    if (cached) {
+      const data = await cached.json();
+      return data && data.length > 0 ? data[0] : null;
+    }
+  }
+
+  const response = await fetchWithRetry(url, {
     headers: {
       'apikey': supabaseKey,
       'Authorization': `Bearer ${supabaseKey}`,
       'Content-Type': 'application/json',
     },
-  });
+  }, { retries: 1, timeoutMs: 6000 });
 
   if (!response.ok) {
     throw new Error(`Supabase error: ${response.status}`);
   }
 
   const data = await response.json();
+  if (cache) {
+    await cache.put(cacheKey, new Response(JSON.stringify(data), {
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' },
+    }));
+  }
   return data && data.length > 0 ? data[0] : null;
 }
 
@@ -128,7 +168,7 @@ function buildHtml(post, lang, slug) {
 
   const canonicalUrl = `${SITE_URL}/blog/${slug}`;
   const ogImage = post.cover_url || DEFAULT_OG_IMAGE;
-  const ogImageAlt = post.cover_alt || escapeHtml(title);
+  const ogImageAlt = post.cover_alt || title;
   const publishedDate = formatDate(post.created_at);
   const readingTime = post.reading_time || 1;
   const author = post.author || SITE_NAME;
@@ -189,7 +229,7 @@ function buildHtml(post, lang, slug) {
   // Construir el contenido del artículo como texto plano para que Google lo indexe
   // No usamos el HTML completo de Tiptap para evitar inyección; Google lo lee bien en texto
   const articleBodyHtml = content
-    ? `<div class="article-content">${content}</div>`
+    ? `<div class="article-content">${sanitizeArticleHtml(content)}</div>`
     : `<p>${escapeHtml(plainContent)}</p>`;
 
   return `<!DOCTYPE html>
@@ -349,13 +389,22 @@ export async function onRequest(context) {
 
   const userAgent = request.headers.get('user-agent') || '';
 
-  // Humanos: no interceptar. Dejar que Pages sirva la SPA en LA MISMA URL
-  // (ASSETS.fetch(index.html) provocaba 308 → / y rompía deep links + GSC)
+  // Humanos: comprobar primero que el artículo existe para poder devolver
+  // 404 real en slugs inexistentes; los artículos válidos siguen siendo SPA.
   if (!isBot(userAgent)) {
-    if (typeof context.next === 'function') {
-      return context.next();
+    const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const post = await fetchPost(supabaseUrl, supabaseKey, slug);
+        if (!post) {
+          return notFoundResponse(request);
+        }
+      } catch (error) {
+        console.error('[SSR] Error validating human route:', error);
+      }
     }
-    // Fallback por si next no existe en el runtime
+    if (typeof context.next === 'function') return context.next();
     return env.ASSETS.fetch(request);
   }
 
@@ -376,10 +425,7 @@ export async function onRequest(context) {
 
     if (!post) {
       // Artículo no encontrado o no publicado
-      return new Response('Not found', {
-        status: 404,
-        headers: { 'Content-Type': 'text/plain' },
-      });
+      return notFoundResponse(request);
     }
 
     const lang = detectLang(request, post);

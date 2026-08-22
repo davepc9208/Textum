@@ -42,7 +42,13 @@ export async function onRequestPost(context) {
     }
 
     if (token) {
-      const secret = env.UNSUBSCRIBE_SECRET || env.SUPABASE_SERVICE_ROLE_KEY || 'textum-unsub';
+      const secret = env.UNSUBSCRIBE_SECRET || env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!secret) {
+        return new Response(JSON.stringify({ error: 'Servicio de baja no configurado' }), {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const expected = await makeToken(email, secret);
       if (token !== expected) {
         return new Response(JSON.stringify({ error: 'Enlace de baja no válido o caducado' }), {
@@ -52,10 +58,18 @@ export async function onRequestPost(context) {
       }
     }
 
-    const supabase = createClient(
-      env.VITE_SUPABASE_URL || env.SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const supabaseUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL;
+    const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceRoleKey) {
+      return new Response(JSON.stringify({ error: 'Servicio de baja no configurado' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     const now = new Date().toISOString();
 

@@ -33,6 +33,7 @@ export default function Footer() {
     { label: t.nav.servicios,                                      action: () => goToSection('servicios') },
     { label: t.nav.blog,                                           action: () => navigate('/blog') },
     { label: lang === 'es' ? 'Colecciones'  : 'Collections',      action: () => navigate('/colecciones') },
+    { label: lang === 'es' ? 'Casos y credenciales' : 'Cases & credentials', action: () => navigate('/casos') },
     { label: lang === 'es' ? 'Testimonios'  : 'Testimonials',     action: () => goToSection('testimonios') },
     { label: t.nav.contacto,                                       action: () => goToSection('contacto') },
   ];

@@ -1,4 +1,5 @@
 // functions/api/translate.js
+import { fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
 // Cloudflare Pages Function — traduce artículo ES → EN usando Groq
 //
 // Cambios v2:
@@ -45,7 +46,7 @@ REGLAS ESTRICTAS:
 `.trim();
 
 async function callGroq(apiKey, systemPrompt, userPrompt) {
-  const res = await fetch(GROQ_API_URL, {
+  const res = await fetchWithRetry(GROQ_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -133,6 +134,7 @@ async function translateHtmlContent(apiKey, content_es) {
 
 export async function onRequest(context) {
   const { request, env } = context;
+  const requestId = getRequestId(request);
 
   if (request.method === "OPTIONS") {
     return new Response(null, {
@@ -148,16 +150,22 @@ export async function onRequest(context) {
     return json({ error: "Método no permitido." }, 405);
   }
 
-  const apiKey = env.GROQ_API_KEY;
-  if (!apiKey) {
-    return json({ error: "GROQ_API_KEY no configurada en Cloudflare Pages → Settings → Environment Variables." }, 500);
-  }
-
   let body;
   try {
     body = await request.json();
   } catch {
     return json({ error: "Body JSON inválido." }, 400);
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return json({ error: "Body inválido." }, 400);
+  }
+
+  const auth = await requireAdmin(request, env);
+  if (!auth.ok) return auth.response;
+
+  const apiKey = env.GROQ_API_KEY;
+  if (!apiKey) {
+    return json({ error: "GROQ_API_KEY no configurada en Cloudflare Pages → Settings → Environment Variables." }, 500);
   }
 
   const { title_es, excerpt_es, content_es, keywords_es } = body;
@@ -171,26 +179,22 @@ export async function onRequest(context) {
 
   try {
     // Título y excerpt en paralelo (son cortos) + contenido (puede ser largo)
-    const { title_es, excerpt_es, content_es, keywords_es } = body;
+    const [title_en, excerpt_en, content_en, keywords_en] = await Promise.all([
+      callGroq(apiKey, SYSTEM_TEXT, `Traduce este título académico al inglés:\n\n${title_es}`),
+      excerpt_es
+        ? callGroq(apiKey, SYSTEM_TEXT, `Traduce este resumen académico al inglés:\n\n${excerpt_es}`)
+        : Promise.resolve(""),
+      translateHtmlContent(apiKey, content_es),
+      keywords_es
+        ? callGroq(apiKey, SYSTEM_TEXT, `Traduce estas palabras clave al inglés (mantén el formato de lista separada por comas):\n\n${keywords_es}`)
+        : Promise.resolve(""),
+    ]);
 
-const [title_en, excerpt_en, content_en, keywords_en] = await Promise.all([
-  callGroq(apiKey, SYSTEM_TEXT, `Traduce este título académico al inglés:\n\n${title_es}`),
-  excerpt_es
-    ? callGroq(apiKey, SYSTEM_TEXT, `Traduce este resumen académico al inglés:\n\n${excerpt_es}`)
-    : Promise.resolve(""),
-  translateHtmlContent(apiKey, content_es),
-  keywords_es
-    ? callGroq(apiKey, SYSTEM_TEXT, `Traduce estas palabras clave al inglés (mantén el formato de lista separada por comas):\n\n${keywords_es}`)
-    : Promise.resolve(""),
-]);
-
-return json({ success: true, title_en, excerpt_en, content_en, keywords_en });
-
-    return json({ success: true, title_en, excerpt_en, content_en });
+    return json({ success: true, title_en, excerpt_en, content_en, keywords_en });
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[translate] Error:", message);
+    log('error', 'translate.failed', { requestId, message });
 
     // Dar un mensaje de error útil según el tipo de fallo
     let userMessage = "Error al traducir con Groq.";
@@ -199,6 +203,6 @@ return json({ success: true, title_en, excerpt_en, content_en, keywords_en });
     else if (message.includes("413") || message.includes("too large")) userMessage = "El artículo es demasiado largo para traducir de una vez — divide el contenido en secciones más pequeñas.";
     else if (message.includes("503") || message.includes("unavailable")) userMessage = "El servicio de Groq no está disponible temporalmente — inténtalo en unos minutos.";
 
-    return json({ error: userMessage, detail: message }, 500);
+    return json({ error: userMessage, requestId }, 500);
   }
 }

@@ -2,9 +2,12 @@
 // v2 — fondo cream para contrastar con Testimonios (navy) que viene antes.
 // Adaptaciones de color: todos los elementos oscuros sobre fondo claro.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Mail, Send, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { useLang } from '../i18n/LangContext';
+import TurnstileWidget from './TurnstileWidget';
+import { turnstileConfigured } from '../lib/turnstile';
+import { trackConversion } from '../lib/conversion';
 
 function Toast({ type, message, onClose }: { type: 'success' | 'error'; message: string; onClose: () => void }) {
   useEffect(() => {
@@ -50,6 +53,8 @@ export default function Contact() {
   const [loading, setLoading]   = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [toast, setToast]       = useState<{ type: 'error'; message: string } | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const onTurnstileToken = useCallback((token: string) => setTurnstileToken(token), []);
 
   const closeToast = () => setToast(null);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -64,18 +69,23 @@ export default function Contact() {
       setToast({ type: 'error', message: 'Por favor introduce un correo electrónico válido.' });
       return;
     }
+    if (turnstileConfigured && !turnstileToken) {
+      setToast({ type: 'error', message: 'Completa la verificación de seguridad.' });
+      return;
+    }
     setLoading(true);
     setToast(null);
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, turnstileToken }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error desconocido');
       setSubmitted(true);
       setForm(EMPTY_FORM);
+      trackConversion('diagnosis_request_submitted', { source: 'contact-form' });
     } catch (err) {
       setToast({ type: 'error', message: err instanceof Error ? err.message : f.errorToast ?? 'Error al enviar.' });
     } finally {
@@ -252,6 +262,8 @@ export default function Contact() {
                       placeholder={f.messagePlaceholder}
                       className="w-full bg-white border border-navy/15 rounded-sm px-4 py-3 text-navy text-sm placeholder-navy/30 focus:outline-none focus:border-gold/60 transition-all resize-none shadow-sm" />
                   </div>
+
+                  <TurnstileWidget onToken={onTurnstileToken} />
 
                   <p className="text-navy/30 text-[10px] leading-relaxed font-light">{f.legalNote}</p>
 

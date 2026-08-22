@@ -38,6 +38,7 @@ import {
   Palette, Minus, Plus,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { optimizeImage } from '../lib/imageOptimization';
 
 // ─── Configurar lowlight para código ──────────────────────────────────────
 const lowlight = createLowlight();
@@ -48,14 +49,20 @@ lowlight.register('css', css);
 
 // ─── Image upload ──────────────────────────────────────────────────────────
 async function uploadImage(file: File): Promise<{ url: string | null; error: string | null }> {
-  const ext = file.name.split('.').pop();
-  const path = `articles/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { error } = await supabase.storage.from('blog-images').upload(path, file);
-  if (error) {
-    return { url: null, error: error.message };
-  }
-  const { data } = supabase.storage.from('blog-images').getPublicUrl(path);
-  return { url: data.publicUrl, error: null };
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { url: null, error: 'Tu sesión ha caducado. Inicia sesión de nuevo.' };
+
+  const optimizedFile = await optimizeImage(file);
+  const formData = new FormData();
+  formData.append('file', optimizedFile, optimizedFile.name);
+  const response = await fetch('/api/upload-image', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    body: formData,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) return { url: null, error: data.error || `Error ${response.status}` };
+  return { url: data.url ?? null, error: null };
 }
 
 
@@ -346,7 +353,7 @@ export default function RichTextEditor({
   const [showImageUrlInput, setShowImageUrlInput] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const lastEmitted = useRef<string | null>(null);
-  const editorRef = useRef<ReturnType<typeof useEditor>>(null);
+  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
 
   // FIX: cargar CSS de syntax highlighting dinámicamente
   // para evitar que bloquee el render en la homepage

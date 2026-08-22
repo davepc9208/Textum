@@ -31,8 +31,20 @@ as $$
   );
 $$;
 
-revoke all on function public.is_admin() from public;
-grant execute on function public.is_admin() to authenticated;
+revoke all on function public.is_admin() from public;grant execute on function public.is_admin() to authenticated;
+
+create or replace function public.is_admin_mfa()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select (auth.jwt() ->> 'aal') = 'aal2' and public.is_admin();
+$$;
+
+revoke all on function public.is_admin_mfa() from public;
+grant execute on function public.is_admin_mfa() to authenticated;
 
 -- 3. Posts — reemplazar política permisiva anterior
 drop policy if exists "Authenticated users have full access" on public.posts;
@@ -47,37 +59,48 @@ drop policy if exists "Admins can insert posts" on public.posts;
 create policy "Admins can insert posts"
   on public.posts for insert
   to authenticated
-  with check (public.is_admin());
+  with check (public.is_admin_mfa());
 
 drop policy if exists "Admins can update posts" on public.posts;
 create policy "Admins can update posts"
   on public.posts for update
   to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
+  using (public.is_admin_mfa())
+  with check (public.is_admin_mfa());
 
 drop policy if exists "Admins can delete posts" on public.posts;
 create policy "Admins can delete posts"
   on public.posts for delete
   to authenticated
-  using (public.is_admin());
+  using (public.is_admin_mfa());
 
--- 4. Storage — solo admins pueden subir/editar/borrar imágenes
+-- 4. Leads — la información personal solo es visible con admin + MFA
+alter table public.leads enable row level security;
+drop policy if exists "Admins can read leads" on public.leads;
+create policy "Admins can read leads"
+  on public.leads for select
+  to authenticated
+  using (public.is_admin_mfa());
+
+-- 5. Storage — solo admins pueden subir/editar/borrar imágenes
 drop policy if exists "Authenticated upload blog images" on storage.objects;
 drop policy if exists "Authenticated update blog images" on storage.objects;
 drop policy if exists "Authenticated delete blog images" on storage.objects;
+drop policy if exists "Admins upload blog images" on storage.objects;
+drop policy if exists "Admins update blog images" on storage.objects;
+drop policy if exists "Admins delete blog images" on storage.objects;
 
 create policy "Admins upload blog images"
   on storage.objects for insert
   to authenticated
-  with check (bucket_id = 'blog-images' and public.is_admin());
+  with check (bucket_id = 'blog-images' and public.is_admin_mfa());
 
 create policy "Admins update blog images"
   on storage.objects for update
   to authenticated
-  using (bucket_id = 'blog-images' and public.is_admin());
+  using (bucket_id = 'blog-images' and public.is_admin_mfa());
 
 create policy "Admins delete blog images"
   on storage.objects for delete
   to authenticated
-  using (bucket_id = 'blog-images' and public.is_admin());
+  using (bucket_id = 'blog-images' and public.is_admin_mfa());

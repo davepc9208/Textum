@@ -14,6 +14,7 @@ import Footer from '../components/Footer';
 import ShareButtons from '../components/ShareButtons';
 import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
+import { NotFoundContent } from './NotFoundPage';
 
 
 const SITE_URL = 'https://www.mentoriatextum.com';
@@ -86,7 +87,7 @@ export default function ColeccionPiecePage() {
     ogType: 'article',
     articleMeta: { publishedTime: post.created_at, author: post.author },
     lang,
-  } : { title: 'Colecciones TEXTUM', description: '', lang });
+  } : { title: 'Colecciones TEXTUM', description: '', lang, noindex: true });
 
   useEffect(() => {
     if (!post || !tipo) return;
@@ -125,12 +126,7 @@ export default function ColeccionPiecePage() {
           </svg>
         </div>
       ) : !post ? (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-          <p className="font-serif text-2xl text-navy/40">Pieza no encontrada.</p>
-          <Link to={`/colecciones/${tipo}`} className="text-gold text-sm hover:underline">
-            <ArrowLeft size={14} className="inline mr-1" />Volver a {typeLabel}
-          </Link>
-        </div>
+        <NotFoundContent />
       ) : (
         <>
           <div className="pt-16 md:pt-20">

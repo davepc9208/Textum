@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
-import { supabase, Post } from '../lib/supabase';
+import { POST_SUMMARY_FIELDS, supabase, Post } from '../lib/supabase';
 import { useLang } from '../i18n/LangContext';
 import { useSEO } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
@@ -51,24 +51,73 @@ const CATEGORIES = {
 export default function BlogPage() {
   const { lang, t } = useLang();
   const b = t.blog;
+  const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const activeCategory = searchParams.get('categoria');
 
   const categories = CATEGORIES[lang];
 
-    useEffect(() => {
-    supabase
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setPosts([]);
+    setHasMore(false);
+
+    const loadFirstPage = async () => {
+      let query = supabase
+        .from('posts')
+        .select(POST_SUMMARY_FIELDS)
+        .eq('published', true)
+        .is('collection_type', null)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(10);
+      if (activeCategory) query = query.eq('category', activeCategory);
+      const { data, error } = await query;
+      if (cancelled) return;
+      setPosts(error ? [] : (data as unknown as Post[] ?? []));
+      setHasMore(!error && (data?.length ?? 0) === 10);
+      setLoading(false);
+    };
+
+    loadFirstPage();
+    return () => { cancelled = true; };
+  }, [activeCategory]);
+
+  const loadMore = async () => {
+    const last = posts[posts.length - 1];
+    if (!last || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+
+    let query = supabase
       .from('posts')
-      .select('*')
+      .select(POST_SUMMARY_FIELDS)
       .eq('published', true)
-      .is('collection_type', null) // solo artículos de blog, no piezas de colección
+      .is('collection_type', null)
+      .or(`created_at.lt.${last.created_at},and(created_at.eq.${last.created_at},id.lt.${last.id})`)
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setPosts(data ?? []);
-        setLoading(false);
-      });
-  }, []);
+      .order('id', { ascending: false })
+      .limit(10);
+    if (activeCategory) query = query.eq('category', activeCategory);
+    const { data, error } = await query;
+    if (!error && data) {
+      setPosts(current => [...current, ...(data as unknown as Post[])]);
+      setHasMore(data.length === 10);
+    } else {
+      setHasMore(false);
+    }
+    setLoadingMore(false);
+  };
+
+  const selectCategory = (category: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (category) next.set('categoria', category);
+    else next.delete('categoria');
+    setSearchParams(next);
+  };
 
   const title   = (p: Post) => lang === 'es' ? p.title_es   : p.title_en;
   const excerpt = (p: Post) => lang === 'es' ? p.excerpt_es : p.excerpt_en;
@@ -126,7 +175,7 @@ export default function BlogPage() {
         <div className="mb-10">
           <div className="flex flex-wrap gap-3 justify-center mb-6">
             <button
-              onClick={() => setActiveCategory(null)}
+              onClick={() => selectCategory(null)}
               className={`px-5 py-2.5 text-xs tracking-[0.15em] rounded-sm border transition-all duration-200 ${
                 activeCategory === null
                   ? 'bg-navy text-gold border-navy'
@@ -138,7 +187,7 @@ export default function BlogPage() {
             {categories.map(cat => (
               <button
                 key={cat.key}
-                onClick={() => setActiveCategory(activeCategory === cat.key ? null : cat.key)}
+                onClick={() => selectCategory(activeCategory === cat.key ? null : cat.key)}
                 className={`px-5 py-2.5 text-xs tracking-[0.15em] rounded-sm border transition-all duration-200 ${
                   activeCategory === cat.key
                     ? 'bg-gold text-navy border-gold font-medium'
@@ -285,6 +334,18 @@ export default function BlogPage() {
                     </div>
                   </Link>
                 ))}
+              </div>
+            )}
+            {hasMore && (
+              <div className="flex justify-center mt-12">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="border border-navy/20 text-navy/65 hover:border-gold/50 hover:text-navy px-7 py-3 text-xs tracking-[0.15em] rounded-sm transition-colors disabled:opacity-50"
+                >
+                  {loadingMore ? (lang === 'es' ? 'CARGANDO…' : 'LOADING…') : (lang === 'es' ? 'CARGAR MÁS' : 'LOAD MORE')}
+                </button>
               </div>
             )}
           </>

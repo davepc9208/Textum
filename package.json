@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:netlify": "netlify dev",
     "build": "vite build",
-    "seo": "tsx scripts/generateSeo.ts",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "playwright test",
+    "seo": "tsx scripts/seo/index.ts",
     "optimize:images": "node scripts/optimizeImages.js",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -15,6 +16,7 @@
   },
   "dependencies": {
     "@microsoft/clarity": "^1.0.2",
+    "@sentry/react": "^10.70.0",
     "@supabase/supabase-js": "^2.57.4",
     "@tiptap/extension-code-block-lowlight": "^3.29.0",
     "@tiptap/extension-color": "^3.29.0",
@@ -47,6 +49,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^26.1.0",
     "@types/react": "^18.3.5",
@@ -62,7 +65,6 @@
     "imagemin-mozjpeg": "^10.0.0",
     "imagemin-pngquant": "^10.0.0",
     "imagemin-webp": "^8.0.0",
-    "netlify-cli": "^23.0.0",
     "postcss": "^8.4.35",
     "sharp": "^0.35.3",
     "tailwindcss": "^3.4.1",

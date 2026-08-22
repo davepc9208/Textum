@@ -12,9 +12,11 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ShareButtons from '../components/ShareButtons';
 import ShareCard from '../components/ShareCard';
+import RelatedPosts from '../components/RelatedPosts';
 import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 import { sanitizeHtml } from '../lib/sanitize';
+import { NotFoundContent } from './NotFoundPage';
 
 const SITE_URL = 'https://www.mentoriatextum.com';
 
@@ -119,6 +121,7 @@ export default function PostPage() {
     title: 'Artículo — TEXTUM Mentoría Académica',
     description: 'Artículo académico del blog de TEXTUM.',
     lang,
+    noindex: !post,
   });
 
   // Schema Article JSON-LD
@@ -191,10 +194,7 @@ export default function PostPage() {
           </svg>
         </div>
       ) : !post ? (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-          <p className="font-serif text-2xl text-navy/40">Artículo no encontrado.</p>
-          <Link to="/blog" className="text-gold text-sm hover:underline">{b.backToBlog}</Link>
-        </div>
+        <NotFoundContent />
       ) : (
         <>
           {/* Offset bajo navbar fija: evita que la portada suba y tape botones */}
@@ -278,6 +278,7 @@ export default function PostPage() {
 
             {/* Fix 7: url canónica explícita en ShareCard */}
             <ShareCard title={postTitle} url={canonicalUrl} />
+            <RelatedPosts currentId={post.id} category={post.category} />
 
             <div className="mt-16 pt-8 border-t border-navy/10">
               <Link

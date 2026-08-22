@@ -5,6 +5,7 @@ import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, 
 import type { Session } from '@supabase/supabase-js';
 import RichTextEditor from '../components/RichTextEditor';
 import AdminDistribute from '../components/AdminDistribute';
+import { optimizeImage } from '../lib/imageOptimization';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function slugify(str: string) {
@@ -51,6 +52,7 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
 
   // 2FA state
   const [needsMfa, setNeedsMfa] = useState(false);
+  const [needsMfaSetup, setNeedsMfaSetup] = useState(false);
   const [factorId, setFactorId] = useState('');
   const [code, setCode] = useState('');
 
@@ -67,18 +69,21 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
     }
 
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      const totpFactor = factors?.totp?.[0];
-      if (totpFactor) {
-        setFactorId(totpFactor.id);
-        setNeedsMfa(true);
-        setLoading(false);
-        return;
-      }
-    }
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const verifiedFactor = factors?.totp?.find((factor: { status: string }) => factor.status === 'verified');
 
-    onLogin();
+    if (aal?.currentLevel === 'aal2') {
+      onLogin();
+    } else if (verifiedFactor) {
+      setFactorId(verifiedFactor.id);
+      setNeedsMfa(true);
+      setLoading(false);
+      return;
+    } else {
+      setNeedsMfaSetup(true);
+      setLoading(false);
+      return;
+    }
     setLoading(false);
   };
 
@@ -97,6 +102,15 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
     onLogin();
     setLoading(false);
   };
+
+  if (needsMfaSetup) {
+    return (
+      <MfaSetup
+        onClose={() => { setNeedsMfaSetup(false); supabase.auth.signOut(); }}
+        onEnabled={() => { setNeedsMfaSetup(false); onLogin(); }}
+      />
+    );
+  }
 
   if (needsMfa) {
     return (
@@ -185,16 +199,25 @@ function CoverImagePicker({ value, onChange }: { value: string; onChange: (url: 
 
     setUploading(true);
     setErr('');
-    const ext = file.name.split('.').pop();
-    const path = `covers/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from('blog-images').upload(path, file);
-    if (error) {
-      setErr('No se pudo subir la imagen: ' + error.message);
-    } else {
-      const { data } = supabase.storage.from('blog-images').getPublicUrl(path);
-      onChange(data.publicUrl);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Tu sesión ha caducado. Inicia sesión de nuevo.');
+      const optimizedFile = await optimizeImage(file);
+      const formData = new FormData();
+      formData.append('file', optimizedFile, optimizedFile.name);
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: formData,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
+      onChange(data.url);
+    } catch (error) {
+      setErr('No se pudo subir la imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
     e.target.value = '';
   };
 
@@ -241,6 +264,8 @@ function CoverImagePicker({ value, onChange }: { value: string; onChange: (url: 
 }
 
 // ─── Post editor ─────────────────────────────────────────────────────────────
+type EditablePost = Omit<Post, 'id' | 'created_at'>;
+
 function PostEditor({
   initial,
   onSave,
@@ -252,7 +277,7 @@ function PostEditor({
 }) {
   const draftKey = `textum_draft_${initial.id ?? 'new'}`;
 
-  const [form, setForm] = useState(() => {
+  const [form, setForm] = useState<EditablePost>(() => {
     try {
       const saved = localStorage.getItem(draftKey);
       if (saved) {
@@ -382,9 +407,14 @@ function PostEditor({
     setTranslating(true);
     setTranslateError('');
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Tu sesión ha caducado. Inicia sesión de nuevo.');
       const res = await fetch('/api/translate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           title_es:    form.title_es,
           excerpt_es:  form.excerpt_es,
@@ -770,13 +800,11 @@ function MfaSetup({ onClose, onEnabled }: { onClose: () => void; onEnabled: () =
   const [code, setCode] = useState('');
   const [err, setErr] = useState('');
   const [verifying, setVerifying] = useState(false);
-  const [existingFactors, setExistingFactors] = useState<{ id: string; status: string }[]>([]);
 
   useEffect(() => {
     (async () => {
       const { data: factors } = await supabase.auth.mfa.listFactors();
       const verified = factors?.totp?.filter((f: { status: string }) => f.status === 'verified') ?? [];
-      setExistingFactors(verified);
       if (verified.length > 0) {
         setStep('done');
         return;
@@ -811,14 +839,6 @@ function MfaSetup({ onClose, onEnabled }: { onClose: () => void; onEnabled: () =
     });
     if (verErr) { setErr('Código incorrecto. Verifica la hora de tu teléfono e inténtalo de nuevo.'); setVerifying(false); return; }
     setVerifying(false);
-    onEnabled();
-  };
-
-  const handleUnenroll = async () => {
-    if (!confirm('¿Desactivar la verificación en dos pasos? Esto reduce la seguridad de tu cuenta.')) return;
-    for (const f of existingFactors) {
-      await supabase.auth.mfa.unenroll({ factorId: f.id });
-    }
     onEnabled();
   };
 
@@ -869,10 +889,9 @@ function MfaSetup({ onClose, onEnabled }: { onClose: () => void; onEnabled: () =
                 <span className="text-green-600 text-2xl">✓</span>
               </div>
               <p className="text-navy/70 text-sm">La verificación en dos pasos ya está activa para tu cuenta.</p>
-              <button onClick={handleUnenroll}
-                className="text-red-500 text-xs tracking-widest hover:underline">
-                DESACTIVAR VERIFICACIÓN EN DOS PASOS
-              </button>
+              <p className="text-xs text-navy/45">
+                La MFA es obligatoria para acceder a las operaciones administrativas.
+              </p>
             </div>
           )}
         </div>

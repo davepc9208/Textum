@@ -40,6 +40,8 @@ import DescargaPage from './pages/DescargaPage';
 import CookieBanner from './components/CookieBanner';
 import BajaPage from './pages/BajaPage';
 import PrivacidadPage from './pages/PrivacidadPage';
+import NotFoundPage from './pages/NotFoundPage';
+import AuthorityPage from './pages/AuthorityPage';
 
 const BlogPage           = lazy(() => import('./pages/BlogPage'));
 const PostPage           = lazy(() => import('./pages/PostPage'));
@@ -188,6 +190,8 @@ export default function App() {
       <Route path="/colecciones/:tipo/:slug/descargar" element={<DescargaPage />} />
       <Route path="/baja" element={<BajaPage />} />
       <Route path="/privacidad" element={<PrivacidadPage />} />
+      <Route path="/casos" element={<AuthorityPage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
     </>
   );

@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
-import { supabase, Post } from '../lib/supabase';
+import { POST_SUMMARY_FIELDS, supabase, Post } from '../lib/supabase';
 import { useLang } from '../i18n/LangContext';
 import { useSEO } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
@@ -26,6 +26,8 @@ export default function ColeccionListPage() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
 
   const collectionType = tipo as CollectionType;
   const meta = META[collectionType]?.[lang];
@@ -46,17 +48,51 @@ export default function ColeccionListPage() {
       navigate('/colecciones');
       return;
     }
-    supabase
+    let cancelled = false;
+    setLoading(true);
+    setPosts([]);
+    setHasMore(false);
+
+    const loadFirstPage = async () => {
+      const { data, error } = await supabase
+        .from('posts')
+        .select(POST_SUMMARY_FIELDS)
+        .eq('published', true)
+        .eq('collection_type', collectionType)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(10);
+      if (cancelled) return;
+      setPosts(error ? [] : (data as unknown as Post[] ?? []));
+      setHasMore(!error && (data?.length ?? 0) === 10);
+      setLoading(false);
+    };
+
+    loadFirstPage();
+    return () => { cancelled = true; };
+  }, [collectionType, navigate]);
+
+  const loadMore = async () => {
+    const last = posts[posts.length - 1];
+    if (!last || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const { data, error } = await supabase
       .from('posts')
-      .select('*')
+      .select(POST_SUMMARY_FIELDS)
       .eq('published', true)
       .eq('collection_type', collectionType)
+      .or(`created_at.lt.${last.created_at},and(created_at.eq.${last.created_at},id.lt.${last.id})`)
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setPosts(data ?? []);
-        setLoading(false);
-      });
-  }, [collectionType, navigate]);
+      .order('id', { ascending: false })
+      .limit(10);
+    if (!error && data) {
+      setPosts(current => [...current, ...(data as unknown as Post[])]);
+      setHasMore(data.length === 10);
+    } else {
+      setHasMore(false);
+    }
+    setLoadingMore(false);
+  };
 
   const title   = (p: Post) => lang === 'es' ? p.title_es   : p.title_en;
   const excerpt = (p: Post) => lang === 'es' ? p.excerpt_es : p.excerpt_en;
@@ -169,6 +205,18 @@ export default function ColeccionListPage() {
                 </div>
               </Link>
             ))}
+            {hasMore && (
+              <div className="flex justify-center pt-6">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="border border-navy/20 text-navy/65 hover:border-gold/50 hover:text-navy px-7 py-3 text-xs tracking-[0.15em] rounded-sm transition-colors disabled:opacity-50"
+                >
+                  {loadingMore ? (lang === 'es' ? 'CARGANDO…' : 'LOADING…') : (lang === 'es' ? 'CARGAR MÁS' : 'LOAD MORE')}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 ﻿// functions/api/lead-magnet.js
 import { createClient } from '@supabase/supabase-js';
+import { fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
 
 
 /** Rate limit simple vía Cache API (por IP). 8 req / 10 min */
@@ -28,6 +29,22 @@ async function enforceRateLimit(request, max = 8, windowSec = 600) {
   }
 }
 
+const ALLOWED_RESOURCES = new Set([
+  'principio:pt-01',
+  'categoria:cm-01',
+  'herramienta:ht-01',
+  'herramienta:ht-02',
+]);
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -46,6 +63,11 @@ async function makeUnsubToken(email, secret) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  const requestId = getRequestId(request);
+
+  if (Number(request.headers.get('Content-Length') || 0) > 32 * 1024) {
+    return jsonResponse({ error: 'La solicitud supera el tamaño permitido.' }, 413, request, env, requestId);
+  }
 
   // Rate limit por IP
   const allowed = await enforceRateLimit(request);
@@ -59,6 +81,9 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return jsonResponse({ error: 'Body inválido.' }, 400, request, env, requestId);
+    }
     const {
       name,
       email,
@@ -74,27 +99,46 @@ export async function onRequestPost(context) {
       utm_medium = null,
       utm_campaign = null,
       privacy_accepted = true,
+      turnstileToken = '',
     } = body;
 
-    if (!name?.trim() || !email?.trim() || !resource_slug || !resource_type) {
+    if (!validateText(name, { min: 2, max: 120 })
+      || !validateText(email, { min: 3, max: 254 })
+      || !validateText(resource_slug, { min: 1, max: 80 })
+      || !validateText(resource_type, { min: 1, max: 30 })) {
       return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(email.trim())) {
       return new Response(JSON.stringify({ error: 'Email no válido' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const supabase = createClient(
-      env.VITE_SUPABASE_URL || env.SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    if (!ALLOWED_RESOURCES.has(`${resource_type}:${resource_slug}`)) {
+      return jsonResponse({ error: 'Recurso no válido.' }, 400, request, env, requestId);
+    }
+
+    const captcha = await verifyTurnstile(turnstileToken, request, env);
+    if (!captcha.ok) {
+      return jsonResponse({ error: 'Completa la verificación de seguridad e inténtalo de nuevo.' }, 403, request, env, requestId);
+    }
+
+    const supabaseUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL;
+    const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceRoleKey || !env.RESEND_API_KEY) {
+      log('error', 'lead_magnet.configuration_missing', { requestId });
+      return jsonResponse({ error: 'Servicio de descarga no configurado.' }, 503, request, env, requestId);
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     const cleanEmail = email.trim().toLowerCase();
 
@@ -163,7 +207,7 @@ export async function onRequestPost(context) {
     }
 
     // 3. Token de baja + email
-    const secret = env.UNSUBSCRIBE_SECRET || env.SUPABASE_SERVICE_ROLE_KEY || 'textum-unsub';
+    const secret = env.UNSUBSCRIBE_SECRET || serviceRoleKey;
     const unsubToken = await makeUnsubToken(cleanEmail, secret);
     const unsubscribeUrl = `https://www.mentoriatextum.com/baja?email=${encodeURIComponent(cleanEmail)}&token=${unsubToken}`;
 
@@ -193,7 +237,7 @@ export async function onRequestPost(context) {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
-    console.error('lead-magnet error:', err);
+    log('error', 'lead_magnet.failed', { requestId, message: err instanceof Error ? err.message : String(err) });
     return new Response(JSON.stringify({ error: 'Error interno del servidor' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -233,8 +277,8 @@ async function sendDownloadEmail({
   const html = isEs
     ? `
       <div style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;">
-        <p>Hola ${name},</p>
-        <p>Aquí tienes tu documento <strong>${resourceTitle}</strong> de la colección <em>Pensar metodológicamente la investigación científica</em>.</p>
+        <p>Hola ${escapeHtml(name)},</p>
+        <p>Aquí tienes tu documento <strong>${escapeHtml(resourceTitle)}</strong> de la colección <em>Pensar metodológicamente la investigación científica</em>.</p>
         <p style="margin: 28px 0;">
           <a href="${downloadUrl}" style="background:#0f766e;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
             Descargar PDF ahora
@@ -257,8 +301,8 @@ async function sendDownloadEmail({
     `
     : `
       <div style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;">
-        <p>Hello ${name},</p>
-        <p>Here is your document <strong>${resourceTitle}</strong> from the collection <em>Thinking Methodologically about Scientific Research</em>.</p>
+        <p>Hello ${escapeHtml(name)},</p>
+        <p>Here is your document <strong>${escapeHtml(resourceTitle)}</strong> from the collection <em>Thinking Methodologically about Scientific Research</em>.</p>
         <p style="margin: 28px 0;">
           <a href="${downloadUrl}" style="background:#0f766e;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
             Download PDF now
@@ -281,7 +325,7 @@ async function sendDownloadEmail({
     `;
 
   try {
-    const res = await fetch('https://api.resend.com/emails', {
+    const res = await fetchWithRetry('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
@@ -298,7 +342,7 @@ async function sendDownloadEmail({
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
       }),
-    });
+    }, { retries: 0, timeoutMs: 8000 });
 
     return res.ok;
   } catch (e) {

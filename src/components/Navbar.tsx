@@ -4,6 +4,10 @@ import { Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLang } from '../i18n/LangContext';
 
+type AnchorItem = { href: string; label: string };
+type RouteItem = { type: 'blog' | 'colecciones'; label: string };
+type NavItem = AnchorItem | RouteItem;
+
 export default function Navbar() {
   const { lang, setLang, t } = useLang();
   const [scrolled, setScrolled] = useState(false);
@@ -12,7 +16,7 @@ export default function Navbar() {
   const location                = useLocation();
   const isHome                  = location.pathname === '/';
 
-  const anchorLinks = [
+  const anchorLinks: AnchorItem[] = [
     { href: '#inicio',    label: t.nav.inicio },
     { href: '#filosofia', label: lang === 'es' ? 'Filosofía' : 'Philosophy' },
     { href: '#sobre-mi',  label: lang === 'es' ? 'Equipo' : 'Team' },
@@ -20,7 +24,7 @@ export default function Navbar() {
     { href: '#servicios', label: t.nav.servicios },
   ];
 
-  const navItems = [
+  const navItems: NavItem[] = [
     ...anchorLinks,
     { type: 'blog',        label: t.nav.blog },
     { type: 'colecciones', label: lang === 'es' ? 'Colecciones' : 'Collections' },
@@ -70,8 +74,8 @@ export default function Navbar() {
     ? 'Idioma actual: Español. Cambiar a English'
     : 'Current language: English. Switch to Español';
 
-  const renderNavItem = (item: any, index: number) => {
-    if (item.type === 'blog') {
+  const renderNavItem = (item: NavItem, index: number) => {
+    if ('type' in item && item.type === 'blog') {
       return (
         <li key={`blog-${index}`}>
           <Link
@@ -85,7 +89,7 @@ export default function Navbar() {
         </li>
       );
     }
-    if (item.type === 'colecciones') {
+    if ('type' in item && item.type === 'colecciones') {
       return (
         <li key={`colecciones-${index}`}>
           <Link
@@ -99,25 +103,26 @@ export default function Navbar() {
         </li>
       );
     }
+    const anchor = item as AnchorItem;
     return (
-      <li key={item.href}>
+      <li key={anchor.href}>
         <a
-          href={isHome ? item.href : '/' + item.href}
-          onClick={(e) => handleAnchorClick(e, item.href)}
+          href={isHome ? anchor.href : '/' + anchor.href}
+          onClick={(e) => handleAnchorClick(e, anchor.href)}
           className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
-            isHome && active === item.href.slice(1)
+            isHome && active === anchor.href.slice(1)
               ? 'text-gold active'
               : 'text-white/80 hover:text-white'
           }`}
         >
-          {item.label.toUpperCase()}
+          {anchor.label.toUpperCase()}
         </a>
       </li>
     );
   };
 
-  const renderMobileNavItem = (item: any, index: number) => {
-    if (item.type === 'blog') {
+  const renderMobileNavItem = (item: NavItem, index: number) => {
+    if ('type' in item && item.type === 'blog') {
       return (
         <Link key={`mobile-blog-${index}`} to="/blog" onClick={() => setOpen(false)}
           className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation">
@@ -125,7 +130,7 @@ export default function Navbar() {
         </Link>
       );
     }
-    if (item.type === 'colecciones') {
+    if ('type' in item && item.type === 'colecciones') {
       return (
         <Link key={`mobile-colecciones-${index}`} to="/colecciones" onClick={() => setOpen(false)}
           className={`block py-3 text-sm tracking-widest transition-colors touch-manipulation ${
@@ -135,12 +140,13 @@ export default function Navbar() {
         </Link>
       );
     }
+    const anchor = item as AnchorItem;
     return (
-      <a key={`mobile-${item.href}`}
-        href={isHome ? item.href : '/' + item.href}
-        onClick={(e) => handleAnchorClick(e, item.href)}
+      <a key={`mobile-${anchor.href}`}
+        href={isHome ? anchor.href : '/' + anchor.href}
+        onClick={(e) => handleAnchorClick(e, anchor.href)}
         className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation">
-        {item.label.toUpperCase()}
+        {anchor.label.toUpperCase()}
       </a>
     );
   };

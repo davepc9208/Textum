@@ -13,10 +13,10 @@ export async function generateRss() {
       return `
   <item>
     <title><![CDATA[${title}]]></title>
-    <link>${SITE_URL}/${locale}/blog/${p.slug}</link>
+    <link>${SITE_URL}/blog/${p.slug}${locale === 'en' ? '?lang=en' : ''}</link>
     <description><![CDATA[${excerpt ?? ""}]]></description>
     <pubDate>${new Date(p.created_at).toUTCString()}</pubDate>
-    <guid>${SITE_URL}/${locale}/blog/${p.slug}</guid>
+    <guid>${SITE_URL}/blog/${p.slug}${locale === 'en' ? '?lang=en' : ''}</guid>
   </item>`;
     });
 
@@ -24,7 +24,7 @@ export async function generateRss() {
 <rss version="2.0">
 <channel>
   <title>Blog (${locale})</title>
-  <link>${SITE_URL}/${locale}</link>
+  <link>${SITE_URL}/${locale === 'en' ? '?lang=en' : ''}</link>
   <description>Contenido actualizado</description>
   ${items.join("")}
 </channel>

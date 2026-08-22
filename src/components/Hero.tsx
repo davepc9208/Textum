@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../i18n/LangContext';
+import { diagnosisHref, trackConversion } from '../lib/conversion';
 
 function canRunCanvas(): boolean {
   if (typeof navigator === 'undefined') return true;
@@ -16,7 +17,7 @@ function canRunCanvas(): boolean {
 }
 
 export default function Hero() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const h = t.hero;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showCanvas] = useState(() => canRunCanvas());
@@ -182,11 +183,8 @@ export default function Hero() {
         {/* CTA */}
         <div className="flex flex-col items-center gap-2 animate-[fadeInUp_1s_ease_0.9s_both]">
           <a
-            href="#contacto"
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
+            href={diagnosisHref()}
+            onClick={() => trackConversion('diagnosis_cta_click', { placement: 'hero' })}
             className="btn-primary px-12 py-4 text-xs tracking-[0.18em] rounded-sm touch-manipulation"
           >
             <span>{h.cta1}</span>

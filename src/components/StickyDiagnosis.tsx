@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useLang } from '../i18n/LangContext';
+import { diagnosisHref, trackConversion } from '../lib/conversion';
 
 export default function StickyDiagnosis() {
   const { lang } = useLang();
@@ -47,7 +48,8 @@ export default function StickyDiagnosis() {
       }`}
     >
       <a
-        href="#contacto"
+        href={diagnosisHref()}
+        onClick={() => trackConversion('diagnosis_cta_click', { placement: 'sticky' })}
         aria-label={ariaLabel}
         aria-hidden={show ? undefined : 'true'}
         tabIndex={show ? 0 : -1}

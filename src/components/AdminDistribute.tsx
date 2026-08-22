@@ -299,9 +299,14 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
       const content = post.content_es || post.content_en || post.content || '';
       const excerpt = post.excerpt_es || post.excerpt_en || post.excerpt || '';
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Tu sesión ha caducado. Inicia sesión de nuevo.');
       const res = await fetch('/api/distribute', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           title,
           content,
