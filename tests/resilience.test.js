@@ -5,6 +5,7 @@ import { onRequest as distribute } from '../functions/api/distribute.js';
 import { onRequest as blogPost } from '../functions/blog/[slug].js';
 import { onRequestPost as contact } from '../functions/api/contact.js';
 import { onRequestPost as uploadImage } from '../functions/api/upload-image.js';
+import { onRequest as catchAll } from '../functions/[[path]].js';
 
 const origin = 'https://www.mentoriatextum.com';
 
@@ -15,6 +16,56 @@ function jsonRequest(path, body) {
     body: JSON.stringify(body),
   });
 }
+
+test('catch-all returns static 404 with noindex for unknown routes', async () => {
+  const response = await catchAll({
+    request: new Request(`${origin}/ruta-inexistente`),
+    env: {},
+  });
+  assert.equal(response.status, 404);
+  assert.match(response.headers.get('X-Robots-Tag'), /noindex/i);
+  const html = await response.text();
+  assert.match(html, /Error 404/i);
+  assert.match(html, /Esta pagina no existe/i);
+});
+
+test('catch-all returns English 404 when lang=en', async () => {
+  const response = await catchAll({
+    request: new Request(`${origin}/unknown?lang=en`),
+    env: {},
+  });
+  assert.equal(response.status, 404);
+  const html = await response.text();
+  assert.match(html, /This page does not exist/i);
+});
+
+test('catch-all serves SPA shell for known app routes', async () => {
+  let nextCalled = false;
+  const response = await catchAll({
+    request: new Request(`${origin}/blog`),
+    env: {},
+    next: async () => {
+      nextCalled = true;
+      return new Response('<html>spa</html>', { headers: { 'Content-Type': 'text/html' } });
+    },
+  });
+  assert.equal(response.status, 200);
+  assert.equal(nextCalled, true);
+});
+
+test('catch-all falls back to ASSETS when next is unavailable', async () => {
+  const response = await catchAll({
+    request: new Request(`${origin}/casos`),
+    env: {
+      ASSETS: {
+        fetch: async () => new Response('<html>index</html>', { status: 200 }),
+      },
+    },
+  });
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /index/);
+});
 
 test('returns a branded 404 for an unpublished blog slug', async () => {
   const originalFetch = globalThis.fetch;

@@ -1,33 +1,6 @@
 ﻿// functions/api/lead-magnet.js
 import { createClient } from '@supabase/supabase-js';
-import { fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
-
-
-/** Rate limit simple vía Cache API (por IP). 8 req / 10 min */
-async function enforceRateLimit(request, max = 8, windowSec = 600) {
-  try {
-    const ip = request.headers.get('CF-Connecting-IP')
-      || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      || 'unknown';
-    const cache = caches.default;
-    const key = new Request(`https://textum.internal/rate/lead-magnet/${ip}`);
-    const hit = await cache.match(key);
-    let count = 0;
-    if (hit) {
-      count = parseInt(await hit.text(), 10) || 0;
-    }
-    if (count >= max) {
-      return false;
-    }
-    const res = new Response(String(count + 1), {
-      headers: { 'Cache-Control': `max-age=${windowSec}`, 'Content-Type': 'text/plain' },
-    });
-    await cache.put(key, res);
-    return true;
-  } catch {
-    return true; // no bloquear si Cache API falla
-  }
-}
+import { enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
 
 const ALLOWED_RESOURCES = new Set([
   'principio:pt-01',
@@ -69,15 +42,9 @@ export async function onRequestPost(context) {
     return jsonResponse({ error: 'La solicitud supera el tamaño permitido.' }, 413, request, env, requestId);
   }
 
-  // Rate limit por IP
-  const allowed = await enforceRateLimit(request);
-  if (!allowed) {
-    return new Response(JSON.stringify({ error: 'Too many requests. Try again later.' }), {
-      status: 429,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '600' },
-    });
+  if (!await enforceRateLimit(request, 'lead-magnet', 8, 600)) {
+    return jsonResponse({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, 429, request, env, requestId, { 'Retry-After': '600' });
   }
-
 
   try {
     const body = await request.json();
