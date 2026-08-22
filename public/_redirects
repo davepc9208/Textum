@@ -1,3 +1,4 @@
+Set-Content -Path "public\_redirects" -Value @'
 # Legacy language prefixes → canonical root plus query-based English
 /es      /   301
 /en      /?lang=en   301
@@ -6,4 +7,6 @@
 /es/blog/*   /blog/:splat   301
 /en/blog/*   /blog/:splat?lang=en   301
 
-# Application routes and real 404 responses are handled by functions/[[path]].js
+# SPA fallback — static assets and React Router handle all other routes
+/*    /index.html   200
+'@ -Encoding UTF8

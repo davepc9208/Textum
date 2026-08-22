@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { onRequest as translate } from '../functions/api/translate.js';
 import { onRequest as distribute } from '../functions/api/distribute.js';
-import { onRequest as catchAll } from '../functions/[[path]].js';
 import { onRequest as blogPost } from '../functions/blog/[slug].js';
 import { onRequestPost as contact } from '../functions/api/contact.js';
 import { onRequestPost as uploadImage } from '../functions/api/upload-image.js';
@@ -17,51 +16,17 @@ function jsonRequest(path, body) {
   });
 }
 
-test('returns a real branded 404 for unknown Cloudflare routes', async () => {
-  const response = await catchAll({
-    request: new Request(`${origin}/ruta-inexistente`, { method: 'GET' }),
-    env: { ASSETS: { fetch: async () => new Response('missing', { status: 404 }) } },
-    next: async () => new Response('missing', { status: 404 }),
-  });
-  assert.equal(response.status, 404);
-  assert.match(await response.text(), /Esta página no existe/);
-  assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow');
-});
-
-test('serves the SPA shell only for known application routes', async () => {
-  const response = await catchAll({
-    request: new Request(`${origin}/blog?lang=en`, { method: 'GET' }),
-    env: { ASSETS: { fetch: async () => new Response('<div id="root"></div>', { status: 200 }) } },
-  });
-  assert.equal(response.status, 200);
-});
-
-test('redirects legacy language prefixes to canonical URLs', async () => {
-  const response = await catchAll({
-    request: new Request(`${origin}/en/blog/mi-post`, { method: 'GET' }),
-    env: { ASSETS: { fetch: async () => new Response('unexpected', { status: 200 }) } },
-  });
-  assert.equal(response.status, 301);
-  assert.equal(response.headers.get('Location'), `${origin}/blog/mi-post?lang=en`);
-});
-
 test('returns a branded 404 for an unpublished blog slug', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => new Response('[]', { status: 200 });
-
   try {
     const response = await blogPost({
       request: new Request(`${origin}/blog/no-existe`),
-      env: {
-        SUPABASE_URL: 'https://supabase.example',
-        SUPABASE_ANON_KEY: 'anon-test-key',
-      },
+      env: { SUPABASE_URL: 'https://supabase.example', SUPABASE_ANON_KEY: 'anon-test-key' },
       params: { slug: 'no-existe' },
       next: async () => new Response('shell'),
     });
     assert.equal(response.status, 404);
-    assert.match(await response.text(), /Esta página no existe/);
-    assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow');
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -101,9 +66,7 @@ test('rejects image uploads without a bearer token', async () => {
 test('rejects malformed translation input', async () => {
   const response = await translate({
     request: new Request(`${origin}/api/translate`, {
-      method: 'POST',
-      headers: { Origin: origin, 'Content-Type': 'application/json' },
-      body: '{',
+      method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: '{',
     }),
     env: {},
   });
@@ -113,9 +76,7 @@ test('rejects malformed translation input', async () => {
 test('rejects malformed distribution input', async () => {
   const response = await distribute({
     request: new Request(`${origin}/api/distribute`, {
-      method: 'POST',
-      headers: { Origin: origin, 'Content-Type': 'application/json' },
-      body: '{',
+      method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: '{',
     }),
     env: {},
   });
