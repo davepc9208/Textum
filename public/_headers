@@ -1,5 +1,4 @@
 # Cloudflare Pages — security headers
-# Colocar en /public/_headers o raíz estática según config Vite (public/_headers)
 
 /*
   X-Frame-Options: DENY
@@ -9,9 +8,10 @@
   Cross-Origin-Opener-Policy: same-origin
   X-XSS-Protection: 0
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.clarity.ms https://scripts.clarity.ms https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://api.resend.com https://www.clarity.ms https://*.clarity.ms https://api.groq.com https://*.sentry.io; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 
-# CSP: ajusta si usas scripts externos extra (Clarity, Resend widgets, etc.)
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.clarity.ms https://scripts.clarity.ms https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://api.resend.com https://www.clarity.ms https://*.clarity.ms https://api.groq.com https://*.sentry.io; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
 
 /api/*
   Access-Control-Allow-Methods: POST, OPTIONS
