@@ -1,0 +1,12 @@
+{
+  "name": "textum-availability-monitoring",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "checkly test",
+    "deploy": "checkly deploy"
+  },
+  "devDependencies": {
+    "checkly": "^8.22.0"
+  }
+}
