@@ -1,5 +1,5 @@
 // functions/api/translate.js
-import { fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
+import { corsHeaders, fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
 // Cloudflare Pages Function — traduce artículo ES → EN usando Groq
 //
 // Cambios v2:
@@ -13,12 +13,13 @@ const MODEL        = "llama-3.3-70b-versatile";
 // Límite conservador — el contexto del modelo es mayor pero Groq tiene rate limits
 const MAX_CONTENT_CHARS = 12_000;
 
-function json(data, status = 200) {
+function json(data, status, request, env) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
+      ...corsHeaders(request, env),
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
     },
   });
 }
@@ -138,26 +139,22 @@ export async function onRequest(context) {
 
   if (request.method === "OPTIONS") {
     return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
+      headers: corsHeaders(request, env),
     });
   }
 
   if (request.method !== "POST") {
-    return json({ error: "Método no permitido." }, 405);
+    return json({ error: "Método no permitido." }, 405, request, env);
   }
 
   let body;
   try {
     body = await request.json();
   } catch {
-    return json({ error: "Body JSON inválido." }, 400);
+    return json({ error: "Body JSON inválido." }, 400, request, env);
   }
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return json({ error: "Body inválido." }, 400);
+    return json({ error: "Body inválido." }, 400, request, env);
   }
 
   const auth = await requireAdmin(request, env);
@@ -165,7 +162,7 @@ export async function onRequest(context) {
 
   const apiKey = env.GROQ_API_KEY;
   if (!apiKey) {
-    return json({ error: "GROQ_API_KEY no configurada en Cloudflare Pages → Settings → Environment Variables." }, 500);
+    return json({ error: "GROQ_API_KEY no configurada en Cloudflare Pages → Settings → Environment Variables." }, 500, request, env);
   }
 
   const { title_es, excerpt_es, content_es, keywords_es } = body;
@@ -174,7 +171,7 @@ export async function onRequest(context) {
     return json({
       error: "Faltan campos: title_es y content_es son obligatorios.",
       received: Object.keys(body),
-    }, 400);
+    }, 400, request, env);
   }
 
   try {
@@ -190,7 +187,7 @@ export async function onRequest(context) {
         : Promise.resolve(""),
     ]);
 
-    return json({ success: true, title_en, excerpt_en, content_en, keywords_en });
+    return json({ success: true, title_en, excerpt_en, content_en, keywords_en }, 200, request, env);
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -203,6 +200,6 @@ export async function onRequest(context) {
     else if (message.includes("413") || message.includes("too large")) userMessage = "El artículo es demasiado largo para traducir de una vez — divide el contenido en secciones más pequeñas.";
     else if (message.includes("503") || message.includes("unavailable")) userMessage = "El servicio de Groq no está disponible temporalmente — inténtalo en unos minutos.";
 
-    return json({ error: userMessage, requestId }, 500);
+    return json({ error: userMessage, requestId }, 500, request, env);
   }
 }

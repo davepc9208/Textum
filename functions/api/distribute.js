@@ -1,5 +1,5 @@
 // functions/api/distribute.js
-import { fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
+import { corsHeaders, fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
 // Fix: fechas de republicación ahora se generan dinámicamente desde new Date()
 // en lugar de estar hardcodeadas en julio 2026.
 
@@ -16,12 +16,13 @@ function truncate(text, maxChars) {
   return text.slice(0, maxChars) + '...';
 }
 
-function json(data, status = 200) {
+function json(data, status, request, env) {
   return new Response(JSON.stringify(data, null, 2), {
     status,
     headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      ...corsHeaders(request, env),
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
     },
   });
 }
@@ -188,26 +189,22 @@ export async function onRequest(context) {
 
     if (request.method === 'OPTIONS') {
       return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
+        headers: corsHeaders(request, env),
       });
     }
 
     if (request.method !== 'POST') {
-      return json({ error: 'Método no permitido.' }, 405);
+      return json({ error: 'Método no permitido.' }, 405, request, env);
     }
 
     let body;
     try {
       body = await request.json();
     } catch {
-      return json({ error: 'Body inválido.' }, 400);
+      return json({ error: 'Body inválido.' }, 400, request, env);
     }
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      return json({ error: 'Body inválido.' }, 400);
+      return json({ error: 'Body inválido.' }, 400, request, env);
     }
 
     const auth = await requireAdmin(request, env);
@@ -223,11 +220,11 @@ export async function onRequest(context) {
         key_prefix: apiKey ? apiKey.slice(0, 8) + '...' : null,
         version: VERSION,
         mode: 'manual_generator',
-      });
+      }, 200, request, env);
     }
 
     if (body.step === 'test_groq') {
-      if (!apiKey) return json({ error: 'Sin API key.' }, 500);
+      if (!apiKey) return json({ error: 'Sin API key.' }, 500, request, env);
       const res = await fetchWithRetry(GROQ_API_URL, {
         method: 'POST',
         headers: {
@@ -246,10 +243,10 @@ export async function onRequest(context) {
       });
       const statusCode = res.status;
       const resText = await res.text();
-      return json({ step: 'test_groq', http_status: statusCode, ok: statusCode === 200, raw: resText.slice(0, 500) });
+      return json({ step: 'test_groq', http_status: statusCode, ok: statusCode === 200, raw: resText.slice(0, 500) }, 200, request, env);
     }
 
-    if (!apiKey) return json({ error: 'GROQ_API_KEY no configurada.' }, 500);
+    if (!apiKey) return json({ error: 'GROQ_API_KEY no configurada.' }, 500, request, env);
 
     const { title, content, slug, excerpt, category, tags } = body;
 
@@ -258,7 +255,7 @@ export async function onRequest(context) {
         error: 'Faltan campos obligatorios',
         required: ['title', 'slug', 'content'],
         received: Object.keys(body),
-      }, 400);
+      }, 400, request, env);
     }
 
     const generatedContent = await generateFullContent(
@@ -283,7 +280,7 @@ export async function onRequest(context) {
   twitter_thread: generatedContent.twitter?.thread?.join('\n\n') || 'No generado',
   tiktok_script: generatedContent.tiktok_reels?.script || 'No generado',
 },
-    });
+    }, 200, request, env);
 
   } catch (error) {
     log('error', 'distribute.failed', { requestId, message: error instanceof Error ? error.message : String(error) });
@@ -291,6 +288,6 @@ export async function onRequest(context) {
       error: 'Error en el generador de contenido',
       requestId,
       version: VERSION,
-    }, 500);
+    }, 500, request, env);
   }
 }

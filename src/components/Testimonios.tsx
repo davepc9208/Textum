@@ -73,7 +73,7 @@ function ProgressBar({ active, paused }: { active: number; paused: boolean }) {
     <div className="w-full h-px bg-white/10 relative overflow-hidden rounded-full mt-8">
       <div
         key={`progress-${active}`} // key fuerza remount = reinicio de animación
-        className="absolute left-0 top-0 h-full bg-gold/60 rounded-full"
+        className="absolute left-0 top-0 h-full w-full origin-left bg-gold/60 rounded-full"
         style={{
           animation: paused
             ? 'none'
@@ -82,8 +82,8 @@ function ProgressBar({ active, paused }: { active: number; paused: boolean }) {
       />
       <style>{`
         @keyframes progressBar {
-          from { width: 0%; }
-          to   { width: 100%; }
+          from { transform: scaleX(0); }
+          to   { transform: scaleX(1); }
         }
       `}</style>
     </div>
@@ -262,10 +262,15 @@ export default function Testimonios() {
               aria-selected={i === active}
               aria-label={`Testimonio ${i + 1}`}
               onClick={() => goTo(i, i > active ? 'next' : 'prev')}
-              className={`rounded-full transition-all duration-300 ${
-                i === active ? 'w-6 h-2 bg-gold' : 'w-2 h-2 bg-white/20 hover:bg-white/40'
-              }`}
-            />
+              className="w-11 h-11 flex items-center justify-center rounded-full transition-colors duration-300"
+            >
+              <span
+                className={`block rounded-full transition-all duration-300 ${
+                  i === active ? 'w-6 h-2 bg-gold' : 'w-2 h-2 bg-white/40 hover:bg-white/70'
+                }`}
+                aria-hidden="true"
+              />
+            </button>
           ))}
         </div>
 

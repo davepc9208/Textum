@@ -41,11 +41,21 @@ export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Mostrar solo si aún no hay decisión
+    // Dejar que el contenido principal pinte antes del consentimiento.
+    // El banner no debe convertirse en el elemento LCP en móviles lentos.
     if (getCookieConsent() === null) {
-      // Pequeño delay para no competir con el LCP
-      const t = setTimeout(() => setVisible(true), 600);
-      return () => clearTimeout(t);
+      let timer: number | null = null;
+      const showBanner = () => {
+        timer = window.setTimeout(() => setVisible(true), 2500);
+      };
+
+      if (document.readyState === 'complete') showBanner();
+      else window.addEventListener('load', showBanner, { once: true });
+
+      return () => {
+        window.removeEventListener('load', showBanner);
+        if (timer !== null) window.clearTimeout(timer);
+      };
     }
     // Si ya aceptó en visitas anteriores, arrancar analítica
     initAnalyticsIfAllowed();

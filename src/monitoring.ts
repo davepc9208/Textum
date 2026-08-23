@@ -1,7 +1,18 @@
 import * as Sentry from '@sentry/react';
 
-const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+const rawDsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim() || '';
 const environment = (import.meta.env.MODE || 'development') as string;
+
+function isValidDsn(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && Boolean(url.username) && url.hostname.endsWith('.ingest.sentry.io');
+  } catch {
+    return false;
+  }
+}
+
+const dsn = isValidDsn(rawDsn) ? rawDsn : '';
 
 if (dsn) {
   Sentry.init({

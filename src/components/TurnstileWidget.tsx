@@ -72,5 +72,5 @@ export default function TurnstileWidget({ onToken }: { onToken: (token: string) 
   }, [onToken]);
 
   if (!siteKey) return null;
-  return <div ref={containerRef} className="min-h-[65px]" aria-label="Verificación de seguridad" />;
+  return <div ref={containerRef} className="min-h-[65px]" role="group" aria-label="Verificación de seguridad" />;
 }

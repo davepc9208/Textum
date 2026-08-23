@@ -162,7 +162,7 @@ export default function Hero() {
         </div>
 
         {/* H1 visible — titular principal (SEO + accesibilidad) */}
-        <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-semibold text-white leading-tight mb-4 animate-[fadeInUp_1s_ease_0.7s_both] max-w-3xl">
+        <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-semibold text-white leading-tight mb-4 max-w-3xl">
           {h.sub}
         </h1>
 

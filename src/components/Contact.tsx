@@ -208,19 +208,19 @@ export default function Contact() {
 
                   <div className="grid sm:grid-cols-2 gap-5">
                     <div>
-                      <label className={labelCls}>{f.nameLabel}</label>
-                      <input type="text" name="name" value={form.name} onChange={handleChange} required placeholder={f.namePlaceholder} className={inputCls} />
+                      <label htmlFor="contact-name" className={labelCls}>{f.nameLabel}</label>
+                      <input id="contact-name" type="text" name="name" value={form.name} onChange={handleChange} required placeholder={f.namePlaceholder} className={inputCls} />
                     </div>
                     <div>
-                      <label className={labelCls}>{f.emailLabel}</label>
-                      <input type="email" name="email" value={form.email} onChange={handleChange} required placeholder={f.emailPlaceholder} className={inputCls} />
+                      <label htmlFor="contact-email" className={labelCls}>{f.emailLabel}</label>
+                      <input id="contact-email" type="email" name="email" value={form.email} onChange={handleChange} required placeholder={f.emailPlaceholder} className={inputCls} />
                     </div>
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-5">
                     <div>
-                      <label className={labelCls}>{f.countryLabel}</label>
-                      <input type="text" name="country" value={form.country} onChange={handleChange} placeholder={f.countryPlaceholder} className={inputCls} />
+                      <label htmlFor="contact-country" className={labelCls}>{f.countryLabel}</label>
+                      <input id="contact-country" type="text" name="country" value={form.country} onChange={handleChange} placeholder={f.countryPlaceholder} className={inputCls} />
                     </div>
                     <div>
                       <label htmlFor="academicLevel-select" className={labelCls}>{f.academicLevelLabel}</label>
@@ -257,8 +257,8 @@ export default function Contact() {
                   </div>
 
                   <div>
-                    <label className={labelCls}>{f.messageLabel}</label>
-                    <textarea name="message" value={form.message} onChange={handleChange} required rows={4}
+                    <label htmlFor="contact-message" className={labelCls}>{f.messageLabel}</label>
+                    <textarea id="contact-message" name="message" value={form.message} onChange={handleChange} required rows={4}
                       placeholder={f.messagePlaceholder}
                       className="w-full bg-white border border-navy/15 rounded-sm px-4 py-3 text-navy text-sm placeholder-navy/30 focus:outline-none focus:border-gold/60 transition-all resize-none shadow-sm" />
                   </div>

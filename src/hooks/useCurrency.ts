@@ -115,15 +115,25 @@ export function useCurrency(): { currency: Currency; loading: boolean } {
         });
     };
 
-    // FIX 3: timeout reducido a 1000ms para dispositivos rápidos
-    if ('requestIdleCallback' in window) {
-      idleId = requestIdleCallback(doFetch, { timeout: 1000 });
-    } else {
-      idleId = setTimeout(doFetch, 300);
-    }
+    // La moneda es una mejora secundaria: no debe competir con el primer render.
+    // Esperamos a que termine la carga inicial antes de consultar Cloudflare.
+    let scheduled = false;
+    const scheduleFetch = () => {
+      if (scheduled || cancelled) return;
+      scheduled = true;
+      if ('requestIdleCallback' in window) {
+        idleId = requestIdleCallback(doFetch, { timeout: 3000 });
+      } else {
+        idleId = setTimeout(doFetch, 2000);
+      }
+    };
+
+    if (document.readyState === 'complete') scheduleFetch();
+    else window.addEventListener('load', scheduleFetch, { once: true });
 
     return () => {
       cancelled = true;
+      window.removeEventListener('load', scheduleFetch);
       if (idleId !== null) {
         if ('requestIdleCallback' in window && typeof idleId === 'number') {
           cancelIdleCallback(idleId);

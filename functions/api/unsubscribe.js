@@ -1,15 +1,10 @@
 // functions/api/unsubscribe.js
 // Baja: con token (email) o solo con email (formulario web)
 import { createClient } from '@supabase/supabase-js';
+import { corsHeaders, enforceRateLimit } from '../_shared/security.js';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-export async function onRequestOptions() {
-  return new Response(null, { headers: corsHeaders });
+export async function onRequestOptions({ request, env }) {
+  return new Response(null, { headers: corsHeaders(request, env) });
 }
 
 async function makeToken(email, secret) {
@@ -21,6 +16,13 @@ async function makeToken(email, secret) {
 export async function onRequestPost(context) {
   const { request, env } = context;
 
+  if (!await enforceRateLimit(request, 'unsubscribe', 10, 600)) {
+    return new Response(JSON.stringify({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }), {
+      status: 429,
+      headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json', 'Retry-After': '600' },
+    });
+  }
+
   try {
     const body = await request.json();
     const email = String(body.email || '').trim().toLowerCase();
@@ -29,7 +31,7 @@ export async function onRequestPost(context) {
     if (!email) {
       return new Response(JSON.stringify({ error: 'Indica tu correo electrónico' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' },
       });
     }
 
@@ -37,7 +39,7 @@ export async function onRequestPost(context) {
     if (!emailRegex.test(email)) {
       return new Response(JSON.stringify({ error: 'Email no válido' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' },
       });
     }
 
@@ -46,14 +48,14 @@ export async function onRequestPost(context) {
       if (!secret) {
         return new Response(JSON.stringify({ error: 'Servicio de baja no configurado' }), {
           status: 503,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' },
         });
       }
       const expected = await makeToken(email, secret);
       if (token !== expected) {
         return new Response(JSON.stringify({ error: 'Enlace de baja no válido o caducado' }), {
           status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' },
         });
       }
     }
@@ -63,7 +65,7 @@ export async function onRequestPost(context) {
     if (!supabaseUrl || !serviceRoleKey) {
       return new Response(JSON.stringify({ error: 'Servicio de baja no configurado' }), {
         status: 503,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' },
       });
     }
 
@@ -85,7 +87,7 @@ export async function onRequestPost(context) {
         JSON.stringify({
           error: 'No se pudo consultar la base de datos. Contacta con contacto@mentoriatextum.com',
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -96,7 +98,7 @@ export async function onRequestPost(context) {
           message:
             'Si ese correo estaba en nuestra lista, ya no recibirá más comunicaciones comerciales de TEXTUM.',
         }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -112,7 +114,7 @@ export async function onRequestPost(context) {
         JSON.stringify({
           error: 'No se pudo registrar la baja. Contacta con contacto@mentoriatextum.com',
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -122,13 +124,13 @@ export async function onRequestPost(context) {
         message:
           'Te has dado de baja correctamente. No recibirás más comunicaciones comerciales de TEXTUM.',
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' } }
     );
   } catch (err) {
     console.error('unsubscribe error:', err);
     return new Response(JSON.stringify({ error: 'Error interno del servidor' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' },
     });
   }
 }

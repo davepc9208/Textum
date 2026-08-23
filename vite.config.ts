@@ -77,24 +77,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // ── Tiptap + ProseMirror ─────────────────────────────────────────
-          // Solo se usa en AdminPage (lazy). Chunk separado para que no
-          // contamine el bundle inicial.
-          if (id.includes('@tiptap') || id.includes('prosemirror')) {
-            return 'tiptap';
-          }
-
           // ── Supabase ─────────────────────────────────────────────────────
           // Se usa en BlogPage, PostPage, Colecciones* y AdminPage.
           // Todos son lazy, así que este chunk nunca se carga en la homepage.
           if (id.includes('@supabase')) {
             return 'supabase';
-          }
-
-          // ── highlight.js + lowlight ───────────────────────────────────────
-          // Solo se usa en RichTextEditor (dentro de AdminPage, lazy).
-          if (id.includes('highlight.js') || id.includes('lowlight')) {
-            return 'code-highlight';
           }
 
           // ── react-icons ───────────────────────────────────────────────────
@@ -111,11 +98,6 @@ export default defineConfig({
             return 'react-vendor';
           }
 
-          // ── DOMPurify ─────────────────────────────────────────────────────
-          // Solo se usa en ColeccionPiecePage (lazy).
-          if (id.includes('dompurify')) {
-            return 'security';
-          }
         },
       },
     },

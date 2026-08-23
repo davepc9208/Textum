@@ -1,6 +1,7 @@
 // src/components/Footer.tsx
+import { useEffect, useState } from 'react';
 import { Mail, Linkedin, Instagram, Facebook } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useLang } from '../i18n/LangContext';
 
 const socialLinks = [
@@ -13,15 +14,33 @@ export default function Footer() {
   const { t, lang } = useLang();
   const f = t.footer;
   const navigate = useNavigate();
+  const location = useLocation();
+  const [pendingSection, setPendingSection] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (location.pathname !== '/' || !pendingSection) return;
+
+    let frame = 0;
+    const scrollWhenReady = () => {
+      const target = document.getElementById(pendingSection);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setPendingSection(null);
+        return;
+      }
+      frame = window.requestAnimationFrame(scrollWhenReady);
+    };
+
+    frame = window.requestAnimationFrame(scrollWhenReady);
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.pathname, pendingSection]);
 
   const goToSection = (sectionId: string) => {
-    if (window.location.pathname === '/') {
+    if (location.pathname === '/') {
       document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
+      setPendingSection(sectionId);
       navigate('/');
-      setTimeout(() => {
-        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 300);
     }
   };
 
@@ -58,7 +77,7 @@ export default function Footer() {
               </div>
               <p className="font-serif italic text-sm text-white/50">{f.tagline}</p>
             </div>
-            <p className="text-xs leading-relaxed text-white/40 font-light max-w-xs">{f.desc}</p>
+            <p className="text-xs leading-relaxed text-white/70 font-light max-w-xs">{f.desc}</p>
           </div>
 
           {/* Nav */}
@@ -109,7 +128,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 text-xs text-white/40 tracking-wide">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 text-xs text-white/70 tracking-wide">
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-5 text-center sm:text-left">
             <p>© {new Date().getFullYear()} TEXTUM — Mentoría Académica. {f.rights}</p>
             <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
@@ -128,7 +147,7 @@ export default function Footer() {
               </Link>
             </nav>
           </div>
-          <p className="text-gold/30">{f.designed}</p>
+          <p className="text-gold/70">{f.designed}</p>
         </div>
       </div>
     </footer>

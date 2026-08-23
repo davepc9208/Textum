@@ -127,7 +127,7 @@ function HomePage() {
   return (
     <div className="relative">
       <Navbar />
-      <main>
+      <main id="main-content">
         <Hero />
         <Filosofia />
         <About />
@@ -178,6 +178,12 @@ function BlogListPage() {
 export default function App() {
   return (
     <>
+    <a
+      href="#main-content"
+      className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[10000] focus:bg-gold focus:text-navy focus:px-4 focus:py-3 focus:text-xs focus:font-semibold focus:rounded-sm"
+    >
+      Saltar al contenido principal
+    </a>
     <CookieBanner />
     <Routes>
       <Route path="/"    element={<HomePage />} />

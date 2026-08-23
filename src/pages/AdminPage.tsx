@@ -6,6 +6,7 @@ import type { Session } from '@supabase/supabase-js';
 import RichTextEditor from '../components/RichTextEditor';
 import AdminDistribute from '../components/AdminDistribute';
 import { optimizeImage } from '../lib/imageOptimization';
+import { sanitizeHtml } from '../lib/sanitize';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function slugify(str: string) {
@@ -574,7 +575,7 @@ function PostEditor({
               </p>
               <div
                 className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:text-navy prose-p:text-navy/80 prose-a:text-gold prose-strong:text-navy prose-blockquote:border-gold"
-                dangerouslySetInnerHTML={{ __html: tab === 'es' ? form.content_es : form.content_en }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(tab === 'es' ? form.content_es : form.content_en) }}
               />
               <div className="mt-6 pt-4 border-t border-navy/10 flex items-center gap-2 text-xs text-navy/40">
                 <span className={`px-2 py-0.5 rounded-full border text-[10px] tracking-widest ${form.published ? 'text-green-700 border-green-200 bg-green-50' : 'text-navy/40 border-navy/15'}`}>
