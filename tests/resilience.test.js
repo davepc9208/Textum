@@ -3,7 +3,8 @@ import test from 'node:test';
 import { onRequest as translate } from '../functions/api/translate.js';
 import { onRequest as distribute } from '../functions/api/distribute.js';
 import { onRequest as blogPost } from '../functions/blog/[slug].js';
-import { onRequestPost as contact } from '../functions/api/contact.js';
+import { onRequestPost as contact, onRequestOptions as contactOptions } from '../functions/api/contact.js';
+import { onRequestPost as leadMagnet, onRequestOptions as leadMagnetOptions } from '../functions/api/lead-magnet.js';
 import { onRequestPost as uploadImage } from '../functions/api/upload-image.js';
 import { onRequest as catchAll } from '../functions/[[path]].js';
 
@@ -67,6 +68,16 @@ test('catch-all passes CSS assets through via ASSETS when next is unavailable', 
   assert.match(response.headers.get('Content-Type'), /css/);
 });
 
+test('catch-all marks utility app routes as noindex before React loads', async () => {
+  const response = await catchAll({
+    request: new Request(`${origin}/colecciones/principio/pt-01/descargar`),
+    env: {},
+    next: async () => new Response('<html>download</html>', { headers: { 'Content-Type': 'text/html' } }),
+  });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow');
+});
+
 test('catch-all serves SPA shell for known app routes', async () => {
   let nextCalled = false;
   const response = await catchAll({
@@ -113,6 +124,66 @@ test('returns a branded 404 for an unpublished blog slug', async () => {
 
 test('rejects contact requests without required fields', async () => {
   const response = await contact({ request: jsonRequest('/api/contact', {}), env: {} });
+  assert.equal(response.status, 400);
+});
+
+test('contact failures return a valid localized 500 response instead of throwing', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('Resend unavailable'); };
+  try {
+    const response = await contact({
+      request: jsonRequest('/api/contact', {
+        name: 'Test User',
+        email: 'test@example.com',
+        message: 'A valid contact message',
+        lang: 'en',
+      }),
+      env: { RESEND_API_KEY: 'test-key' },
+    });
+    assert.equal(response.status, 500);
+    assert.match(await response.text(), /Server error/i);
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), origin);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('public API preflight responses never use a wildcard CORS origin', async () => {
+  const request = new Request(`${origin}/api/contact`, { headers: { Origin: origin } });
+  const contactResponse = await contactOptions({ request, env: {} });
+  const leadResponse = await leadMagnetOptions({ request, env: {} });
+  assert.equal(contactResponse.headers.get('Access-Control-Allow-Origin'), origin);
+  assert.equal(leadResponse.headers.get('Access-Control-Allow-Origin'), origin);
+  assert.notEqual(contactResponse.headers.get('Access-Control-Allow-Origin'), '*');
+  assert.notEqual(leadResponse.headers.get('Access-Control-Allow-Origin'), '*');
+});
+
+test('lead magnet requires an explicit privacy acceptance', async () => {
+  const response = await leadMagnet({
+    request: jsonRequest('/api/lead-magnet', {
+      name: 'Test User',
+      email: 'test@example.com',
+      resource_slug: 'pt-01',
+      resource_type: 'principio',
+    }),
+    env: {},
+  });
+  assert.equal(response.status, 400);
+  assert.match(await response.text(), /privacidad/i);
+});
+
+test('lead magnet rejects malformed optional fields without throwing', async () => {
+  const response = await leadMagnet({
+    request: jsonRequest('/api/lead-magnet', {
+      name: 'Test User',
+      email: 'test@example.com',
+      resource_slug: 'pt-01',
+      resource_type: 'principio',
+      institution: { invalid: true },
+      privacy_accepted: true,
+    }),
+    env: {},
+  });
   assert.equal(response.status, 400);
 });
 

@@ -18,6 +18,12 @@ function isAppRoute(pathname) {
   return APP_ROUTES.some((pattern) => pattern.test(pathname));
 }
 
+function isNoIndexAppRoute(pathname) {
+  return pathname === '/baja'
+    || pathname === '/textum-redaccion-2026'
+    || /^\/colecciones\/(?:principio|categoria|herramienta)\/[^/]+\/descargar$/.test(pathname);
+}
+
 function notFoundHtml(lang) {
   const isEn = lang === 'en';
   const title = isEn ? 'This page does not exist' : 'Esta pagina no existe';
@@ -44,9 +50,13 @@ export async function onRequest(context) {
     const response = typeof context.next === 'function'
       ? await context.next()
       : await env.ASSETS.fetch(new Request(new URL('/index.html', request.url), request));
+    const headers = new Headers(response.headers);
+    if (isNoIndexAppRoute(url.pathname)) {
+      headers.set('X-Robots-Tag', 'noindex, nofollow');
+    }
     return new Response(response.body, {
       status: 200,
-      headers: response.headers,
+      headers,
     });
   }
 

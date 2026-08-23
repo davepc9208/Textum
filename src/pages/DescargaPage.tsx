@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Loader2, Download, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useLang } from '../i18n/LangContext';
+import { useSEO } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import TurnstileWidget from '../components/TurnstileWidget';
@@ -36,7 +37,17 @@ const RESOURCES: Record<string, { title_es: string; title_en: string; type: stri
 export default function DescargaPage() {
   const { tipo, slug } = useParams<{ tipo: string; slug: string }>();
   const { lang } = useLang();
-  const resource = slug ? RESOURCES[slug] : null;
+  const resource = slug && tipo && RESOURCES[slug]?.type === tipo ? RESOURCES[slug] : null;
+
+  useSEO({
+    title: lang === 'es' ? 'Descarga de recurso — TEXTUM' : 'Resource download — TEXTUM',
+    description: lang === 'es'
+      ? 'Descarga un recurso metodológico de TEXTUM.'
+      : 'Download a methodological resource from TEXTUM.',
+    canonical: `/colecciones/${tipo || 'coleccion'}/${slug || 'recurso'}/descargar`,
+    lang,
+    noindex: true,
+  });
 
   const [form, setForm] = useState({
     name: '',
@@ -143,7 +154,7 @@ export default function DescargaPage() {
             to={localizedPath(`/colecciones/${tipo}/${slug}`, lang)}
             className="inline-flex items-center gap-2 text-sm text-navy/50 hover:text-gold mb-10 transition-colors"
           >
-            <ArrowLeft size={14} />
+            <ArrowLeft size={14} aria-hidden="true" />
             {lang === 'es' ? 'Volver al documento' : 'Back to document'}
           </Link>
 
@@ -197,10 +208,11 @@ export default function DescargaPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-navy/80 mb-1.5">
+                    <label htmlFor="download-name" className="block text-sm font-medium text-navy/80 mb-1.5">
                       {lang === 'es' ? 'Nombre completo *' : 'Full name *'}
                     </label>
                     <input
+                      id="download-name"
                       name="name"
                       required
                       value={form.name}
@@ -211,10 +223,11 @@ export default function DescargaPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-navy/80 mb-1.5">
+                    <label htmlFor="download-email" className="block text-sm font-medium text-navy/80 mb-1.5">
                       Email *
                     </label>
                     <input
+                      id="download-email"
                       name="email"
                       type="email"
                       required
@@ -226,10 +239,11 @@ export default function DescargaPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-navy/80 mb-1.5">
+                    <label htmlFor="download-institution" className="block text-sm font-medium text-navy/80 mb-1.5">
                       {lang === 'es' ? 'Institución / Universidad' : 'Institution / University'}
                     </label>
                     <input
+                      id="download-institution"
                       name="institution"
                       value={form.institution}
                       onChange={handleChange}
@@ -240,10 +254,11 @@ export default function DescargaPage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-navy/80 mb-1.5">
+                      <label htmlFor="download-country" className="block text-sm font-medium text-navy/80 mb-1.5">
                         {lang === 'es' ? 'País' : 'Country'}
                       </label>
                       <input
+                        id="download-country"
                         name="country"
                         value={form.country}
                         onChange={handleChange}
@@ -252,10 +267,11 @@ export default function DescargaPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-navy/80 mb-1.5">
+                      <label htmlFor="download-role" className="block text-sm font-medium text-navy/80 mb-1.5">
                         {lang === 'es' ? 'Rol' : 'Role'}
                       </label>
                       <select
+                        id="download-role"
                         name="role"
                         value={form.role}
                         onChange={handleChange}

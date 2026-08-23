@@ -3,11 +3,25 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useLang } from '../i18n/LangContext';
+import { useSEO } from '../hooks/useSEO';
+import { localizedPath } from '../lib/locale';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
 export default function BajaPage() {
+  const { lang } = useLang();
   const [params] = useSearchParams();
+
+  useSEO({
+    title: lang === 'en' ? 'Unsubscribe — TEXTUM' : 'Baja de comunicaciones — TEXTUM',
+    description: lang === 'en'
+      ? 'Manage your TEXTUM communication preferences.'
+      : 'Gestiona tus preferencias de comunicación con TEXTUM.',
+    canonical: '/baja',
+    lang,
+    noindex: true,
+  });
   const emailParam = params.get('email') || '';
   const tokenParam = params.get('token') || '';
 
@@ -92,10 +106,10 @@ export default function BajaPage() {
     <div className="min-h-screen bg-cream flex flex-col">
       <header className="border-b border-navy/10 bg-white">
         <div className="max-w-lg mx-auto px-6 py-5 flex items-center justify-between">
-          <Link to="/" className="font-serif text-xl tracking-[0.2em] text-navy">
+          <Link to={localizedPath('/', lang)} className="font-serif text-xl tracking-[0.2em] text-navy">
             TEXTUM
           </Link>
-          <Link to="/" className="text-xs tracking-widest text-navy/50 hover:text-navy uppercase">
+          <Link to={localizedPath('/', lang)} className="text-xs tracking-widest text-navy/50 hover:text-navy uppercase">
             Inicio
           </Link>
         </div>
@@ -168,7 +182,7 @@ export default function BajaPage() {
           )}
 
           <Link
-            to="/"
+            to={localizedPath('/', lang)}
             className="inline-block mt-6 text-xs tracking-widest uppercase text-navy/50 hover:text-gold transition-colors"
           >
             ← Volver a TEXTUM

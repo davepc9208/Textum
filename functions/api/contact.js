@@ -1,6 +1,6 @@
 // functions/api/contact.js
 // Cloudflare Pages Function para el formulario de contacto.
-import { enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
+import { corsHeaders, enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
 
 const MAX_BODY_BYTES = 32 * 1024;
 
@@ -16,6 +16,7 @@ function escapeHtml(str) {
 export async function onRequestPost(context) {
   const { request, env } = context;
   const requestId = getRequestId(request);
+  let english = false;
 
   if (Number(request.headers.get('Content-Length') || 0) > MAX_BODY_BYTES) {
     return jsonResponse({ error: 'La solicitud supera el tamaño permitido.' }, 413, request, env, requestId);
@@ -29,24 +30,20 @@ export async function onRequestPost(context) {
     try {
       body = await request.json();
     } catch {
-      return new Response(JSON.stringify({ error: 'Body JSON inválido.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ error: 'Body JSON inválido.' }, 400, request, env, requestId);
     }
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return jsonResponse({ error: 'Body inválido.' }, 400, request, env, requestId);
     }
 
     const { name, email, service, message, turnstileToken, lang } = body;
-    const english = lang === 'en';
+    english = lang === 'en';
 
     if (!validateText(name, { min: 2, max: 120 })
       || !validateText(email, { min: 3, max: 254 })
       || !validateText(message, { min: 5, max: 5000 })
-      || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {return new Response(JSON.stringify({ error: english ? 'Required fields are missing.' : 'Faltan campos obligatorios.' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+      return jsonResponse({ error: english ? 'Required fields are missing.' : 'Faltan campos obligatorios.' }, 400, request, env, requestId);
     }
 
     const captcha = await verifyTurnstile(turnstileToken, request, env);
@@ -84,33 +81,18 @@ export async function onRequestPost(context) {
     if (!res.ok) {
       const error = await res.json().catch(() => ({}));
       log('error', 'contact.email_failed', { requestId, status: res.status, error });
-      return new Response(
-        JSON.stringify({ error: english ? 'The email could not be sent. Please try again.' : 'No se pudo enviar el correo. Inténtalo de nuevo.' }),
-        { status: 502, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: english ? 'The email could not be sent. Please try again.' : 'No se pudo enviar el correo. Inténtalo de nuevo.' }, 502, request, env, requestId);
     }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId } }
-    );
+    return jsonResponse({ success: true }, 200, request, env, requestId);
 
   } catch (err) {
     log('error', 'contact.failed', { requestId, message: err instanceof Error ? err.message : String(err) });
-    return new Response(
-      JSON.stringify({ error: english ? 'Server error. Please try again later.' : 'Error del servidor. Inténtalo de nuevo más tarde.' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ error: english ? 'Server error. Please try again later.' : 'Error del servidor. Inténtalo de nuevo más tarde.' }, 500, request, env, requestId);
   }
 }
 
 // Responde a OPTIONS para CORS en desarrollo local
-export async function onRequestOptions() {
-  return new Response(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
+export async function onRequestOptions({ request, env }) {
+  return new Response(null, { headers: corsHeaders(request, env) });
 }

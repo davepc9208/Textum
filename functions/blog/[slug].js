@@ -79,10 +79,11 @@ function stripHtml(html) {
 
 function sanitizeArticleHtml(html) {
   return String(html || '')
-    .replace(/<\/?(?:script|style|iframe|object|embed|form)[^>]*>/gi, '')
+    .replace(/<\/?(?:script|style|iframe|object|embed|form|base|meta|link)[^>]*>/gi, '')
     .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-    .replace(/\s(?:href|src)\s*=\s*(['"])\s*javascript:[\\s\\S]*?\1/gi, '')
-    .replace(/\s(?:href|src)\s*=\s*javascript:[^\s>]+/gi, '');
+    .replace(/\s(?:href|src)\s*=\s*(['"])\s*(?:javascript|vbscript|data):[\\s\\S]*?\1/gi, '')
+    .replace(/\s(?:href|src)\s*=\s*(?:javascript|vbscript|data):[^\s>]+/gi, '')
+    .replace(/<svg\b[\s\S]*?<\/svg>/gi, '');
 }
 
 function truncate(text, maxLength) {
@@ -369,19 +370,6 @@ function buildHtml(post, lang, slug) {
     </p>
   </footer>
 
-  <!-- Redirigir a usuarios humanos a la SPA React -->
-  <script>
-    // Si es un usuario humano (no bot), redirigir a la SPA React
-    // Los bots no ejecutan este script o lo ignoran
-    (function() {
-      var isBot = /bot|crawler|spider|crawling|facebookexternalhit|linkedinbot|twitterbot|whatsapp|telegram/i.test(navigator.userAgent);
-      if (!isBot && typeof window !== 'undefined') {
-        // Pequeño delay para que Googlebot pueda leer el HTML antes de que
-        // una SPA potencial tome el control
-        window.__textumSSR = true;
-      }
-    })();
-  </script>
 </body>
 </html>`;
 }

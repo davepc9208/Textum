@@ -7,8 +7,7 @@ export function sanitizeHtml(dirty: string): string {
   return DOMPurify.sanitize(dirty, {
     USE_PROFILES: { html: true },
     ADD_ATTR: ['target', 'rel', 'loading', 'decoding', 'fetchpriority'],
-    ADD_TAGS: ['iframe'], // si no usáis iframes, quitar
-    FORBID_TAGS: ['script', 'style', 'form', 'input', 'button'],
+    FORBID_TAGS: ['script', 'style', 'form', 'input', 'button', 'iframe', 'object', 'embed'],
     FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
   });
 }

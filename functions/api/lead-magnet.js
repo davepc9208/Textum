@@ -1,6 +1,6 @@
 ﻿// functions/api/lead-magnet.js
 import { createClient } from '@supabase/supabase-js';
-import { enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
+import { corsHeaders, enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
 
 const ALLOWED_RESOURCES = new Set([
   'principio:pt-01',
@@ -8,6 +8,10 @@ const ALLOWED_RESOURCES = new Set([
   'herramienta:ht-01',
   'herramienta:ht-02',
 ]);
+
+function isOptionalText(value, max) {
+  return value == null || (typeof value === 'string' && value.length <= max);
+}
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -18,14 +22,8 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-export async function onRequestOptions() {
-  return new Response(null, { headers: corsHeaders });
+export async function onRequestOptions({ request, env }) {
+  return new Response(null, { headers: corsHeaders(request, env) });
 }
 
 async function makeUnsubToken(email, secret) {
@@ -65,26 +63,30 @@ export async function onRequestPost(context) {
       utm_source = null,
       utm_medium = null,
       utm_campaign = null,
-      privacy_accepted = true,
+      privacy_accepted = false,
       turnstileToken = '',
     } = body;
 
     if (!validateText(name, { min: 2, max: 120 })
       || !validateText(email, { min: 3, max: 254 })
       || !validateText(resource_slug, { min: 1, max: 80 })
-      || !validateText(resource_type, { min: 1, max: 30 })) {
-      return new Response(JSON.stringify({ error: 'Faltan campos obligatorios' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      || !validateText(resource_type, { min: 1, max: 30 })
+      || !isOptionalText(institution, 160)
+      || !isOptionalText(country, 80)
+      || !isOptionalText(role, 80)
+      || !isOptionalText(resource_title, 240)
+      || !isOptionalText(source, 80)
+      || !isOptionalText(utm_source, 120)
+      || !isOptionalText(utm_medium, 120)
+      || !isOptionalText(utm_campaign, 120)
+      || !['es', 'en'].includes(lang)
+      || privacy_accepted !== true) {
+      return jsonResponse({ error: 'Faltan campos obligatorios o no se aceptó la política de privacidad.' }, 400, request, env, requestId);
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     if (!emailRegex.test(email.trim())) {
-      return new Response(JSON.stringify({ error: 'Email no válido' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ error: 'Email no válido' }, 400, request, env, requestId);
     }
 
     if (!ALLOWED_RESOURCES.has(`${resource_type}:${resource_slug}`)) {
@@ -133,10 +135,7 @@ export async function onRequestPost(context) {
 
     if (insertError) {
       console.error('Insert error:', insertError);
-      return new Response(JSON.stringify({ error: 'Error al guardar el lead' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ error: 'Error al guardar el lead' }, 500, request, env, requestId);
     }
 
     // 2. Signed URL del PDF (15 min)
@@ -169,7 +168,7 @@ export async function onRequestPost(context) {
       console.error('Signed URL error:', signError);
       return new Response(JSON.stringify({ error: 'No se pudo generar el enlace de descarga' }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers:      { ...corsHeaders(request, env), 'Content-Type': 'application/json', 'X-Request-ID': requestId },
       });
     }
 
@@ -201,13 +200,13 @@ export async function onRequestPost(context) {
         downloadUrl: signed.signedUrl,
         expiresIn: 900,
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json', 'X-Request-ID': requestId } }
     );
   } catch (err) {
     log('error', 'lead_magnet.failed', { requestId, message: err instanceof Error ? err.message : String(err) });
     return new Response(JSON.stringify({ error: 'Error interno del servidor' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers:      { ...corsHeaders(request, env), 'Content-Type': 'application/json', 'X-Request-ID': requestId },
     });
   }
 }

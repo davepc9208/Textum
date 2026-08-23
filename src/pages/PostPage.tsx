@@ -162,7 +162,7 @@ export default function PostPage() {
       },
       mainEntityOfPage: {
         '@type': 'WebPage',
-        '@id': `${SITE_URL}/blog/${post.slug}`,
+        '@id': localizedUrl(`/blog/${post.slug}`, lang),
       },
       timeRequired: `PT${post.reading_time}M`,
       inLanguage: lang === 'es' ? 'es-ES' : 'en-GB',
@@ -178,13 +178,13 @@ export default function PostPage() {
           '@type': 'ListItem',
           position: 1,
           name: 'Blog',
-          item: `${SITE_URL}/blog`,
+          item: localizedUrl('/blog', lang),
         },
         {
           '@type': 'ListItem',
           position: 2,
           name: postTitle,
-          item: `${SITE_URL}/blog/${post.slug}`,
+          item: localizedUrl(`/blog/${post.slug}`, lang),
         },
       ],
     };
@@ -239,7 +239,7 @@ export default function PostPage() {
               to={localizedPath('/blog', lang)}
               className="inline-flex items-center gap-2 text-gold text-sm mb-10 hover:gap-3 transition-all duration-200"
             >
-              <ArrowLeft size={14} />
+              <ArrowLeft size={14} aria-hidden="true" />
               {b.backToBlog}
             </Link>
 
@@ -247,14 +247,14 @@ export default function PostPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
               <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
                 <span className="flex items-center gap-1.5">
-                  <Calendar size={13} />
+                  <Calendar size={13} aria-hidden="true" />
                   {new Date(post.created_at).toLocaleDateString(
                     lang === 'es' ? 'es-ES' : 'en-GB',
                     { year: 'numeric', month: 'long', day: 'numeric' }
                   )}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Clock size={13} />
+                  <Clock size={13} aria-hidden="true" />
                   {post.reading_time} {b.minRead}
                 </span>
                 <span className="text-gold font-medium">
@@ -271,7 +271,7 @@ export default function PostPage() {
 
             <div className="flex items-center gap-4 mb-10">
               <div className="w-16 h-px bg-gradient-to-r from-gold to-transparent" />
-              <svg width="8" height="8" viewBox="0 0 8 8">
+              <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true">
                 <rect x="4" y="0" width="6" height="6" transform="rotate(45 4 4)" fill="#c9a84c" />
               </svg>
             </div>
@@ -305,7 +305,7 @@ export default function PostPage() {
                 to={localizedPath('/blog', lang)}
                 className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200"
               >
-                <ArrowLeft size={14} />
+                <ArrowLeft size={14} aria-hidden="true" />
                 {b.backToBlog}
               </Link>
             </div>

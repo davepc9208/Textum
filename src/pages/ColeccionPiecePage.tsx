@@ -74,10 +74,10 @@ export default function ColeccionPiecePage() {
     if (!slug) return;
     setLoading(true);
     setLoadError(false);
-    Promise.resolve(supabase.from('posts').select('*').eq('slug', slug).eq('published', true).single())
+    Promise.resolve(supabase.from('posts').select('*').eq('slug', slug).eq('collection_type', tipo).eq('published', true).single())
       .then(({ data, error }) => { setPost(data); setLoadError(Boolean(error)); setLoading(false); })
       .catch(() => { setPost(null); setLoadError(true); setLoading(false); });
-  }, [slug, reloadKey]);
+  }, [slug, tipo, reloadKey]);
 
   const postTitle   = post ? (lang === 'es' ? post.title_es   : post.title_en)   : '';
   const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
@@ -219,14 +219,14 @@ export default function ColeccionPiecePage() {
 
             {/* CTA Descarga PDF profesional */}
 <div className="mt-14 p-7 bg-navy/[0.03] border border-navy/10 rounded-2xl">
-  <h3 className="font-serif text-lg text-navy mb-2">
-    <p className="mt-10 text-xs text-navy/40 text-center font-light">
-  {lang === 'es'
-    ? 'Este documento es de solo lectura en la web. Para citarlo o usarlo offline, descarga la versión PDF profesional.'
-    : 'This document is read-only on the web. To cite it or use it offline, download the professional PDF version.'}
-</p>
-    {lang === 'es' ? 'Versión PDF profesional' : 'Professional PDF version'}
-  </h3>
+  <p className="mt-10 text-xs text-navy/40 text-center font-light">
+            {lang === 'es'
+              ? 'Este documento es de solo lectura en la web. Para citarlo o usarlo offline, descarga la versión PDF profesional.'
+              : 'This document is read-only on the web. To cite it or use it offline, download the professional PDF version.'}
+          </p>
+          <h3 className="font-serif text-lg text-navy mb-2">
+            {lang === 'es' ? 'Versión PDF profesional' : 'Professional PDF version'}
+          </h3>
   <p className="text-sm text-navy/65 mb-5 leading-relaxed">
     {lang === 'es'
       ? 'Formato listo para citar, imprimir y usar offline (incluye QR y referencia APA).'

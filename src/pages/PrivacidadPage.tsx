@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useLang } from '../i18n/LangContext';
 import { useSEO } from '../hooks/useSEO';
+import { localizedPath } from '../lib/locale';
 
 const UPDATED = '16 de agosto de 2026';
 
@@ -32,10 +33,10 @@ export default function PrivacidadPage() {
     <div className="min-h-screen bg-cream">
       <header className="border-b border-navy/10 bg-white">
         <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link to="/" className="font-serif text-xl tracking-[0.2em] text-navy">
+          <Link to={localizedPath('/', lang)} className="font-serif text-xl tracking-[0.2em] text-navy">
             TEXTUM
           </Link>
-          <Link to="/" className="text-xs tracking-widest text-navy/50 hover:text-navy uppercase">
+          <Link to={localizedPath('/', lang)} className="text-xs tracking-widest text-navy/50 hover:text-navy uppercase">
             {isEs ? 'Inicio' : 'Home'}
           </Link>
         </div>
@@ -53,14 +54,14 @@ export default function PrivacidadPage() {
         </p>
 
         <div className="prose-textum space-y-8 text-navy/80 text-[15px] leading-relaxed font-light">
-          {isEs ? <ContentEs /> : <ContentEn />}
+          {isEs ? <ContentEs lang={lang} /> : <ContentEn lang={lang} />}
         </div>
 
         <div className="mt-14 pt-8 border-t border-navy/10 flex flex-wrap gap-4 text-xs tracking-widest uppercase">
-          <Link to="/" className="text-navy/50 hover:text-gold transition-colors">
+          <Link to={localizedPath('/', lang)} className="text-navy/50 hover:text-gold transition-colors">
             ← {isEs ? 'Volver al inicio' : 'Back to home'}
           </Link>
-          <Link to="/baja" className="text-navy/50 hover:text-gold transition-colors">
+          <Link to={localizedPath('/baja', lang)} className="text-navy/50 hover:text-gold transition-colors">
             {isEs ? 'Darse de baja de comunicaciones' : 'Unsubscribe from communications'}
           </Link>
         </div>
@@ -78,7 +79,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ContentEs() {
+function ContentEs({ lang }: { lang: 'es' | 'en' }) {
   return (
     <>
       <Section title="1. Responsable del tratamiento">
@@ -260,7 +261,7 @@ function ContentEs() {
           <li>Retirada del consentimiento en cualquier momento (sin afectar al tratamiento previo)</li>
           <li>
             Baja de comunicaciones comerciales mediante el enlace del correo o la página{' '}
-            <Link to="/baja" className="text-gold underline underline-offset-2">
+            <Link to={localizedPath('/baja', lang)} className="text-gold underline underline-offset-2">
               /baja
             </Link>
           </li>
@@ -322,7 +323,7 @@ function ContentEs() {
   );
 }
 
-function ContentEn() {
+function ContentEn({ lang }: { lang: 'es' | 'en' }) {
   return (
     <>
       <Section title="1. Data controller">
@@ -406,7 +407,7 @@ function ContentEn() {
         <p>
           Access, rectification, erasure, restriction, objection, portability where applicable, and
           withdrawal of consent. Unsubscribe via the email link or{' '}
-          <Link to="/baja" className="text-gold underline underline-offset-2">
+          <Link to={localizedPath('/baja', lang)} className="text-gold underline underline-offset-2">
             /baja
           </Link>
           . Contact{' '}

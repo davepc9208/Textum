@@ -28,10 +28,11 @@ function stripHtml(value) {
 
 function sanitizeArticleHtml(value) {
   return String(value ?? '')
-    .replace(/<\/?(?:script|style|iframe|object|embed|form)[^>]*>/gi, '')
+    .replace(/<\/?(?:script|style|iframe|object|embed|form|base|meta|link)[^>]*>/gi, '')
     .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-    .replace(/\s(?:href|src)\s*=\s*(['"])\s*javascript:[\s\S]*?\1/gi, '')
-    .replace(/\s(?:href|src)\s*=\s*javascript:[^\s>]+/gi, '');
+    .replace(/\s(?:href|src)\s*=\s*(['"])\s*(?:javascript|vbscript|data):[\s\S]*?\1/gi, '')
+    .replace(/\s(?:href|src)\s*=\s*(?:javascript|vbscript|data):[^\s>]+/gi, '')
+    .replace(/<svg\b[\s\S]*?<\/svg>/gi, '');
 }
 
 function isBot(userAgent) {
