@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { POST_SUMMARY_FIELDS, Post, supabase } from '../lib/supabase';
 import { useLang } from '../i18n/LangContext';
+import { localizedPath } from '../lib/locale';
 
 export default function RelatedPosts({ currentId, category }: { currentId: string; category: string | null }) {
   const { lang } = useLang();
@@ -38,7 +39,7 @@ export default function RelatedPosts({ currentId, category }: { currentId: strin
         {posts.map((post) => (
           <Link
             key={post.id}
-            to={`/blog/${post.slug}`}
+            to={localizedPath(`/blog/${post.slug}`, lang)}
             className="group border border-navy/10 bg-white rounded-sm overflow-hidden hover:border-gold/40 hover:shadow-md transition-all"
           >
             {post.cover_url && <img src={post.cover_url} alt={post.cover_alt || (lang === 'es' ? `Imagen de ${post.title_es}` : `Image for ${post.title_en}`)} loading="lazy" className="w-full h-32 object-cover" />}

@@ -6,6 +6,7 @@
 //         se acumulen al navegar entre artículos.
 
 import { useEffect } from 'react';
+import { canonicalVariants, SITE_URL } from '../lib/locale';
 
 interface SEOProps {
   title: string;
@@ -25,7 +26,6 @@ interface SEOProps {
   keywords?: string;
 }
 
-const SITE_URL = 'https://www.mentoriatextum.com';
 const DEFAULT_IMAGE = `${SITE_URL}/og-default.png`;
 const DEFAULT_IMAGE_ALT = 'TEXTUM — Mentoría Académica Internacional';
 
@@ -84,9 +84,9 @@ export function useSEO({
           document.head.appendChild(el);
         }
       } else {
-        // Para canonical y otros links sin hreflang usamos data-seo
-        // como discriminador para no tocar links del HTML estático
-        selector = `link[rel="${rel}"][data-seo]`;
+        // Reutilizar el canonical del HTML inicial evita publicar dos
+        // canonicals cuando React termina de hidratar la SPA.
+        selector = `link[rel="${rel}"]`;
         el = document.querySelector(selector);
         if (!el) {
           el = document.createElement('link');
@@ -99,9 +99,9 @@ export function useSEO({
       el.setAttribute('href', href);
     };
 
-    const canonicalUrl = canonical
-      ? `${SITE_URL}${canonical}`
-      : SITE_URL + window.location.pathname;
+    const canonicalPath = canonical || window.location.pathname;
+    const variants = canonicalVariants(canonicalPath);
+    const canonicalUrl = lang === 'en' ? variants.en : variants.es;
     const image    = ogImage    || DEFAULT_IMAGE;
     const imageAlt = ogImageAlt || DEFAULT_IMAGE_ALT;
 
@@ -116,8 +116,9 @@ export function useSEO({
     // ── Hreflang alternates ────────────────────────────────────────
     // Fix 1: ahora cada llamada usa su propio selector con hreflang,
     // no interfiere con el canonical ni entre sí.
-    setLink('alternate', canonicalUrl, lang);
-    setLink('alternate', canonicalUrl, 'x-default');
+    setLink('alternate', variants.es, 'es');
+    setLink('alternate', variants.en, 'en');
+    setLink('alternate', variants.xDefault, 'x-default');
 
     // ── Open Graph ─────────────────────────────────────────────────
     setMeta('property', 'og:title',          title);

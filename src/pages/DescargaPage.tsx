@@ -8,6 +8,7 @@ import Footer from '../components/Footer';
 import TurnstileWidget from '../components/TurnstileWidget';
 import { turnstileConfigured } from '../lib/turnstile';
 import { diagnosisHref, trackConversion } from '../lib/conversion';
+import { localizedPath } from '../lib/locale';
 
 const RESOURCES: Record<string, { title_es: string; title_en: string; type: string }> = {
   'pt-01': {
@@ -120,7 +121,7 @@ export default function DescargaPage() {
             <p className="font-serif text-2xl text-navy/40 mb-4">
               {lang === 'es' ? 'Recurso no encontrado' : 'Resource not found'}
             </p>
-            <Link to="/colecciones" className="text-gold text-sm hover:underline">
+            <Link to={localizedPath('/colecciones', lang)} className="text-gold text-sm hover:underline">
               {lang === 'es' ? 'Volver a Colecciones' : 'Back to Collections'}
             </Link>
           </div>
@@ -139,7 +140,7 @@ export default function DescargaPage() {
       <div className="flex-1 py-16 px-4">
         <div className="max-w-lg mx-auto">
           <Link
-            to={`/colecciones/${tipo}/${slug}`}
+            to={localizedPath(`/colecciones/${tipo}/${slug}`, lang)}
             className="inline-flex items-center gap-2 text-sm text-navy/50 hover:text-gold mb-10 transition-colors"
           >
             <ArrowLeft size={14} />

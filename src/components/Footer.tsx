@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Mail, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useLang } from '../i18n/LangContext';
+import { localizedPath } from '../lib/locale';
 
 const socialLinks = [
   { icon: Linkedin,  href: 'https://www.linkedin.com/company/mentor%C3%ADa-textum', label: 'LinkedIn'  },
@@ -40,7 +41,7 @@ export default function Footer() {
       document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
       setPendingSection(sectionId);
-      navigate('/');
+      navigate(localizedPath('/', lang));
     }
   };
 
@@ -50,8 +51,8 @@ export default function Footer() {
     { label: lang === 'es' ? 'Equipo'       : 'Team',             action: () => goToSection('sobre-mi') },
     { label: t.nav.valores,                                        action: () => goToSection('valores') },
     { label: t.nav.servicios,                                      action: () => goToSection('servicios') },
-    { label: t.nav.blog,                                           action: () => navigate('/blog') },
-    { label: lang === 'es' ? 'Colecciones'  : 'Collections',      action: () => navigate('/colecciones') },
+    { label: t.nav.blog,                                           action: () => navigate(localizedPath('/blog', lang)) },
+    { label: lang === 'es' ? 'Colecciones'  : 'Collections',      action: () => navigate(localizedPath('/colecciones', lang)) },
     { label: lang === 'es' ? 'Casos y credenciales' : 'Cases & credentials', action: () => navigate('/casos') },
     { label: lang === 'es' ? 'Testimonios'  : 'Testimonials',     action: () => goToSection('testimonios') },
     { label: t.nav.contacto,                                       action: () => goToSection('contacto') },
@@ -133,14 +134,14 @@ export default function Footer() {
             <p>© {new Date().getFullYear()} TEXTUM — Mentoría Académica. {f.rights}</p>
             <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               <Link
-                to="/privacidad"
+                to={localizedPath('/privacidad', lang)}
                 className="text-white/45 hover:text-gold transition-colors"
               >
                 {lang === 'es' ? 'Privacidad' : 'Privacy'}
               </Link>
               <span className="text-white/20 hidden sm:inline" aria-hidden>|</span>
               <Link
-                to="/baja"
+                to={localizedPath('/baja', lang)}
                 className="text-white/45 hover:text-gold transition-colors"
               >
                 {lang === 'es' ? 'Baja de comunicaciones' : 'Unsubscribe'}

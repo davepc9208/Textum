@@ -56,7 +56,7 @@ function CurrencyBadge({ currency, loading }: { currency: 'USD' | 'EUR'; loading
 // Contexto de precio: ancla el valor antes de que el precio parezca caro
 function PriceAnchor({ lang }: { lang: 'es' | 'en' }) {
   return (
-    <p className="text-[10px] text-navy/30 font-light mt-1 leading-snug">
+    <p className="text-[10px] text-navy/75 font-light mt-1 leading-snug">
       {lang === 'es'
         ? 'Inversión única · Sin renovaciones ni cuotas'
         : 'One-time investment · No renewals or fees'}
@@ -330,7 +330,7 @@ export default function Services() {
         {/* Separador antes de Defensa */}
         <div className="flex items-center gap-4 mt-20 mb-14">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent to-navy/10" />
-          <p className="text-[10px] tracking-[0.3em] text-navy/60 uppercase px-4 whitespace-nowrap">
+          <p className="text-[10px] tracking-[0.3em] text-navy/90 uppercase px-4 whitespace-nowrap">
             {lang === 'es' ? 'Preparación de defensa' : 'Defence preparation'}
           </p>
           <div className="flex-1 h-px bg-gradient-to-l from-transparent to-navy/10" />
@@ -360,7 +360,7 @@ export default function Services() {
                   : (lang === 'es' ? 'SOLICITAR DIAGNÓSTICO GRATUITO' : 'REQUEST FREE DIAGNOSIS')}
               </span>
             </a>
-            <p className="text-[10px] text-navy/60 font-light">
+            <p className="text-[10px] text-navy/85 font-light">
               {lang === 'es'
                 ? 'Sin compromiso · Respuesta en menos de 24h'
                 : 'No commitment · Response within 24h'}

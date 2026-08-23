@@ -10,6 +10,7 @@
 
 import { useLang } from '../i18n/LangContext';
 import { useNavigate } from 'react-router-dom';
+import { localizedPath } from '../lib/locale';
 
 const content = {
   es: {
@@ -118,7 +119,7 @@ export default function BlogPreview() {
               </h3>
 
               {/* Descripción */}
-              <p className="text-xs text-white/45 leading-relaxed font-light flex-1 mb-6">
+              <p className="text-xs text-white/70 leading-relaxed font-light flex-1 mb-6">
                 {cat.desc}
               </p>
 
@@ -157,12 +158,12 @@ export default function BlogPreview() {
           <div className="inline-flex flex-col items-center gap-1">
             <button
               type="button"
-              onClick={() => navigate('/blog')}
+              onClick={() => navigate(localizedPath('/blog', lang))}
               className="btn-primary px-10 py-4 text-xs tracking-[0.18em] rounded-sm touch-manipulation"
             >
               <span>{c.cta}</span>
             </button>
-            <span className="text-white/30 text-[10px] tracking-wide font-light mt-1">
+            <span className="text-white/65 text-[10px] tracking-wide font-light mt-1">
               {c.ctaSub}
             </span>
           </div>

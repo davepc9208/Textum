@@ -38,7 +38,7 @@ function Toast({ type, message, onClose }: { type: 'success' | 'error'; message:
 }
 
 export default function Contact() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const c = t.contact;
   const f = c.form;
 
@@ -66,11 +66,11 @@ export default function Contact() {
     e.preventDefault();
     if (honeypot) return;
     if (!isValidEmail(form.email)) {
-      setToast({ type: 'error', message: 'Por favor introduce un correo electrónico válido.' });
+      setToast({ type: 'error', message: lang === 'es' ? 'Por favor introduce un correo electrónico válido.' : 'Please enter a valid email address.' });
       return;
     }
     if (turnstileConfigured && !turnstileToken) {
-      setToast({ type: 'error', message: 'Completa la verificación de seguridad.' });
+      setToast({ type: 'error', message: lang === 'es' ? 'Completa la verificación de seguridad.' : 'Complete the security check.' });
       return;
     }
     setLoading(true);
@@ -79,10 +79,10 @@ export default function Contact() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, turnstileToken }),
+        body: JSON.stringify({ ...form, turnstileToken, lang }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error desconocido');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || (lang === 'es' ? 'No se pudo enviar la solicitud.' : 'The request could not be sent.'));
       setSubmitted(true);
       setForm(EMPTY_FORM);
       trackConversion('diagnosis_request_submitted', { source: 'contact-form' });
@@ -176,18 +176,16 @@ export default function Contact() {
                     <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gold/10 border-2 border-gold/40 flex items-center justify-center animate-[scaleIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)_0.2s_both]">
                       <CheckCircle size={48} className="text-gold" />
                     </div>
-                    <h3 className="font-serif text-2xl text-navy mb-2">✓ Hemos recibido correctamente tu solicitud.</h3>
-                    <p className="text-navy/55 text-sm leading-relaxed mt-4">
-                      Uno de nuestros asesores contactará contigo en menos de 24 horas.
-                    </p>
-                    <p className="text-navy/30 text-xs mt-6 font-light border-t border-navy/10 pt-6">
-                      Mientras tanto puedes seguir explorando nuestros programas.
+                    <h3 className="font-serif text-2xl text-navy mb-2">{f.successTitle}</h3>
+                    <p className="text-navy/55 text-sm leading-relaxed mt-4">{f.successDesc}</p>
+                    <p className="text-navy/60 text-xs mt-6 font-light border-t border-navy/10 pt-6">
+                      {lang === 'es' ? 'Mientras tanto puedes seguir explorando nuestros programas.' : 'In the meantime, you can continue exploring our programmes.'}
                     </p>
                     <button
                       onClick={() => { setSubmitted(false); setForm(EMPTY_FORM); }}
-                      className="mt-6 text-navy/40 hover:text-navy text-xs tracking-[0.15em] transition-colors border border-navy/15 hover:border-navy/30 px-5 py-2 rounded-sm"
+                      className="mt-6 text-navy/65 hover:text-navy text-xs tracking-[0.15em] transition-colors border border-navy/15 hover:border-navy/30 px-5 py-2 rounded-sm"
                     >
-                      ENVIAR OTRA SOLICITUD
+                      {f.another}
                     </button>
                   </div>
                 </div>

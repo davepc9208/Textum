@@ -9,6 +9,8 @@ import { useSEO } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BackToTop from '../components/BackToTop';
+import { PageError, PageSkeleton } from '../components/AsyncState';
+import { localizedPath } from '../lib/locale';
 
 const COLLECTIONS = {
   es: [
@@ -94,6 +96,8 @@ export default function ColeccionesPage() {
 
   const [counts, setCounts]               = useState<Record<string, number>>({});
   const [loadingCounts, setLoadingCounts] = useState(true);
+  const [loadError, setLoadError]         = useState(false);
+  const [reloadKey, setReloadKey]         = useState(0);
 
   useSEO({
     title: lang === 'es'
@@ -108,20 +112,31 @@ export default function ColeccionesPage() {
   });
 
   useEffect(() => {
-    supabase
+    Promise.resolve(supabase
       .from('posts')
       .select('collection_type')
       .eq('published', true)
       .not('collection_type', 'is', null)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          setLoadError(true);
+          setLoadingCounts(false);
+          return;
+        }
         const c: Record<string, number> = {};
         (data ?? []).forEach(row => {
           if (row.collection_type) c[row.collection_type] = (c[row.collection_type] ?? 0) + 1;
         });
         setCounts(c);
+        setLoadError(false);
+        setLoadingCounts(false);
+      })
+      )
+      .catch(() => {
+        setLoadError(true);
         setLoadingCounts(false);
       });
-  }, []);
+  }, [reloadKey]);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -170,13 +185,23 @@ export default function ColeccionesPage() {
         {/* Etiqueta de estructura */}
         <div className="flex items-center gap-4 mb-14">
           <div className="w-12 h-px bg-gradient-to-r from-transparent to-gold/50" />
-          <p className="text-[10px] tracking-[0.35em] text-navy/30 uppercase">
+          <p className="text-[10px] tracking-[0.35em] text-navy/75 uppercase">
             {s.structureLabel}
           </p>
           <div className="flex-1 h-px bg-gradient-to-l from-transparent via-navy/10 to-transparent" />
         </div>
 
         {/* Cards */}
+        {loadingCounts && !loadError ? (
+          <PageSkeleton cards={3} />
+        ) : loadError ? (
+          <PageError
+            title={lang === 'es' ? 'No se pudo cargar la colección' : 'The collection could not be loaded'}
+            description={lang === 'es' ? 'Comprueba tu conexión e inténtalo de nuevo.' : 'Check your connection and try again.'}
+            retry={() => { setLoadError(false); setLoadingCounts(true); setReloadKey(value => value + 1); }}
+            retryLabel={lang === 'es' ? 'Intentar de nuevo' : 'Try again'}
+          />
+        ) : (
         <div className="space-y-4">
           {cols.map((col) => {
             const count = counts[col.type] ?? 0;
@@ -184,7 +209,7 @@ export default function ColeccionesPage() {
               <button
                 key={col.type}
                 type="button"
-                onClick={() => navigate(`/colecciones/${col.type}`)}
+                onClick={() => navigate(localizedPath(`/colecciones/${col.type}`, lang))}
                 className="group flex w-full text-left rounded-sm bg-white border border-navy/8 hover:border-gold/30 hover:shadow-lg transition-all duration-300 overflow-hidden"
               >
                 {/* Franja lateral — style inline para evitar purga de Tailwind */}
@@ -200,7 +225,7 @@ export default function ColeccionesPage() {
 
                   {/* Código */}
                   <div className="flex-shrink-0 sm:w-20 text-center">
-                    <span className="font-mono text-xl font-light text-navy/25 tracking-widest">
+                    <span className="font-mono text-xl font-light text-navy/65 tracking-widest">
                       {col.code}
                     </span>
                   </div>
@@ -220,7 +245,7 @@ export default function ColeccionesPage() {
 
                   {/* CTA */}
                   <div className="flex-shrink-0 flex flex-col items-end gap-2">
-                    <span className="text-xs text-navy/30 font-light">
+                    <span className="text-xs text-navy/70 font-light">
                       {loadingCounts ? '—' : count > 0 ? `${count} ${s.pieces}` : s.soon}
                     </span>
                     <span className="inline-flex items-center gap-2 text-xs tracking-[0.15em] text-gold border border-gold/30 px-4 py-2 rounded-sm group-hover:bg-gold group-hover:text-navy transition-all duration-200 whitespace-nowrap">
@@ -237,6 +262,7 @@ export default function ColeccionesPage() {
             );
           })}
         </div>
+        )}
 
         {/* Cita del sistema metodológico */}
         <div className="mt-16 glass-cream rounded-sm p-8 border border-gold/15 shadow-sm">
@@ -251,7 +277,7 @@ export default function ColeccionesPage() {
             <div className="w-8 h-px bg-gold/40" />
             <p className="text-xs tracking-[0.2em] text-gold/60 uppercase">{s.brand}</p>
           </div>
-          <p className="text-xs text-navy/35 font-light leading-relaxed">{s.intro3}</p>
+          <p className="text-xs text-navy/65 font-light leading-relaxed">{s.intro3}</p>
         </div>
 
       </div>

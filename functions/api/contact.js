@@ -38,26 +38,25 @@ export async function onRequestPost(context) {
       return jsonResponse({ error: 'Body inválido.' }, 400, request, env, requestId);
     }
 
-    const { name, email, service, message, turnstileToken } = body;
+    const { name, email, service, message, turnstileToken, lang } = body;
+    const english = lang === 'en';
 
     if (!validateText(name, { min: 2, max: 120 })
       || !validateText(email, { min: 3, max: 254 })
       || !validateText(message, { min: 5, max: 5000 })
-      || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
-      return new Response(
-        JSON.stringify({ error: 'Faltan campos obligatorios.' }),
+      || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {return new Response(JSON.stringify({ error: english ? 'Required fields are missing.' : 'Faltan campos obligatorios.' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     const captcha = await verifyTurnstile(turnstileToken, request, env);
     if (!captcha.ok) {
-      return jsonResponse({ error: 'Completa la verificación de seguridad e inténtalo de nuevo.' }, 403, request, env, requestId);
+      return jsonResponse({ error: english ? 'Complete the security check and try again.' : 'Completa la verificación de seguridad e inténtalo de nuevo.' }, 403, request, env, requestId);
     }
 
     if (!env.RESEND_API_KEY) {
       log('error', 'contact.configuration_missing', { requestId });
-      return jsonResponse({ error: 'Servicio de correo no configurado.' }, 503, request, env, requestId);
+      return jsonResponse({ error: english ? 'Email service is not configured.' : 'Servicio de correo no configurado.' }, 503, request, env, requestId);
     }
 
     const res = await fetchWithRetry('https://api.resend.com/emails', {
@@ -86,7 +85,7 @@ export async function onRequestPost(context) {
       const error = await res.json().catch(() => ({}));
       log('error', 'contact.email_failed', { requestId, status: res.status, error });
       return new Response(
-        JSON.stringify({ error: 'No se pudo enviar el correo. Inténtalo de nuevo.' }),
+        JSON.stringify({ error: english ? 'The email could not be sent. Please try again.' : 'No se pudo enviar el correo. Inténtalo de nuevo.' }),
         { status: 502, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -99,7 +98,7 @@ export async function onRequestPost(context) {
   } catch (err) {
     log('error', 'contact.failed', { requestId, message: err instanceof Error ? err.message : String(err) });
     return new Response(
-      JSON.stringify({ error: 'Error del servidor. Inténtalo de nuevo más tarde.' }),
+      JSON.stringify({ error: english ? 'Server error. Please try again later.' : 'Error del servidor. Inténtalo de nuevo más tarde.' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

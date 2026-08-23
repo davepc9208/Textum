@@ -45,32 +45,6 @@ export default defineConfig({
         target: 'http://localhost:8888',
         changeOrigin: true,
       },
-      '/cdn-cgi/trace': {
-        target: 'http://localhost:8888',
-        changeOrigin: true,
-        bypass(req, res) {
-          res.setHeader('Content-Type', 'text/plain');
-          res.end(
-            'fl=123abc\n' +
-            'h=mentoriatextum.com\n' +
-            'ip=1.2.3.4\n' +
-            'ts=1700000000.000\n' +
-            'visit_scheme=https\n' +
-            'uag=Mozilla/5.0\n' +
-            'colo=MAD\n' +
-            'sliver=none\n' +
-            'http=http/2\n' +
-            'loc=ES\n' +
-            'tls=TLSv1.3\n' +
-            'sni=plaintext\n' +
-            'warp=off\n' +
-            'gateway=off\n' +
-            'rbi=off\n' +
-            'kex=X25519\n'
-          );
-          return false;
-        },
-      },
     },
   },
   build: {

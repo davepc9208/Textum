@@ -10,6 +10,8 @@ import { useSEO } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BackToTop from '../components/BackToTop';
+import { localizedPath } from '../lib/locale';
+import { PageError, PageSkeleton } from '../components/AsyncState';
 
 type CollectionType = 'principio' | 'categoria' | 'herramienta';
 
@@ -28,6 +30,8 @@ export default function ColeccionListPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const collectionType = tipo as CollectionType;
   const meta = META[collectionType]?.[lang];
@@ -45,13 +49,14 @@ export default function ColeccionListPage() {
 
   useEffect(() => {
     if (!collectionType || !META[collectionType]) {
-      navigate('/colecciones');
+      navigate(localizedPath('/colecciones', lang));
       return;
     }
     let cancelled = false;
     setLoading(true);
     setPosts([]);
     setHasMore(false);
+    setLoadError(false);
 
     const loadFirstPage = async () => {
       const { data, error } = await supabase
@@ -65,12 +70,13 @@ export default function ColeccionListPage() {
       if (cancelled) return;
       setPosts(error ? [] : (data as unknown as Post[] ?? []));
       setHasMore(!error && (data?.length ?? 0) === 10);
+      setLoadError(Boolean(error));
       setLoading(false);
     };
 
     loadFirstPage();
     return () => { cancelled = true; };
-  }, [collectionType, navigate]);
+  }, [collectionType, navigate, reloadKey, lang]);
 
   const loadMore = async () => {
     const last = posts[posts.length - 1];
@@ -108,7 +114,7 @@ export default function ColeccionListPage() {
         <div className="orb orb-gold w-[400px] h-[400px] top-[-60px] right-[-60px] opacity-10" />
         <div className="max-w-4xl mx-auto relative z-10">
           <Link
-            to="/colecciones"
+            to={localizedPath('/colecciones', lang)}
             className="inline-flex items-center gap-2 text-gold/60 text-xs tracking-widest hover:text-gold transition-colors mb-8"
           >
             <ArrowLeft size={13} />
@@ -135,18 +141,20 @@ export default function ColeccionListPage() {
       {/* Contenido */}
       <div className="max-w-5xl mx-auto px-6 py-16">
         {loading ? (
-          <div className="flex justify-center py-20">
-            <svg className="animate-spin w-8 h-8 text-gold" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3"/>
-              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </div>
+          <PageSkeleton cards={3} />
+        ) : loadError ? (
+          <PageError
+            title={lang === 'es' ? 'No se pudo cargar la colección' : 'The collection could not be loaded'}
+            description={lang === 'es' ? 'Comprueba tu conexión e inténtalo de nuevo. El contenido volverá a estar disponible cuando el servicio se recupere.' : 'Check your connection and try again. The content will be available when the service recovers.'}
+            retry={() => setReloadKey(value => value + 1)}
+            retryLabel={lang === 'es' ? 'Intentar de nuevo' : 'Try again'}
+          />
         ) : posts.length === 0 ? (
           <div className="text-center py-24 border border-dashed border-navy/10 rounded-sm">
-            <p className="font-serif text-2xl text-navy/30 italic mb-2">
+            <p className="font-serif text-2xl text-navy/65 italic mb-2">
               {lang === 'es' ? 'Próximamente' : 'Coming soon'}
             </p>
-            <p className="text-sm text-navy/30 font-light">
+            <p className="text-sm text-navy/70 font-light">
               {lang === 'es'
                 ? 'Estamos preparando el contenido de esta colección.'
                 : 'We are preparing the content for this collection.'}
@@ -157,7 +165,7 @@ export default function ColeccionListPage() {
             {posts.map((post, i) => (
               <Link
                 key={post.id}
-                to={`/colecciones/${collectionType}/${post.slug}`}
+                to={localizedPath(`/colecciones/${collectionType}/${post.slug}`, lang)}
                 className="group flex flex-col md:flex-row gap-6 bg-white border border-navy/8 rounded-sm p-6 md:p-8 hover:border-gold/30 hover:shadow-lg transition-all duration-300"
               >
                 {/* Número de pieza */}

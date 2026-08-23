@@ -16,6 +16,8 @@ import RelatedPosts from '../components/RelatedPosts';
 import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 import { sanitizeHtml } from '../lib/sanitize';
+import { localizedPath, localizedUrl } from '../lib/locale';
+import { PageError, PageSkeleton } from '../components/AsyncState';
 import { NotFoundContent } from './NotFoundPage';
 
 const SITE_URL = 'https://www.mentoriatextum.com';
@@ -59,6 +61,8 @@ export default function PostPage() {
   const b = t.blog;
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -83,24 +87,36 @@ export default function PostPage() {
 
   useEffect(() => {
     if (!slug) return;
-    supabase
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(false);
+    Promise.resolve(supabase
       .from('posts')
       .select('*')
       .eq('slug', slug)
       .eq('published', true)
-      .single()
-      .then(({ data }) => {
+      .single())
+      .then(({ data, error }) => {
+        if (cancelled) return;
         setPost(data);
+        setLoadError(Boolean(error));
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPost(null);
+        setLoadError(true);
         setLoading(false);
       });
-  }, [slug]);
+    return () => { cancelled = true; };
+  }, [slug, reloadKey]);
 
   const postTitle   = post ? (lang === 'es' ? post.title_es   : post.title_en)   : '';
   const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
   const content     = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
 
   // URL canónica del artículo — usada en SEO, ShareCard y ShareButtons
-  const canonicalUrl = post ? `${SITE_URL}/blog/${post.slug}` : undefined;
+  const canonicalUrl = post ? localizedUrl(`/blog/${post.slug}`, lang) : undefined;
 
   useSEO(post ? {
     title: `${postTitle} — TEXTUM Mentoría Académica`,
@@ -187,11 +203,15 @@ export default function PostPage() {
       <Navbar />
 
       {loading ? (
-        <div className="flex justify-center items-center min-h-screen">
-          <svg className="animate-spin w-8 h-8 text-gold" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+        <div className="max-w-3xl mx-auto px-6 py-20"><PageSkeleton cards={1} /></div>
+      ) : loadError ? (
+        <div className="max-w-3xl mx-auto px-6 py-20">
+          <PageError
+            title={lang === 'es' ? 'No se pudo cargar el artículo' : 'The article could not be loaded'}
+            description={lang === 'es' ? 'Comprueba tu conexión e inténtalo de nuevo.' : 'Check your connection and try again.'}
+            retry={() => setReloadKey(value => value + 1)}
+            retryLabel={lang === 'es' ? 'Intentar de nuevo' : 'Try again'}
+          />
         </div>
       ) : !post ? (
         <NotFoundContent />
@@ -216,7 +236,7 @@ export default function PostPage() {
 
           <div className="max-w-3xl mx-auto px-6 py-16">
             <Link
-              to="/blog"
+              to={localizedPath('/blog', lang)}
               className="inline-flex items-center gap-2 text-gold text-sm mb-10 hover:gap-3 transition-all duration-200"
             >
               <ArrowLeft size={14} />
@@ -282,7 +302,7 @@ export default function PostPage() {
 
             <div className="mt-16 pt-8 border-t border-navy/10">
               <Link
-                to="/blog"
+                to={localizedPath('/blog', lang)}
                 className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200"
               >
                 <ArrowLeft size={14} />

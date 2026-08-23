@@ -152,7 +152,7 @@ export default function AcademicIntegrity() {
               {/* Línea de cierre */}
               <div className="mt-8 pt-6 border-t border-navy/8 flex items-center gap-3">
                 <div className="w-6 h-px bg-gold/40" />
-                <p className="text-xs text-navy/40 font-light italic leading-relaxed">
+                <p className="text-xs text-navy/70 font-light italic leading-relaxed">
                   {lang === 'es'
                     ? 'Alineados con los estándares de calidad académica de América Latina y Europa.'
                     : 'Aligned with academic quality standards across Latin America and Europe.'}

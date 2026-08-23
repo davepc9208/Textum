@@ -15,16 +15,9 @@
 // FIX 4: guessFromTimezone() ahora también cubre zonas horarias de Canarias y
 //         territorios de ultramar europeos que usan EUR.
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export type Currency = 'USD' | 'EUR';
-
-const EUR_COUNTRIES = new Set([
-  'AT','BE','CY','EE','FI','FR','DE','GR','IE','IT','LV','LT','LU',
-  'MT','NL','PT','SK','SI','ES',
-  'GB','CH','SE','NO','DK','PL','CZ','HU','RO','BG','HR','RS','BA',
-  'ME','MK','AL','AD','MC','SM','XK','LI','IS',
-]);
 
 const EUR_TZ_PREFIXES = ['Europe/', 'Atlantic/'];
 
@@ -46,12 +39,6 @@ function readCache(): Currency | null {
   } catch { return null; }
 }
 
-function writeCache(currency: Currency) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ currency, timestamp: Date.now() }));
-  } catch { /* storage lleno — ignorar */ }
-}
-
 function guessFromTimezone(): Currency {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
@@ -59,90 +46,11 @@ function guessFromTimezone(): Currency {
   } catch { return 'USD'; }
 }
 
-function parseTrace(text: string): Record<string, string> {
-  return Object.fromEntries(
-    text.trim().split('\n')
-      .map(l => l.split('='))
-      .filter(parts => parts.length === 2)
-  );
-}
-
 export function useCurrency(): { currency: Currency; loading: boolean } {
-  const [currency, setCurrency] = useState<Currency>(() => {
+  const [currency] = useState<Currency>(() => {
     return readCache() ?? guessFromTimezone();
   });
-  const [loading, setLoading] = useState(() => readCache() === null);
-
-  useEffect(() => {
-    // Si ya tenemos cache válido, no hacemos nada
-    if (readCache() !== null) {
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    let idleId: number | ReturnType<typeof setTimeout> | null = null;
-
-    const doFetch = () => {
-      if (cancelled) return;
-
-      const controller = new AbortController();
-      // FIX 2: timeout de 3s, abort limpio
-      const timer = setTimeout(() => controller.abort(), 3000);
-
-      // FIX 1: force-cache evita que el navegador haga dos peticiones
-      // si /cdn-cgi/trace ya está en la caché HTTP del navegador
-      fetch('/cdn-cgi/trace', {
-        signal: controller.signal,
-        cache: 'force-cache',
-      })
-        .then(r => r.text())
-        .then(text => {
-          clearTimeout(timer);
-          if (cancelled) return;
-          const parsed = parseTrace(text);
-          const countryCode = parsed['loc'] ?? '';
-          const detected: Currency = EUR_COUNTRIES.has(countryCode) ? 'EUR' : 'USD';
-          writeCache(detected);
-          setCurrency(detected);
-          setLoading(false);
-        })
-        .catch(() => {
-          clearTimeout(timer);
-          if (cancelled) return;
-          // Si falla, usamos el valor del timezone que ya está en el estado
-          setLoading(false);
-        });
-    };
-
-    // La moneda es una mejora secundaria: no debe competir con el primer render.
-    // Esperamos a que termine la carga inicial antes de consultar Cloudflare.
-    let scheduled = false;
-    const scheduleFetch = () => {
-      if (scheduled || cancelled) return;
-      scheduled = true;
-      if ('requestIdleCallback' in window) {
-        idleId = requestIdleCallback(doFetch, { timeout: 3000 });
-      } else {
-        idleId = setTimeout(doFetch, 2000);
-      }
-    };
-
-    if (document.readyState === 'complete') scheduleFetch();
-    else window.addEventListener('load', scheduleFetch, { once: true });
-
-    return () => {
-      cancelled = true;
-      window.removeEventListener('load', scheduleFetch);
-      if (idleId !== null) {
-        if ('requestIdleCallback' in window && typeof idleId === 'number') {
-          cancelIdleCallback(idleId);
-        } else {
-          clearTimeout(idleId as ReturnType<typeof setTimeout>);
-        }
-      }
-    };
-  }, []);
+  const [loading] = useState(false);
 
   return { currency, loading };
 }

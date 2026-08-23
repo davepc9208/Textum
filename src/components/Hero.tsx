@@ -190,7 +190,7 @@ export default function Hero() {
             <span>{h.cta1}</span>
           </a>
           {cta1Micro && (
-            <p className="text-white/30 text-[10px] tracking-wide font-light max-w-[260px] text-center leading-snug mt-1">
+            <p className="text-white/65 text-[10px] tracking-wide font-light max-w-[260px] text-center leading-snug mt-1">
               {cta1Micro}
             </p>
           )}

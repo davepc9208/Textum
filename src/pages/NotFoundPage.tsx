@@ -4,6 +4,7 @@ import { useLang } from '../i18n/LangContext';
 import { useSEO } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { localizedPath } from '../lib/locale';
 
 const COPY = {
   es: {
@@ -44,11 +45,11 @@ export function NotFoundContent() {
           {copy.description}
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link to="/" className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-xs tracking-widest rounded-sm">
+          <Link to={localizedPath('/', lang)} className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-xs tracking-widest rounded-sm">
             <Home size={14} aria-hidden="true" />
             <span>{copy.home}</span>
           </Link>
-          <Link to="/blog" className="inline-flex items-center gap-2 px-6 py-3 text-xs tracking-widest rounded-sm border border-navy/20 text-navy/65 hover:border-gold/50 hover:text-navy transition-colors">
+          <Link to={localizedPath('/blog', lang)} className="inline-flex items-center gap-2 px-6 py-3 text-xs tracking-widest rounded-sm border border-navy/20 text-navy/65 hover:border-gold/50 hover:text-navy transition-colors">
             <BookOpen size={14} aria-hidden="true" />
             {copy.blog}
           </Link>

@@ -95,6 +95,13 @@ function formatDate(isoString) {
   return isoString.slice(0, 10);
 }
 
+function localizedUrl(path, lang) {
+  const url = new URL(path, SITE_URL);
+  if (lang === 'en') url.searchParams.set('lang', 'en');
+  else url.searchParams.delete('lang');
+  return url.toString();
+}
+
 function detectLang(request, post) {
   // Detectar idioma del post según Accept-Language o parámetro
   const url = new URL(request.url);
@@ -127,7 +134,7 @@ function notFoundResponse(request) {
 }
 
 async function fetchPost(supabaseUrl, supabaseKey, slug) {
-  const url = `${supabaseUrl}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&published=eq.true&select=*&limit=1`;
+  const url = `${supabaseUrl}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&published=eq.true&collection_type=is.null&select=*&limit=1`;
   const cache = typeof caches !== 'undefined' ? caches.default : null;
   const cacheKey = new Request(url, { method: 'GET' });
 
@@ -166,7 +173,9 @@ function buildHtml(post, lang, slug) {
   const content = lang === 'en' ? (post.content_en || post.content_es) : post.content_es;
   const keywords = lang === 'en' ? (post.keywords_en || post.keywords_es || '') : (post.keywords_es || '');
 
-  const canonicalUrl = `${SITE_URL}/blog/${slug}`;
+  const canonicalUrl = localizedUrl(`/blog/${slug}`, lang);
+  const esUrl = localizedUrl(`/blog/${slug}`, 'es');
+  const enUrl = localizedUrl(`/blog/${slug}`, 'en');
   const ogImage = post.cover_url || DEFAULT_OG_IMAGE;
   const ogImageAlt = post.cover_alt || title;
   const publishedDate = formatDate(post.created_at);
@@ -215,7 +224,7 @@ function buildHtml(post, lang, slug) {
         '@type': 'ListItem',
         position: 1,
         name: 'Blog',
-        item: `${SITE_URL}/blog`,
+        item: localizedUrl('/blog', lang),
       },
       {
         '@type': 'ListItem',
@@ -268,9 +277,9 @@ function buildHtml(post, lang, slug) {
   <meta name="twitter:image:alt" content="${escapeHtml(ogImageAlt)}" />
 
   <!-- Hreflang -->
-  <link rel="alternate" hreflang="es" href="${canonicalUrl}" />
-  <link rel="alternate" hreflang="en" href="${canonicalUrl}?lang=en" />
-  <link rel="alternate" hreflang="x-default" href="${canonicalUrl}" />
+  <link rel="alternate" hreflang="es" href="${esUrl}" />
+  <link rel="alternate" hreflang="en" href="${enUrl}" />
+  <link rel="alternate" hreflang="x-default" href="${esUrl}" />
 
   <!-- JSON-LD Schemas -->
   <script type="application/ld+json">${articleSchema}</script>
@@ -343,9 +352,7 @@ function buildHtml(post, lang, slug) {
 
     <div itemprop="articleBody">
       ${articleBodyHtml}
-    </div>
-
-    <a href="${SITE_URL}/#contacto" class="cta">
+    </div>      <a href="${localizedUrl('/#contacto', lang)}" class="cta">
       ${lang === 'en'
         ? 'Book a free academic diagnosis'
         : 'Solicitar diagnóstico académico gratuito'}
@@ -356,9 +363,9 @@ function buildHtml(post, lang, slug) {
   <footer>
     <p>&copy; ${new Date().getFullYear()} ${SITE_NAME}</p>
     <p>
-      <a href="${SITE_URL}/blog">${lang === 'en' ? 'Back to Blog' : 'Volver al Blog'}</a>
+      <a href="${localizedUrl('/blog', lang)}">${lang === 'en' ? 'Back to Blog' : 'Volver al Blog'}</a>
       &nbsp;&middot;&nbsp;
-      <a href="${SITE_URL}/#contacto">${lang === 'en' ? 'Contact' : 'Contacto'}</a>
+      <a href="${localizedUrl('/#contacto', lang)}">${lang === 'en' ? 'Contact' : 'Contacto'}</a>
     </p>
   </footer>
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TURNSTILE_SITE_KEY } from '../lib/turnstile';
 
 const siteKey = TURNSTILE_SITE_KEY;
@@ -46,9 +46,29 @@ function loadTurnstile() {
 export default function TurnstileWidget({ onToken }: { onToken: (token: string) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!siteKey || !containerRef.current) return;
+    if (!('IntersectionObserver' in window)) {
+      setReady(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setReady(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '300px 0px' }
+    );
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!siteKey || !ready || !containerRef.current) return;
     let active = true;
     loadTurnstile()
       .then(() => {
@@ -69,7 +89,7 @@ export default function TurnstileWidget({ onToken }: { onToken: (token: string) 
       }
       widgetRef.current = null;
     };
-  }, [onToken]);
+  }, [onToken, ready]);
 
   if (!siteKey) return null;
   return <div ref={containerRef} className="min-h-[65px]" role="group" aria-label="Verificación de seguridad" />;

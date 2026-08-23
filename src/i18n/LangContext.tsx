@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Lang, translations, Translations } from './translations';
+import { getLocaleFromUrl, localizedPath } from '../lib/locale';
 
 interface LangContextType {
   lang: Lang;
@@ -18,6 +19,9 @@ const CONTENT_SWAP_MS = 350;
 const LANG_STORAGE_KEY = 'textum_lang';
 
 function getInitialLang(): Lang {
+  const fromUrl = getLocaleFromUrl();
+  if (fromUrl) return fromUrl;
+
   try {
     const saved = localStorage.getItem(LANG_STORAGE_KEY);
     if (saved === 'es' || saved === 'en') return saved;
@@ -35,6 +39,14 @@ export function LangProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(LANG_STORAGE_KEY, lang);
     } catch { /* ignorar si storage no disponible */ }
+
+    if (typeof window !== 'undefined') {
+      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      const normalized = localizedPath(current, lang);
+      if (normalized !== current) {
+        window.history.replaceState(window.history.state, '', normalized);
+      }
+    }
   }, [lang]);
 
   const setLang = (l: Lang) => {
@@ -43,6 +55,8 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
     window.setTimeout(() => {
       setLangState(l);
+      const nextUrl = localizedPath(window.location.pathname + window.location.search + window.location.hash, l);
+      window.history.replaceState(window.history.state, '', nextUrl);
     }, CONTENT_SWAP_MS);
 
     window.setTimeout(() => {

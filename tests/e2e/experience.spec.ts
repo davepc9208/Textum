@@ -142,6 +142,26 @@ test.describe('accessibility patterns', () => {
     await expect(form.getByLabel(/mensaje breve/i)).toBeVisible();
   });
 
+  test('keeps the homepage usable on a narrow mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await openHome(page);
+
+    const layout = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      documentWidth: document.documentElement.scrollWidth,
+    }));
+    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewport + 1);
+
+    const interactive = page.locator('button, a, input, select, textarea');
+    const count = await interactive.count();
+    for (let index = 0; index < count; index += 1) {
+      const box = await interactive.nth(index).boundingBox();
+      if (box && box.width > 0 && box.height > 0) {
+        expect(box.x + box.width).toBeLessThanOrEqual(layout.viewport + 1);
+      }
+    }
+  });
+
   test('provides a skip link and keeps the hidden sticky CTA out of keyboard navigation', async ({ page }) => {
     await openHome(page);
     const skipLink = page.getByRole('link', { name: /saltar al contenido principal/i });

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLang } from '../i18n/LangContext';
+import { localizedPath } from '../lib/locale';
 
 type AnchorItem = { href: string; label: string };
 type RouteItem = { type: 'blog' | 'colecciones'; label: string };
@@ -56,7 +57,7 @@ export default function Navbar() {
     if (isHome) {
       document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
-      window.location.href = '/' + href;
+      window.location.href = localizedPath('/' + href, lang);
     }
   };
 
@@ -65,7 +66,7 @@ export default function Navbar() {
     if (isHome) {
       document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
-      window.location.href = '/#contacto';
+      window.location.href = localizedPath('/#contacto', lang);
     }
   };
 
@@ -79,7 +80,7 @@ export default function Navbar() {
       return (
         <li key={`blog-${index}`}>
           <Link
-            to="/blog"
+            to={localizedPath('/blog', lang)}
             className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
               location.pathname.startsWith('/blog') ? 'text-gold active' : 'text-white/80 hover:text-white'
             }`}
@@ -93,7 +94,7 @@ export default function Navbar() {
       return (
         <li key={`colecciones-${index}`}>
           <Link
-            to="/colecciones"
+            to={localizedPath('/colecciones', lang)}
             className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
               location.pathname.startsWith('/colecciones') ? 'text-gold active' : 'text-white/80 hover:text-white'
             }`}
@@ -124,7 +125,7 @@ export default function Navbar() {
   const renderMobileNavItem = (item: NavItem, index: number) => {
     if ('type' in item && item.type === 'blog') {
       return (
-        <Link key={`mobile-blog-${index}`} to="/blog" onClick={() => setOpen(false)}
+        <Link key={`mobile-blog-${index}`} to={localizedPath('/blog', lang)} onClick={() => setOpen(false)}
           className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation">
           {item.label.toUpperCase()}
         </Link>
@@ -132,7 +133,7 @@ export default function Navbar() {
     }
     if ('type' in item && item.type === 'colecciones') {
       return (
-        <Link key={`mobile-colecciones-${index}`} to="/colecciones" onClick={() => setOpen(false)}
+        <Link key={`mobile-colecciones-${index}`} to={localizedPath('/colecciones', lang)} onClick={() => setOpen(false)}
           className={`block py-3 text-sm tracking-widest transition-colors touch-manipulation ${
             location.pathname.startsWith('/colecciones') ? 'text-gold' : 'text-white/80 hover:text-gold active:text-gold'
           }`}>
@@ -156,7 +157,7 @@ export default function Navbar() {
       scrolled ? 'glass-navy py-3 shadow-[0_4px_30px_rgba(0,0,0,0.25)]' : 'bg-transparent py-5'
     }`}>
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
+        <Link to={localizedPath('/', lang)} className="flex items-center gap-3 group flex-shrink-0">
           <div className="relative w-8 h-8">
             <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
               <text x="2" y="32" fontFamily="Cormorant Garamond, serif" fontSize="34" fontWeight="600" fill="#c9a84c">T</text>

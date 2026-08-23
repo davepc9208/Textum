@@ -15,6 +15,8 @@ import ShareButtons from '../components/ShareButtons';
 import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 import { NotFoundContent } from './NotFoundPage';
+import { localizedPath, localizedUrl } from '../lib/locale';
+import { PageError, PageSkeleton } from '../components/AsyncState';
 
 
 const SITE_URL = 'https://www.mentoriatextum.com';
@@ -47,6 +49,8 @@ export default function ColeccionPiecePage() {
   const { lang, t } = useLang();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -68,14 +72,17 @@ export default function ColeccionPiecePage() {
 
   useEffect(() => {
     if (!slug) return;
-    supabase.from('posts').select('*').eq('slug', slug).eq('published', true).single()
-      .then(({ data }) => { setPost(data); setLoading(false); });
-  }, [slug]);
+    setLoading(true);
+    setLoadError(false);
+    Promise.resolve(supabase.from('posts').select('*').eq('slug', slug).eq('published', true).single())
+      .then(({ data, error }) => { setPost(data); setLoadError(Boolean(error)); setLoading(false); })
+      .catch(() => { setPost(null); setLoadError(true); setLoading(false); });
+  }, [slug, reloadKey]);
 
   const postTitle   = post ? (lang === 'es' ? post.title_es   : post.title_en)   : '';
   const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
   const content     = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
-  const canonicalUrl = post ? `${SITE_URL}/colecciones/${tipo}/${post.slug}` : undefined;
+  const canonicalUrl = post ? localizedUrl(`/colecciones/${tipo}/${post.slug}`, lang) : undefined;
   const typeLabel = tipo ? (TYPE_LABELS[tipo]?.[lang] ?? '') : '';
 
   useSEO(post ? {
@@ -100,15 +107,15 @@ export default function ColeccionPiecePage() {
       datePublished: post.created_at,
       author: { '@type': 'Person', name: post.author },
       publisher: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica', logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.svg` } },
-      mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}/colecciones/${tipo}/${post.slug}` },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': localizedUrl(`/colecciones/${tipo}/${post.slug}`, lang) },
     }, 'schema-coleccion-piece');
     injectSchema({
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Colecciones', item: `${SITE_URL}/colecciones` },
-        { '@type': 'ListItem', position: 2, name: typeLabel,     item: `${SITE_URL}/colecciones/${tipo}` },
-        { '@type': 'ListItem', position: 3, name: postTitle,     item: `${SITE_URL}/colecciones/${tipo}/${post.slug}` },
+        { '@type': 'ListItem', position: 1, name: lang === 'es' ? 'Colecciones' : 'Collections', item: localizedUrl('/colecciones', lang) },
+        { '@type': 'ListItem', position: 2, name: typeLabel,     item: localizedUrl(`/colecciones/${tipo}`, lang) },
+        { '@type': 'ListItem', position: 3, name: postTitle,     item: localizedUrl(`/colecciones/${tipo}/${post.slug}`, lang) },
       ],
     }, 'schema-coleccion-breadcrumb');
     return () => { removeSchema('schema-coleccion-piece'); removeSchema('schema-coleccion-breadcrumb'); };
@@ -119,11 +126,15 @@ export default function ColeccionPiecePage() {
       <Navbar />
 
       {loading ? (
-        <div className="flex justify-center items-center min-h-screen">
-          <svg className="animate-spin w-8 h-8 text-gold" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3"/>
-            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+        <div className="max-w-3xl mx-auto px-6 py-20"><PageSkeleton cards={1} /></div>
+      ) : loadError ? (
+        <div className="max-w-3xl mx-auto px-6 py-20">
+          <PageError
+            title={lang === 'es' ? 'No se pudo cargar el documento' : 'The document could not be loaded'}
+            description={lang === 'es' ? 'Comprueba tu conexión e inténtalo de nuevo.' : 'Check your connection and try again.'}
+            retry={() => setReloadKey(value => value + 1)}
+            retryLabel={lang === 'es' ? 'Intentar de nuevo' : 'Try again'}
+          />
         </div>
       ) : !post ? (
         <NotFoundContent />
@@ -147,11 +158,11 @@ export default function ColeccionPiecePage() {
           <div className="max-w-3xl mx-auto px-6 py-16">
             {/* Breadcrumb */}
             <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-navy/35 mb-10">
-              <Link to="/colecciones" className="hover:text-gold transition-colors">
+              <Link to={localizedPath('/colecciones', lang)} className="hover:text-gold transition-colors">
                 {lang === 'es' ? 'Colecciones' : 'Collections'}
               </Link>
               <span aria-hidden="true">/</span>
-              <Link to={`/colecciones/${tipo}`} className="hover:text-gold transition-colors">
+              <Link to={localizedPath(`/colecciones/${tipo}`, lang)} className="hover:text-gold transition-colors">
                 {typeLabel}
               </Link>
               <span aria-hidden="true">/</span>
@@ -222,7 +233,7 @@ export default function ColeccionPiecePage() {
       : 'Ready-to-cite format for printing and offline use (includes QR and APA reference).'}
   </p>
   <Link
-    to={`/colecciones/${tipo}/${slug}/descargar`}
+    to={localizedPath(`/colecciones/${tipo}/${slug}/descargar`, lang)}
     className="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-cream text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
   >
     <Download size={15} />
@@ -234,7 +245,7 @@ export default function ColeccionPiecePage() {
             <WhatsAppCTA />
 
             <div className="mt-10 pt-8 border-t border-navy/10">
-              <Link to={`/colecciones/${tipo}`} className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200">
+              <Link to={localizedPath(`/colecciones/${tipo}`, lang)} className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200">
                 <ArrowLeft size={14} aria-hidden="true" />
                 {lang === 'es' ? `Volver a ${typeLabel}` : `Back to ${typeLabel}`}
               </Link>

@@ -5,6 +5,9 @@
 /en/     /?lang=en   301
 /es/blog/*   /blog/:splat   301
 /en/blog/*   /blog/:splat?lang=en   301
+/contacto   /#contacto   301
+/es/contacto   /#contacto   301
+/en/contacto   /?lang=en#contacto   301
 
 # NO global SPA fallback here: Cloudflare Pages already serves index.html for
 # unmatched paths (default SPA behavior), and functions/[[path]].js handles the

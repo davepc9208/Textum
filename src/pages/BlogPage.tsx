@@ -7,6 +7,8 @@ import { useSEO } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BackToTop from '../components/BackToTop';
+import { PageError, PageSkeleton } from '../components/AsyncState';
+import { localizedPath } from '../lib/locale';
 
 // Categorías definidas aquí como fuente única de verdad para BlogPage.
 // BlogPreview.tsx tiene su propia copia localizada — si cambias el copy,
@@ -56,6 +58,8 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const activeCategory = searchParams.get('categoria');
 
   const categories = CATEGORIES[lang];
@@ -65,6 +69,7 @@ export default function BlogPage() {
     setLoading(true);
     setPosts([]);
     setHasMore(false);
+    setLoadError(false);
 
     const loadFirstPage = async () => {
       let query = supabase
@@ -80,12 +85,13 @@ export default function BlogPage() {
       if (cancelled) return;
       setPosts(error ? [] : (data as unknown as Post[] ?? []));
       setHasMore(!error && (data?.length ?? 0) === 10);
+      setLoadError(Boolean(error));
       setLoading(false);
     };
 
     loadFirstPage();
     return () => { cancelled = true; };
-  }, [activeCategory]);
+  }, [activeCategory, reloadKey]);
 
   const loadMore = async () => {
     const last = posts[posts.length - 1];
@@ -210,12 +216,14 @@ export default function BlogPage() {
 
         {/* Content */}
         {loading ? (
-          <div className="flex justify-center py-20">
-            <svg className="animate-spin w-8 h-8 text-gold" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </div>
+          <PageSkeleton cards={3} />
+        ) : loadError ? (
+          <PageError
+            title={lang === 'es' ? 'No se pudo cargar el blog' : 'The blog could not be loaded'}
+            description={lang === 'es' ? 'Comprueba tu conexión e inténtalo de nuevo. Tus artículos siguen disponibles cuando el servicio se recupere.' : 'Check your connection and try again. The articles will be available when the service recovers.'}
+            retry={() => setReloadKey(value => value + 1)}
+            retryLabel={lang === 'es' ? 'Intentar de nuevo' : 'Try again'}
+          />
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <p className="font-serif text-2xl text-navy/40 italic">{b.empty}</p>
@@ -225,7 +233,7 @@ export default function BlogPage() {
             {/* Featured article — full width */}
             {featured && (
               <Link
-                to={`/blog/${featured.slug}`}
+                to={localizedPath(`/blog/${featured.slug}`, lang)}
                 className="group block mb-10 bg-white rounded-sm shadow-sm border border-navy/8 hover:shadow-xl hover:border-gold/30 transition-all duration-300 overflow-hidden"
               >
                 <div className="flex flex-col md:flex-row">
@@ -284,7 +292,7 @@ export default function BlogPage() {
                 {rest.map((post) => (
                   <Link
                     key={post.id}
-                    to={`/blog/${post.slug}`}
+                    to={localizedPath(`/blog/${post.slug}`, lang)}
                     className="group bg-white rounded-sm shadow-sm border border-navy/8 hover:shadow-lg hover:border-gold/30 transition-all duration-300 overflow-hidden flex flex-col"
                   >
                     {post.cover_url && (

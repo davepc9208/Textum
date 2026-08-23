@@ -1,111 +1,68 @@
 // functions/sitemap.xml.js
-// SITE canónico: siempre https://www.mentoriatextum.com
 const SITE = 'https://www.mentoriatextum.com';
 
-export async function onRequest(context) {
-  const { env } = context;
-
-  const supabaseUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL;
-  const supabaseKey = env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    return new Response(
-      `Missing env vars. URL: ${supabaseUrl ? 'OK' : 'MISSING'}, KEY: ${supabaseKey ? 'OK' : 'MISSING'}`,
-      { status: 500, headers: { 'Content-Type': 'text/plain' } }
-    );
-  }
-
-  try {
-    const res = await fetch(
-      `${supabaseUrl}/rest/v1/posts?select=slug,collection_type,created_at&published=eq.true&order=created_at.desc`,
-      {
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!res.ok) {
-      const body = await res.text();
-      return new Response(
-        `Supabase error ${res.status}: ${body}`,
-        { status: 500, headers: { 'Content-Type': 'text/plain' } }
-      );
-    }
-
-    const posts = await res.json();
-    const today = new Date().toISOString().slice(0, 10);
-
-    const staticUrls = [
-      { loc: `${SITE}/`, lastmod: today, changefreq: 'weekly', priority: '1.0' },
-      { loc: `${SITE}/blog`, lastmod: today, changefreq: 'weekly', priority: '0.8' },
-      { loc: `${SITE}/colecciones`, lastmod: today, changefreq: 'weekly', priority: '0.9' },
-      { loc: `${SITE}/colecciones/principio`, lastmod: today, changefreq: 'weekly', priority: '0.8' },
-      { loc: `${SITE}/colecciones/categoria`, lastmod: today, changefreq: 'weekly', priority: '0.8' },
-      { loc: `${SITE}/colecciones/herramienta`, lastmod: today, changefreq: 'weekly', priority: '0.8' },
-      { loc: `${SITE}/contacto`, lastmod: today, changefreq: 'monthly', priority: '0.6' },
-      { loc: `${SITE}/privacidad`, lastmod: today, changefreq: 'yearly', priority: '0.3' },
-      { loc: `${SITE}/llms.txt`, lastmod: today, changefreq: 'monthly', priority: '0.9' },
-      { loc: `${SITE}/faq.md`, lastmod: today, changefreq: 'monthly', priority: '0.7' },
-      { loc: `${SITE}/services.md`, lastmod: today, changefreq: 'monthly', priority: '0.7' },
-    ];
-
-    const dynamicUrls = (posts || []).map((p) => {
-      const lastmod = (p.created_at || today).toString().slice(0, 10);
-      if (p.collection_type) {
-        return {
-          loc: `${SITE}/colecciones/${p.collection_type}/${p.slug}`,
-          lastmod,
-          changefreq: 'monthly',
-          priority: '0.8',
-        };
-      }
-      return {
-        loc: `${SITE}/blog/${p.slug}`,
-        lastmod,
-        changefreq: 'monthly',
-        priority: '0.7',
-      };
-    });
-
-    const allUrls = [...staticUrls, ...dynamicUrls];
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${allUrls
-  .map(
-    (u) => `  <url>
-    <loc>${escapeXml(u.loc)}</loc>
-    <lastmod>${u.lastmod}</lastmod>
-    <changefreq>${u.changefreq}</changefreq>
-    <priority>${u.priority}</priority>
-  </url>`
-  )
-  .join('\n')}
-</urlset>`;
-
-    return new Response(xml, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=300, s-maxage=300',
-      },
-    });
-  } catch (err) {
-    return new Response(
-      `Sitemap exception: ${err?.message || String(err)}`,
-      { status: 500, headers: { 'Content-Type': 'text/plain' } }
-    );
-  }
-}
-
-function escapeXml(str) {
-  return String(str)
+function escapeXml(value) {
+  return String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
+}
+
+function localizedUrl(path, lang) {
+  const url = new URL(path, SITE);
+  if (lang === 'en') url.searchParams.set('lang', 'en');
+  else url.searchParams.delete('lang');
+  return url.toString();
+}
+
+function urlEntry(path, lastmod, priority, changefreq) {  const es = localizedUrl(path, 'es');
+  const en = localizedUrl(path, 'en');
+  return `  <url>\n    <loc>${escapeXml(es)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n    <xhtml:link rel="alternate" hreflang="es" href="${escapeXml(es)}" />\n    <xhtml:link rel="alternate" hreflang="en" href="${escapeXml(en)}" />\n    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(es)}" />\n  </url>`;
+}
+
+export async function onRequest(context) {
+  const { env } = context;
+  const supabaseUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL;
+  const supabaseKey = env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return new Response('Sitemap temporarily unavailable', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/posts?select=slug,collection_type,created_at&published=eq.true&order=created_at.desc`, {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+    });
+    if (!response.ok) return new Response('Sitemap temporarily unavailable', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+
+    const posts = await response.json();
+    const today = new Date().toISOString().slice(0, 10);
+    const staticPaths = [
+      ['/', '1.0', 'weekly'],
+      ['/blog', '0.8', 'weekly'],
+      ['/colecciones', '0.9', 'weekly'],
+      ['/colecciones/principio', '0.8', 'weekly'],
+      ['/colecciones/categoria', '0.8', 'weekly'],
+      ['/colecciones/herramienta', '0.8', 'weekly'],
+      ['/privacidad', '0.3', 'yearly'],
+      ['/casos', '0.6', 'monthly'],
+    ];
+    const entries = staticPaths.map(([path, priority, frequency]) => urlEntry(path, today, priority, frequency));
+    for (const post of posts || []) {
+      const path = post.collection_type
+        ? `/colecciones/${post.collection_type}/${post.slug}`
+        : `/blog/${post.slug}`;
+      entries.push(urlEntry(path, String(post.created_at || today).slice(0, 10), post.collection_type ? '0.8' : '0.7', 'monthly'));
+    }
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${entries.join('\n')}\n</urlset>`;
+    return new Response(xml, {
+      status: 200,
+      headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=300, s-maxage=300' },
+    });
+  } catch (error) {
+    console.error('[Sitemap] generation failed', error);
+    return new Response('Sitemap temporarily unavailable', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+  }
 }
