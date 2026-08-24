@@ -79,7 +79,7 @@ function linksForNeed(need, lang) {
   return keys.map((key) => ({ label: LINKS[key][lang === 'en' ? 'label_en' : 'label_es'], url: LINKS[key].url }));
 }
 
-function fallbackAnswer(text, lang) {
+function fallbackAnswer(text, lang, reason = 'fallback') {
   const need = classifyNeed(text);
   const answers = {
     es: {
@@ -97,7 +97,7 @@ function fallbackAnswer(text, lang) {
       flux: 'When you need to align your problem, objectives, methodology and argumentation, Advanced FLUX Mentoring is the most relevant starting point. The free diagnosis helps identify your project’s real priorities.',
     },
   };
-  return { answer: answers[lang][need], need, follow_up: lang === 'en' ? 'What stage is your project at now?' : '¿En qué etapa está ahora tu proyecto?', links: linksForNeed(need, lang) };
+  return { answer: answers[lang][need], need, follow_up: lang === 'en' ? 'What stage is your project at now?' : '¿En qué etapa está ahora tu proyecto?', links: linksForNeed(need, lang), diagnostics: { source: 'fallback', llm_used: false, web_used: false, web_sources: 0, reason } };
 }
 
 function parseModelResponse(raw, lang, sourceText) {
@@ -112,10 +112,10 @@ function parseModelResponse(raw, lang, sourceText) {
     const followUp = clean(parsed.follow_up, 260);
     const cta = ['diagnosis', 'whatsapp', 'blog', 'collections', 'none'].includes(parsed.cta) ? parsed.cta : 'diagnosis';
     const links = cta === 'none' ? [] : cta === 'diagnosis' ? linksForNeed(need, lang) : [LINKS[cta] && { label: LINKS[cta][lang === 'en' ? 'label_en' : 'label_es'], url: LINKS[cta].url }].filter(Boolean);
-    return { answer, need, follow_up: followUp, links };
+    return { answer, need, follow_up: followUp, links, diagnostics: { source: 'llm', llm_used: true, web_used: false, web_sources: 0, reason: 'ok' } };
 
   } catch {
-    return fallbackAnswer(sourceText, lang);
+    return fallbackAnswer(sourceText, lang, 'llm_invalid_json');
   }
 }
 
@@ -129,26 +129,28 @@ function shouldSearchWeb(text) {
 
 async function searchWeb(query, env) {
   const apiKey = env.SERPER_API_KEY;
-  if (!apiKey || !shouldSearchWeb(query)) return '';
+  if (!apiKey || !shouldSearchWeb(query)) return { context: '', sources: 0, reason: apiKey ? 'not_needed' : 'SERPER_API_KEY_missing' };
   try {
     const response = await fetchWithRetry('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({ q: query, gl: 'es', hl: 'es', num: 4 }),
     }, { retries: 0, timeoutMs: 5000 });
-    if (!response.ok) return '';
+    if (!response.ok) return { context: '', sources: 0, reason: `serper_http_${response.status}` };
     const data = await response.json();
-    return (data.organic || []).slice(0, 4).map((item) => `${item.title}: ${item.snippet} (${item.link})`).join('\\n').slice(0, MAX_WEB_CONTEXT_CHARS);
+    const organic = (data.organic || []).slice(0, 4);
+    return { context: organic.map((item) => `${item.title}: ${item.snippet} (${item.link})`).join('\\n').slice(0, MAX_WEB_CONTEXT_CHARS), sources: organic.length, reason: 'ok' };
   } catch (error) {
     log('warn', 'assistant.web_search_failed', { message: error instanceof Error ? error.message : String(error) });
-    return '';
+    return { context: '', sources: 0, reason: 'serper_request_failed' };
   }
 }
 
 async function answerChat(messages, lang, env) {
   const latest = messages[messages.length - 1]?.content || '';
-  if (!env.GROQ_API_KEY) return fallbackAnswer(latest, lang);
-  const webContext = await searchWeb(messages.map((message) => message.content).join('\\n'), env);
+  if (!env.GROQ_API_KEY) return fallbackAnswer(latest, lang, 'GROQ_API_KEY_missing');
+  const webResult = await searchWeb(messages.map((message) => message.content).join('\\n'), env);
+  const webContext = webResult.context;
 
   try {
     const response = await fetchWithRetry(GROQ_API_URL, {
@@ -170,10 +172,11 @@ async function answerChat(messages, lang, env) {
 
     if (!response.ok) throw new Error(`Groq responded with ${response.status}`);
     const data = await response.json();
-    return parseModelResponse(data.choices?.[0]?.message?.content, lang, latest);
+    const result = parseModelResponse(data.choices?.[0]?.message?.content, lang, latest);
+    return { ...result, diagnostics: { source: 'llm', llm_used: true, web_used: webResult.sources > 0, web_sources: webResult.sources, reason: webResult.reason } };
   } catch (error) {
     log('warn', 'assistant.groq_failed', { message: error instanceof Error ? error.message : String(error) });
-    return fallbackAnswer(latest, lang);
+    return fallbackAnswer(latest, lang, 'groq_request_failed');
   }
 }
 

@@ -9,7 +9,8 @@ import { turnstileConfigured } from '../lib/turnstile';
 type Role = 'user' | 'assistant';
 type Need = 'defensa' | 'publicacion' | 'ajuste' | 'intensidad' | 'flux';
 type Link = { label: string; url: string };
-type Message = { id: number; role: Role; content: string; need?: Need; links?: Link[]; followUp?: string };
+type Diagnostics = { source?: 'llm' | 'fallback'; llm_used?: boolean; web_used?: boolean; web_sources?: number; reason?: string };
+type Message = { id: number; role: Role; content: string; need?: Need; links?: Link[]; followUp?: string; diagnostics?: Diagnostics };
 
 type Copy = {
   title: string;
@@ -233,11 +234,11 @@ export default function AssistantWidget() {
       if (!response.ok) throw new Error(data.error || c.unavailable);
       const need = (data.need || 'flux') as Need;
       setLastNeed(need);
-      setMessages((current) => [...current, makeMessage(nextId.current++, data.answer, 'assistant', { need, links: data.links, followUp: data.follow_up })]);
+      setMessages((current) => [...current, makeMessage(nextId.current++, data.answer, 'assistant', { need, links: data.links, followUp: data.follow_up, diagnostics: data.diagnostics })]);
     } catch {
       const fallback = localFallback(nextMessages[nextMessages.length - 1]?.content || '');
       setLastNeed(fallback.need);
-      setMessages((current) => [...current, makeMessage(nextId.current++, fallback.answer, 'assistant', { need: fallback.need, links: fallback.links, followUp: lang === 'es' ? '¿En qué etapa está ahora tu proyecto?' : 'What stage is your project at now?' })]);
+      setMessages((current) => [...current, makeMessage(nextId.current++, fallback.answer, 'assistant', { need: fallback.need, links: fallback.links, followUp: lang === 'es' ? '¿En qué etapa está ahora tu proyecto?' : 'What stage is your project at now?', diagnostics: { source: 'fallback', llm_used: false, web_used: false, web_sources: 0, reason: 'frontend_backend_unavailable' } })]);
     } finally {
       setLoading(false);
     }
@@ -395,7 +396,7 @@ export default function AssistantWidget() {
                   {messages.map((message) => (
                     <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[88%] ${message.role === 'user' ? 'bg-gold text-navy rounded-2xl rounded-br-sm shadow-[0_8px_24px_rgba(201,168,76,0.18)]' : 'bg-white/[0.96] border border-white text-navy rounded-2xl rounded-bl-sm shadow-[0_8px_24px_rgba(0,0,0,0.16)]'} px-4 py-3`}>
-                        <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>{message.followUp && <p className="mt-3 pt-3 border-t border-navy/10 text-sm font-medium text-navy">{message.followUp}</p>}
+                        <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>{message.followUp && <p className="mt-3 pt-3 border-t border-navy/10 text-sm font-medium text-navy">{message.followUp}</p>}{message.diagnostics && <p className="mt-3 text-[10px] text-navy/45">{message.diagnostics.web_used ? `${lang === 'es' ? 'Fuentes web consultadas' : 'Web sources consulted'}: ${message.diagnostics.web_sources || 0}` : message.diagnostics.source === 'fallback' ? (lang === 'es' ? 'Orientación local' : 'Local guidance') : (lang === 'es' ? 'Respuesta de la Guía TEXTUM' : 'TEXTUM Guide response')}</p>}
                         {message.links && message.links.length > 0 && (
                           <div className="mt-3 pt-3 border-t border-navy/10 flex flex-col gap-2">
                             {message.links.map((link) => (
