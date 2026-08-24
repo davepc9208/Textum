@@ -15,6 +15,7 @@ const MODEL = 'llama-3.3-70b-versatile';
 const MAX_BODY_BYTES = 24 * 1024;
 const MAX_MESSAGES = 12;
 const MAX_MESSAGE_CHARS = 1400;
+const MAX_WEB_CONTEXT_CHARS = 3500;
 
 const KNOWLEDGE = `
 TEXTUM — Mentoría Académica Internacional opera online desde España en español e inglés.
@@ -96,7 +97,7 @@ function fallbackAnswer(text, lang) {
       flux: 'When you need to align your problem, objectives, methodology and argumentation, Advanced FLUX Mentoring is the most relevant starting point. The free diagnosis helps identify your project’s real priorities.',
     },
   };
-  return { answer: answers[lang][need], need, links: linksForNeed(need, lang) };
+  return { answer: answers[lang][need], need, follow_up: lang === 'en' ? 'What stage is your project at now?' : '¿En qué etapa está ahora tu proyecto?', links: linksForNeed(need, lang) };
 }
 
 function parseModelResponse(raw, lang, sourceText) {
@@ -108,19 +109,46 @@ function parseModelResponse(raw, lang, sourceText) {
     const need = ['defensa', 'publicacion', 'ajuste', 'intensidad', 'flux'].includes(parsed.need)
       ? parsed.need
       : classifyNeed(sourceText);
-    return { answer, need, links: linksForNeed(need, lang) };
+    const followUp = clean(parsed.follow_up, 260);
+    const cta = ['diagnosis', 'whatsapp', 'blog', 'collections', 'none'].includes(parsed.cta) ? parsed.cta : 'diagnosis';
+    const links = cta === 'none' ? [] : cta === 'diagnosis' ? linksForNeed(need, lang) : [LINKS[cta] && { label: LINKS[cta][lang === 'en' ? 'label_en' : 'label_es'], url: LINKS[cta].url }].filter(Boolean);
+    return { answer, need, follow_up: followUp, links };
+
   } catch {
     return fallbackAnswer(sourceText, lang);
   }
 }
 
-function systemPrompt(lang) {
-  return `Eres TEXTUM Orienta, un asistente inicial de TEXTUM. Responde en ${lang === 'en' ? 'inglés' : 'español'} con tono cálido, profesional y breve. Usa únicamente la información de la base de conocimiento. No inventes datos, resultados, credenciales ni políticas universitarias. No redactes tesis, artículos o trabajos completos. Si piden ghostwriting, explica que TEXTUM no lo hace y ofrece acompañamiento ético. No des asesoría legal o clínica. Recomienda un programa solo como orientación y sugiere el diagnóstico gratuito cuando falten datos. Responde SOLO JSON válido con esta forma: {"answer":"respuesta de máximo 1200 caracteres","need":"defensa|publicacion|ajuste|intensidad|flux"}.\n\nBASE DE CONOCIMIENTO:\n${KNOWLEDGE}`;
+function systemPrompt(lang, webContext = '') {
+  return `Eres la Guía TEXTUM, una orientadora académica con criterio humano, no un bot de respuestas prefabricadas. Responde en ${lang === 'en' ? 'inglés' : 'español'} con tono cálido, inteligente, concreto y variable. Lee toda la conversación: reconoce lo que la persona acaba de contar, no repitas la misma introducción y formula una sola pregunta de seguimiento cuando falten datos. Personaliza usando tipo de proyecto, disciplina, etapa, bloqueo y plazo si aparecen. Explica por qué recomiendas algo y ofrece una acción concreta. No inventes datos, resultados, credenciales ni políticas universitarias. No redactes tesis, artículos o trabajos completos. Si piden ghostwriting, marca el límite y redirige a acompañamiento ético. No des asesoría legal o clínica. Si la consulta requiere información actual de una universidad, revista, convocatoria, normativa o fecha, utiliza el contexto web solo como referencia y aclara que debe verificarse en la fuente oficial. Responde SOLO JSON válido con esta forma: {"answer":"respuesta natural de máximo 1200 caracteres","need":"defensa|publicacion|ajuste|intensidad|flux","follow_up":"una pregunta breve o cadena vacía","cta":"diagnosis|whatsapp|blog|collections|none"}.\n\nBASE DE CONOCIMIENTO:\n${KNOWLEDGE}${webContext ? `\n\nCONTEXTO WEB RECIENTE (no lo trates como verdad absoluta):\n${webContext}` : ''}`;
+}
+
+function shouldSearchWeb(text) {
+  return /universidad|revista|scopus|latindex|normativa|reglamento|convocatoria|fecha|plazo|actual|hoy|202[4-9]|apa ?7|doi/i.test(text);
+}
+
+async function searchWeb(query, env) {
+  const apiKey = env.SERPER_API_KEY;
+  if (!apiKey || !shouldSearchWeb(query)) return '';
+  try {
+    const response = await fetchWithRetry('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: query, gl: 'es', hl: 'es', num: 4 }),
+    }, { retries: 0, timeoutMs: 5000 });
+    if (!response.ok) return '';
+    const data = await response.json();
+    return (data.organic || []).slice(0, 4).map((item) => `${item.title}: ${item.snippet} (${item.link})`).join('\\n').slice(0, MAX_WEB_CONTEXT_CHARS);
+  } catch (error) {
+    log('warn', 'assistant.web_search_failed', { message: error instanceof Error ? error.message : String(error) });
+    return '';
+  }
 }
 
 async function answerChat(messages, lang, env) {
   const latest = messages[messages.length - 1]?.content || '';
   if (!env.GROQ_API_KEY) return fallbackAnswer(latest, lang);
+  const webContext = await searchWeb(messages.map((message) => message.content).join('\\n'), env);
 
   try {
     const response = await fetchWithRetry(GROQ_API_URL, {
@@ -132,7 +160,7 @@ async function answerChat(messages, lang, env) {
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          { role: 'system', content: systemPrompt(lang) },
+          { role: 'system', content: systemPrompt(lang, webContext) },
           ...messages.map((message) => ({ role: message.role, content: message.content })),
         ],
         temperature: 0.2,
@@ -254,8 +282,6 @@ export async function onRequestPost(context) {
     return jsonResponse({ error: 'La solicitud supera el tamaño permitido.' }, 413, request, env, requestId);
   }
 
-  const mode = request.method === 'POST' ? null : null;
-  void mode;
   try {
     const body = await request.json();
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
