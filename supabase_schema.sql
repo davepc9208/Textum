@@ -43,6 +43,10 @@ create table if not exists public.leads (
   email_sent       boolean not null default false,
   downloaded_at    timestamptz,
   unsubscribed_at  timestamptz,
+  assistant_need    text,
+  assistant_program text,
+  assistant_summary text,
+  assistant_consent_at timestamptz,
   created_at       timestamptz not null default now()
 );
 

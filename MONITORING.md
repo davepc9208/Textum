@@ -1,6 +1,6 @@
 # External availability monitoring
 
-The repository includes `monitoring/checkly.config.ts` with two external HTTPS monitors:
+The repository includes `monitoring/checkly.config.ts` plus `monitoring/textum-availability.check.ts` with two external HTTPS monitors:
 
 - `https://www.mentoriatextum.com/` checks the production custom domain.
 - `https://textum.pages.dev/` checks the Cloudflare Pages hostname independently.

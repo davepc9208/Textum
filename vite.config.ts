@@ -45,6 +45,10 @@ export default defineConfig({
         target: 'http://localhost:8888',
         changeOrigin: true,
       },
+      '/api/assistant': {
+        target: 'http://localhost:8888',
+        changeOrigin: true,
+      },
     },
   },
   build: {

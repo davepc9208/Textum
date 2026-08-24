@@ -33,6 +33,7 @@ import Contact              from './components/Contact';
 import Footer               from './components/Footer';
 import StickyDiagnosis      from './components/StickyDiagnosis';
 import BackToTop            from './components/BackToTop';
+import AssistantWidget      from './components/AssistantWidget';
 import { useScrollReveal }  from './hooks/useScrollReveal';
 import { useSEO, injectSchema, removeSchema } from './hooks/useSEO';
 import { useLang }          from './i18n/LangContext';
@@ -185,7 +186,7 @@ export default function App() {
       Saltar al contenido principal
     </a>
     <CookieBanner />
-    <Routes>
+      <Routes>
       <Route path="/"    element={<HomePage />} />
       <Route path="/blog" element={<BlogListPage />} />
       <Route path="/blog/:slug" element={<Suspense fallback={<PageLoader />}><PostPage /></Suspense>} />
@@ -199,6 +200,7 @@ export default function App() {
       <Route path="/casos" element={<AuthorityPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    <AssistantWidget />
     </>
   );
 }
