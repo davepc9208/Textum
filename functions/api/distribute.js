@@ -1,10 +1,9 @@
 // functions/api/distribute.js
+import { GROQ_API_URL, callGroqWithFallback } from '../_shared/groq.js';
 import { corsHeaders, fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
 // Fix: fechas de republicación ahora se generan dinámicamente desde new Date()
 // en lugar de estar hardcodeadas en julio 2026.
 
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = "llama-3.3-70b-versatile";
 const VERSION = "5.1.0-dynamic-dates";
 
 function stripHtml(html) {
@@ -142,33 +141,18 @@ IMPORTANTE: Responde SOLO con JSON válido sin markdown. Sigue EXACTAMENTE esta 
 }`;
 
   try {
-    const response = await fetchWithRetry(GROQ_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          {
-            role: 'system',
-            content: 'Eres un experto en marketing de contenido académico para Latinoamérica y España. Siempre respondes con JSON válido y estructurado. Los textos deben ser profesionales, atractivos y adaptados al público académico.',
-          },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-      }),
+    const result = await callGroqWithFallback({
+      apiKey: env.GROQ_API_KEY,
+      messages: [
+        { role: 'system', content: 'Eres un experto en marketing de contenido académico para Latinoamérica y España. Siempre respondes con JSON válido y estructurado. Los textos deben ser profesionales, atractivos y adaptados al público académico.' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.7,
+      maxTokens: 4000,
+      fetchWithRetry,
+      onModelError: (model, error) => log('warn', 'distribute.model_failed', { model, message: error instanceof Error ? error.message : String(error) }),
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Groq API error ${response.status}: ${errorText}`);
-    }
-
-    const data = await response.json();
-    const rawText = data.choices?.[0]?.message?.content || '';
+    const rawText = result.content;
     const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
     try {
@@ -225,24 +209,19 @@ export async function onRequest(context) {
 
     if (body.step === 'test_groq') {
       if (!apiKey) return json({ error: 'Sin API key.' }, 500, request, env);
-      const res = await fetchWithRetry(GROQ_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          messages: [
-            { role: 'system', content: 'Responde SOLO con JSON válido.' },
-            { role: 'user', content: '{"test": "ok"}' },
-          ],
-          temperature: 0,
-          max_tokens: 50,
-        }),
+      const result = await callGroqWithFallback({
+        apiKey,
+        messages: [
+          { role: 'system', content: 'Responde SOLO con JSON válido.' },
+          { role: 'user', content: '{"test": "ok"}' },
+        ],
+        temperature: 0,
+        maxTokens: 50,
+        fetchWithRetry,
+        onModelError: (model, error) => log('warn', 'distribute.test_model_failed', { model, message: error instanceof Error ? error.message : String(error) }),
       });
-      const statusCode = res.status;
-      const resText = await res.text();
+      const statusCode = 200;
+      const resText = JSON.stringify({ model: result.model, content: result.content });
       return json({ step: 'test_groq', http_status: statusCode, ok: statusCode === 200, raw: resText.slice(0, 500) }, 200, request, env);
     }
 

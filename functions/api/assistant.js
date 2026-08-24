@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { callGroqWithFallback } from '../_shared/groq.js';
 import {
   corsHeaders,
   enforceRateLimit,
@@ -10,8 +11,6 @@ import {
   verifyTurnstile,
 } from '../_shared/security.js';
 
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama-3.3-70b-versatile';
 const MAX_BODY_BYTES = 24 * 1024;
 const MAX_MESSAGES = 12;
 const MAX_MESSAGE_CHARS = 1400;
@@ -153,27 +152,19 @@ async function answerChat(messages, lang, env) {
   const webContext = webResult.context;
 
   try {
-    const response = await fetchWithRetry(GROQ_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt(lang, webContext) },
-          ...messages.map((message) => ({ role: message.role, content: message.content })),
-        ],
-        temperature: 0.2,
-        max_tokens: 500,
-      }),
-    }, { retries: 1, timeoutMs: 8000 });
-
-    if (!response.ok) throw new Error(`Groq responded with ${response.status}`);
-    const data = await response.json();
-    const result = parseModelResponse(data.choices?.[0]?.message?.content, lang, latest);
-    return { ...result, diagnostics: { source: 'llm', llm_used: true, web_used: webResult.sources > 0, web_sources: webResult.sources, reason: webResult.reason } };
+    const result = await callGroqWithFallback({
+      apiKey: env.GROQ_API_KEY,
+      messages: [
+        { role: 'system', content: systemPrompt(lang, webContext) },
+        ...messages.map((message) => ({ role: message.role, content: message.content })),
+      ],
+      temperature: 0.45,
+      maxTokens: 700,
+      fetchWithRetry,
+      onModelError: (model, error) => log('warn', 'assistant.model_failed', { model, message: error instanceof Error ? error.message : String(error) }),
+    });
+    const parsed = parseModelResponse(result.content, lang, latest);
+    return { ...parsed, diagnostics: { source: 'llm', llm_used: true, web_used: webResult.sources > 0, web_sources: webResult.sources, model: result.model, reason: webResult.reason } };
   } catch (error) {
     log('warn', 'assistant.groq_failed', { message: error instanceof Error ? error.message : String(error) });
     return fallbackAnswer(latest, lang, 'groq_request_failed');

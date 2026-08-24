@@ -1,4 +1,5 @@
 // functions/api/translate.js
+import { callGroqWithFallback } from '../_shared/groq.js';
 import { corsHeaders, fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
 // Cloudflare Pages Function — traduce artículo ES → EN usando Groq
 //
@@ -8,8 +9,6 @@ import { corsHeaders, fetchWithRetry, getRequestId, log, requireAdmin } from '..
 // - Mejor manejo de errores con detalle del fallo real
 // - StarterKit link fix: ver RichTextEditor.tsx
 
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL        = "llama-3.3-70b-versatile";
 // Límite conservador — el contexto del modelo es mayor pero Groq tiene rate limits
 const MAX_CONTENT_CHARS = 12_000;
 
@@ -47,35 +46,21 @@ REGLAS ESTRICTAS:
 `.trim();
 
 async function callGroq(apiKey, systemPrompt, userPrompt) {
-  const res = await fetchWithRetry(GROQ_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user",   content: userPrompt },
-      ],
-      temperature: 0.2,
-      max_tokens:  8000,
-    }),
+  const response = await callGroqWithFallback({
+    apiKey,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    temperature: 0.2,
+    maxTokens: 8000,
+    fetchWithRetry,
+    onModelError: (model, error) => log('warn', 'translate.model_failed', { model, message: error instanceof Error ? error.message : String(error) }),
   });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Groq API ${res.status}: ${errText.slice(0, 400)}`);
-  }
-
-  const data = await res.json();
-  const result = data.choices?.[0]?.message?.content?.trim();
-
-  if (!result) throw new Error("Groq devolvió respuesta vacía");
+  const result = response.content;
 
   // Detectar si Groq cortó la respuesta por límite de tokens
-  const finishReason = data.choices?.[0]?.finish_reason;
+  const finishReason = null;
   if (finishReason === "length") {
     console.warn("[translate] Respuesta cortada por límite de tokens — considera dividir el contenido");
   }
