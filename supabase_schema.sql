@@ -47,6 +47,8 @@ create table if not exists public.leads (
   assistant_program text,
   assistant_summary text,
   assistant_consent_at timestamptz,
+  assistant_deadline text,
+  assistant_priority text,
   created_at       timestamptz not null default now()
 );
 

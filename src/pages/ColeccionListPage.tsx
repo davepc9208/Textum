@@ -109,6 +109,7 @@ export default function ColeccionListPage() {
     <div className="min-h-screen bg-cream">
       <Navbar />
 
+      <main id="main-content">
       {/* Hero */}
       <div className="gradient-bg pt-40 pb-20 px-6 relative overflow-hidden">
         <div className="orb orb-gold w-[400px] h-[400px] top-[-60px] right-[-60px] opacity-10" />
@@ -183,7 +184,8 @@ export default function ColeccionListPage() {
                       src={post.cover_url}
                       alt={post.cover_alt ?? title(post)}
                       loading="lazy"
-                      className="w-full h-44 object-cover rounded-sm mb-5"
+                      decoding="async"
+                      className="w-full aspect-[3/2] object-cover rounded-sm mb-5"
                     />
                   )}
                   <div className="flex items-center gap-3 mb-3 text-xs text-navy/40">
@@ -228,6 +230,8 @@ export default function ColeccionListPage() {
           </div>
         )}
       </div>
+
+      </main>
 
       <Footer />
       <BackToTop />

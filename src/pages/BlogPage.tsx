@@ -158,6 +158,7 @@ export default function BlogPage() {
     <div className="min-h-screen bg-cream">
       <Navbar />
 
+      <main id="main-content">
       {/* Header hero */}
       <div className="gradient-bg pt-32 pb-24 px-6 relative overflow-hidden">
         <div className="orb orb-gold w-[400px] h-[400px] top-[-80px] right-[-80px] opacity-15" />
@@ -238,7 +239,7 @@ export default function BlogPage() {
               >
                 <div className="flex flex-col md:flex-row">
                   {featured.cover_url && (
-                    <div className="relative md:w-1/2 h-64 md:h-auto overflow-hidden flex-shrink-0">
+                    <div className="relative md:w-1/2 aspect-[16/10] md:aspect-auto md:min-h-[320px] overflow-hidden flex-shrink-0">
                       {/* Featured: eager load ya que es el primer elemento visible */}
                       <img
                         src={featured.cover_url}
@@ -296,7 +297,7 @@ export default function BlogPage() {
                     className="group bg-white rounded-sm shadow-sm border border-navy/8 hover:shadow-lg hover:border-gold/30 transition-all duration-300 overflow-hidden flex flex-col"
                   >
                     {post.cover_url && (
-                      <div className="relative h-52 overflow-hidden">
+                      <div className="relative aspect-[3/2] overflow-hidden">
                         {/* Grid cards: lazy load */}
                         <img
                           src={post.cover_url}
@@ -359,6 +360,8 @@ export default function BlogPage() {
           </>
         )}
       </div>
+
+      </main>
 
       <Footer />
       <BackToTop />

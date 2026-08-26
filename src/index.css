@@ -18,6 +18,47 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── Rendimiento táctil ────────────────────────────────────────────────
+   touch-action: manipulation elimina el retardo de 300ms del doble tap
+   en iOS/Android y evita el zoom accidental, de modo que los botones
+   responden al primer toque. cursor: pointer da feedback inmediato. */
+button,
+a,
+[role='button'],
+input[type='submit'],
+select {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+button:disabled,
+a[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/* Quita el recuadro gris del tap en iOS/Android manteniendo el foco de teclado */
+a, button, [role='button'] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Accesibilidad: movimiento reducido ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal,
+  .reveal-left,
+  .reveal-right {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .orb,
+  .scroll-indicator {
+    animation: none !important;
+  }
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--cream);
@@ -49,6 +90,20 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(201, 168, 76, 0.2);
+}
+
+/* ── Rendimiento móvil ────────────────────────────────────────────────────
+   En pantallas táctiles el backdrop-filter es caro (GPU). El navbar y el
+   widget ya tienen fondo navy suficientemente opaco, así que reducimos el
+   desenfoque en móvil para que los toques y el scroll vayan fluidos sin
+   perder el estilo glass en desktop. */
+@media (pointer: coarse) {
+  .glass,
+  .glass-navy,
+  .glass-cream {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
 }
 
 /* Animated gradient background */

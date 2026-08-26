@@ -125,6 +125,7 @@ export default function ColeccionPiecePage() {
     <div className="min-h-screen bg-cream">
       <Navbar />
 
+      <main id="main-content">
       {loading ? (
         <div className="max-w-3xl mx-auto px-6 py-20"><PageSkeleton cards={1} /></div>
       ) : loadError ? (
@@ -142,15 +143,14 @@ export default function ColeccionPiecePage() {
         <>
           <div className="pt-16 md:pt-20">
             {post.cover_url && (
-              <div className="relative w-full h-56 sm:h-72 md:h-96 overflow-hidden bg-navy/10">
+              <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] overflow-hidden bg-navy">
                 <img
                   src={post.cover_url}
                   alt={post.cover_alt ?? postTitle}
                   loading="eager"
                   fetchPriority="high"
-                  className="absolute inset-0 w-full h-full object-cover object-center"
+                  className="absolute inset-0 w-full h-full object-contain p-3 sm:p-6"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/20 to-transparent pointer-events-none" />
               </div>
             )}
           </div>
@@ -201,17 +201,7 @@ export default function ColeccionPiecePage() {
     prose-strong:text-navy
     prose-blockquote:border-l-gold prose-blockquote:text-navy/60 prose-blockquote:font-serif prose-blockquote:italic
     prose-li:text-navy/70
-    prose-img:rounded-sm prose-img:shadow-md
-    select-none"
-  style={{
-    WebkitUserSelect: 'none',
-    MozUserSelect: 'none',
-    msUserSelect: 'none',
-    userSelect: 'none',
-  }}
-  onCopy={(e) => e.preventDefault()}
-  onCut={(e) => e.preventDefault()}
-  onContextMenu={(e) => e.preventDefault()}
+    prose-img:rounded-sm prose-img:shadow-md"
   dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
 />
 
@@ -253,6 +243,8 @@ export default function ColeccionPiecePage() {
           </div>
         </>
       )}
+
+      </main>
 
       <Footer />
       <BackToTop />

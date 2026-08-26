@@ -142,6 +142,7 @@ export default function ColeccionesPage() {
     <div className="min-h-screen bg-cream">
       <Navbar />
 
+      <main id="main-content">
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <div className="gradient-bg pt-40 pb-24 px-6 relative overflow-hidden">
         <div className="orb orb-gold w-[500px] h-[500px] top-[-80px] right-[-80px] opacity-10" />
@@ -281,6 +282,8 @@ export default function ColeccionesPage() {
         </div>
 
       </div>
+
+      </main>
 
       <Footer />
       <BackToTop />

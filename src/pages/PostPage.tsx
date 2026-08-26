@@ -202,6 +202,7 @@ export default function PostPage() {
     <div className="min-h-screen bg-cream">
       <Navbar />
 
+      <main id="main-content">
       {loading ? (
         <div className="max-w-3xl mx-auto px-6 py-20"><PageSkeleton cards={1} /></div>
       ) : loadError ? (
@@ -220,16 +221,15 @@ export default function PostPage() {
           {/* Offset bajo navbar fija: evita que la portada suba y tape botones */}
           <div className="pt-16 md:pt-20">
             {post.cover_url && (
-              <div className="relative w-full h-56 sm:h-72 md:h-96 overflow-hidden bg-navy/10">
+              <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] overflow-hidden bg-navy">
                 <img
                   src={post.cover_url}
                   alt={post.cover_alt ?? postTitle}
                   loading="eager"
                   decoding="async"
                   fetchPriority="high"
-                  className="absolute inset-0 w-full h-full object-cover object-center"
+                  className="absolute inset-0 w-full h-full object-contain p-3 sm:p-6"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/20 to-transparent pointer-events-none" />
               </div>
             )}
           </div>
@@ -312,6 +312,8 @@ export default function PostPage() {
           </div>
         </>
       )}
+
+      </main>
 
       <Footer />
       <BackToTop />

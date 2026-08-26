@@ -177,13 +177,14 @@ function BlogListPage() {
 }
 
 export default function App() {
+  const { lang } = useLang();
   return (
     <>
     <a
       href="#main-content"
       className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[10000] focus:bg-gold focus:text-navy focus:px-4 focus:py-3 focus:text-xs focus:font-semibold focus:rounded-sm"
     >
-      Saltar al contenido principal
+      {lang === 'es' ? 'Saltar al contenido principal' : 'Skip to main content'}
     </a>
     <CookieBanner />
       <Routes>
