@@ -16,6 +16,23 @@ const MAX_MESSAGES = 12;
 const MAX_MESSAGE_CHARS = 1400;
 const MAX_WEB_CONTEXT_CHARS = 3500;
 
+// ── Límites antiabuso ────────────────────────────────────────────────────────
+// La clave de Groq es gratuita y limitada: protegemos el presupuesto diario
+// sin recortar la ayuda. Cuando se alcanza un límite, el asistente sigue
+// respondiendo desde la base de conocimiento (fallback) y deriva al equipo
+// humano en lugar de bloquear al visitante.
+const IP_CHAT_LIMIT = 12;        // mensajes por IP en 10 minutos
+const IP_LEAD_LIMIT = 4;         // envíos de lead por IP en 10 minutos
+const IP_WINDOW_SEC = 600;
+const SESSION_MESSAGE_LIMIT = 15; // máx. mensajes por conversación (IP + sesión) al día
+const SESSION_WINDOW_SEC = 86400;
+const DEFAULT_DAILY_LLM_LIMIT = 300; // máx. llamadas a Groq al día en toda la web
+
+function limitFromEnv(env, key, fallback) {
+  const value = Number(env?.[key]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
 const KNOWLEDGE = `
 TEXTUM — Mentoría Académica Internacional opera online desde España en español e inglés.
 Su propósito es acompañar al investigador para desarrollar rigor, claridad y autonomía; no es un servicio de ghostwriting.
@@ -96,7 +113,7 @@ function fallbackAnswer(text, lang, reason = 'fallback') {
       flux: 'When you need to align your problem, objectives, methodology and argumentation, Advanced FLUX Mentoring is the most relevant starting point. The free diagnosis helps identify your project’s real priorities.',
     },
   };
-  return { answer: answers[lang][need], need, follow_up: lang === 'en' ? 'What stage is your project at now?' : '¿En qué etapa está ahora tu proyecto?', links: linksForNeed(need, lang), diagnostics: { source: 'fallback', llm_used: false, web_used: false, web_sources: 0, reason } };
+  return { answer: answers[lang][need], need, follow_up: lang === 'en' ? 'What stage is your project at now?' : '¿En qué etapa está ahora tu proyecto?', links: linksForNeed(need, lang), diagnostics: { source: 'fallback', llm_used: false, web_used: false, web_sources: 0, reason }, limit_reached: reason === 'daily_budget_exceeded' };
 }
 
 function parseModelResponse(raw, lang, sourceText) {
@@ -148,6 +165,16 @@ async function searchWeb(query, env) {
 async function answerChat(messages, lang, env) {
   const latest = messages[messages.length - 1]?.content || '';
   if (!env.GROQ_API_KEY) return fallbackAnswer(latest, lang, 'GROQ_API_KEY_missing');
+
+  // Presupuesto diario global: si se agotó, seguimos ayudando desde la base
+  // de conocimiento sin gastar créditos de Groq.
+  const dailyLimit = Number(env.ASSISTANT_DAILY_LLM_LIMIT || DEFAULT_DAILY_LLM_LIMIT);
+  const usage = await getDailyGroqUsage(env, estimatedTokens(messages));
+  if (usage && Number(usage.calls) >= dailyLimit) {
+    log('warn', 'assistant.daily_budget_reached', { calls: usage.calls, limit: dailyLimit });
+    return fallbackAnswer(latest, lang, 'daily_budget_exceeded');
+  }
+
   const webResult = await searchWeb(messages.map((message) => message.content).join('\\n'), env);
   const webContext = webResult.context;
 
@@ -164,11 +191,37 @@ async function answerChat(messages, lang, env) {
       onModelError: (model, error) => log('warn', 'assistant.model_failed', { model, message: error instanceof Error ? error.message : String(error) }),
     });
     const parsed = parseModelResponse(result.content, lang, latest);
-    return { ...parsed, diagnostics: { source: 'llm', llm_used: true, web_used: webResult.sources > 0, web_sources: webResult.sources, model: result.model, reason: webResult.reason } };
+    return { ...parsed, diagnostics: { source: 'llm', llm_used: true, web_used: webResult.sources > 0, web_sources: webResult.sources, model: result.model, reason: webResult.reason }, limit_reached: false };
   } catch (error) {
     log('warn', 'assistant.groq_failed', { message: error instanceof Error ? error.message : String(error) });
     return fallbackAnswer(latest, lang, 'groq_request_failed');
   }
+}
+
+// Contador diario de uso de Groq en Supabase (fail-open: si el contador falla,
+// se permite la consulta para no recortar la ayuda). Devuelve { count } o null.
+async function getDailyGroqUsage(env, tokens = 0) {
+  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) return null;
+  try {
+    const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { data, error } = await supabase.rpc('bump_ai_usage', { p_calls: 1, p_tokens: tokens });
+    if (error) {
+      log('warn', 'assistant.budget_counter_failed', { message: error.message });
+      return null;
+    }
+    return Array.isArray(data) && data.length > 0 ? data[0] : null;
+  } catch (error) {
+    log('warn', 'assistant.budget_counter_failed', { message: error instanceof Error ? error.message : String(error) });
+    return null;
+  }
+}
+
+function estimatedTokens(messages) {
+  let chars = 0;
+  (messages || []).forEach((message) => { chars += String(message.content || '').length; });
+  return Math.max(1, Math.round(chars / 4));
 }
 
 async function saveLead(body, request, env, requestId) {
@@ -282,8 +335,25 @@ export async function onRequestPost(context) {
       return jsonResponse({ error: 'Body inválido.' }, 400, request, env, requestId);
     }
     const lang = body.lang === 'en' ? 'en' : 'es';
-    if (!await enforceRateLimit(request, body.mode === 'lead' ? 'assistant-lead' : 'assistant-chat', body.mode === 'lead' ? 4 : 24, 600)) {
-      return jsonResponse({ error: lang === 'en' ? 'Too many requests. Please try again later.' : 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, 429, request, env, requestId, { 'Retry-After': '600' });
+
+    // Límite por IP (ventana de 10 minutos) — antiabuso básico.
+    const ipChatLimit = limitFromEnv(env, 'ASSISTANT_IP_CHAT_LIMIT', IP_CHAT_LIMIT);
+    if (!await enforceRateLimit(request, body.mode === 'lead' ? 'assistant-lead' : 'assistant-chat', body.mode === 'lead' ? IP_LEAD_LIMIT : ipChatLimit, IP_WINDOW_SEC)) {
+      return jsonResponse({ error: lang === 'en' ? 'You have reached the message limit for now. Write to us directly and we will help you.' : 'Alcanzaste el límite de mensajes por ahora. Escríbenos directamente y te ayudamos.' }, 429, request, env, requestId, { 'Retry-After': String(IP_WINDOW_SEC) });
+    }
+
+    // Límite por conversación: session_id lo genera el widget una vez por
+    // pestaña; junto con la IP evita que una sola sesión agote el presupuesto.
+    const sessionId = typeof body.session_id === 'string' && /^[A-Za-z0-9-]{1,64}$/.test(body.session_id)
+      ? body.session_id
+      : 'anon';
+    const sessionLimit = limitFromEnv(env, 'ASSISTANT_SESSION_MESSAGE_LIMIT', SESSION_MESSAGE_LIMIT);
+    if (body.mode === 'chat'
+      && !await enforceRateLimit(request, `assistant-session-${sessionId}`, sessionLimit, SESSION_WINDOW_SEC)) {
+      return jsonResponse({
+        error: lang === 'en' ? 'You have reached the limit of this conversation. If you need more help, contact the team directly.' : 'Alcanzaste el límite de esta conversación. Si necesitas más ayuda, contacta directamente con el equipo.',
+        limit_reached: true,
+      }, 429, request, env, requestId);
     }
 
     if (body.mode === 'lead') return saveLead({ ...body, lang }, request, env, requestId);

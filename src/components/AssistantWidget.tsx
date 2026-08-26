@@ -38,6 +38,8 @@ type Copy = {
   unavailable: string;
   required: string;
   human: string;
+  limitTitle: string;
+  limitIntro: string;
   deadline: string;
   deadlineOptions: string[];
   dynamicCta: string;
@@ -76,6 +78,8 @@ const COPY: Record<'es' | 'en', Copy> = {
     unavailable: 'No puedo responder ahora. Puedes escribirnos directamente y te atenderemos.',
     required: 'Completa nombre, email y acepta la política de privacidad.',
     human: 'Hablar con el equipo',
+    limitTitle: 'Hoy ya dimos muchas orientaciones automáticas',
+    limitIntro: 'Para no perder calidad en la atención, seguimos disponibles directamente con el equipo de TEXTUM. Cuéntanos tu caso y te orientamos sin límites.',
     deadline: '¿Cuándo necesitas avanzar?',
     deadlineOptions: ['Menos de 2 semanas', 'Entre 2 y 6 semanas', 'Más de 6 semanas', 'Todavía no tengo fecha'],
     dynamicCta: 'Enviar mi caso al equipo',
@@ -112,6 +116,8 @@ const COPY: Record<'es' | 'en', Copy> = {
     unavailable: 'I cannot respond right now. You can contact us directly and we will help you.',
     required: 'Complete your name, email and accept the privacy policy.',
     human: 'Talk to the team',
+    limitTitle: 'We have already given many automatic orientations today',
+    limitIntro: 'To keep the quality of our support, we are still available directly with the TEXTUM team. Tell us about your case and we will guide you with no limits.',
     deadline: 'When do you need to move forward?',
     deadlineOptions: ['Less than 2 weeks', 'Between 2 and 6 weeks', 'More than 6 weeks', 'I do not have a date yet'],
     dynamicCta: 'Send my case to the team',
@@ -167,9 +173,18 @@ function makeMessage(id: number, content: string, role: Role, extra: Partial<Mes
   return { id, content, role, ...extra };
 }
 
+function makeSessionId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch { /* crypto no disponible */ }
+  return `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export default function AssistantWidget() {
   const { lang } = useLang();
   const c = COPY[lang];
+  const sessionIdRef = useRef<string>('');
+  if (!sessionIdRef.current) sessionIdRef.current = makeSessionId();
   const [open, setOpen] = useState(false);
   const [inviteVisible, setInviteVisible] = useState(() => {
     try { return sessionStorage.getItem('textum_assistant_seen') !== '1'; } catch { return true; }
@@ -185,6 +200,7 @@ export default function AssistantWidget() {
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [showPolicy, setShowPolicy] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
   const [leadError, setLeadError] = useState('');
   const [lead, setLead] = useState({ name: '', email: '', country: '', deadline: '', privacyAccepted: false });
   const [turnstileToken, setTurnstileToken] = useState('');
@@ -203,6 +219,7 @@ export default function AssistantWidget() {
     setShowLeadForm(false);
     setShowPolicy(false);
     setLeadSent(false);
+    setLimitReached(false);
     setLeadError('');
   }, [lang]);
 
@@ -227,11 +244,16 @@ export default function AssistantWidget() {
         body: JSON.stringify({
           mode: 'chat',
           lang,
+          session_id: sessionIdRef.current,
           messages: nextMessages.slice(-10).map(({ role, content }) => ({ role, content })),
         }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || c.unavailable);
+      if (!response.ok) {
+        if (response.status === 429) setLimitReached(true);
+        throw new Error(data.error || c.unavailable);
+      }
+      if (data.limit_reached) setLimitReached(true);
       const need = (data.need || 'flux') as Need;
       setLastNeed(need);
       setMessages((current) => [...current, makeMessage(nextId.current++, data.answer, 'assistant', { need, links: data.links, followUp: data.follow_up, diagnostics: data.diagnostics })]);
@@ -246,7 +268,7 @@ export default function AssistantWidget() {
 
   const sendMessage = async (value = input) => {
     const content = value.trim();
-    if (!content || loading) return;
+    if (!content || loading || limitReached) return;
     const userMessage = makeMessage(nextId.current++, content, 'user');
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
@@ -389,7 +411,20 @@ export default function AssistantWidget() {
               </div>
             )}
 
-            {!showLeadForm && !showPolicy && !leadSent && (
+            {limitReached && !showLeadForm && !showPolicy && !leadSent && (
+              <div className="relative z-10 flex-1 overflow-y-auto p-5 sm:p-6 bg-[linear-gradient(160deg,rgba(19,43,82,0.96),rgba(7,18,37,0.92))] text-white/85 flex flex-col justify-center">
+                <div className="w-12 h-12 rounded-full bg-gold/15 border border-gold/35 flex items-center justify-center mb-5"><ShieldCheck size={22} className="text-gold" /></div>
+                <h3 className="font-serif text-2xl text-gold mb-3">{c.limitTitle}</h3>
+                <p className="text-sm text-white/70 leading-relaxed mb-7">{c.limitIntro}</p>
+                <div className="flex flex-col gap-2 w-full">
+                  <a href={`https://wa.me/34614638406?text=${whatsappText}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-sm text-xs font-semibold"><Sparkles size={14} /> WhatsApp</a>
+                  <a href="mailto:contacto@mentoriatextum.com" className="flex items-center justify-center gap-2 border border-white/25 text-white py-3 rounded-xl text-xs hover:border-gold/60 transition-colors"><Mail size={14} /> {c.human}</a>
+                </div>
+                <p className="text-[10px] text-white/40 mt-6 text-center">{c.security}</p>
+              </div>
+            )}
+
+            {!limitReached && !showLeadForm && !showPolicy && !leadSent && (
               <>
                 <div className="relative z-10 flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-[radial-gradient(circle_at_90%_12%,rgba(201,168,76,0.13),transparent_34%),linear-gradient(160deg,rgba(19,43,82,0.96),rgba(7,18,37,0.92))]" aria-live="polite">
                   {messages.length === 0 && <p className="text-sm text-white/75 text-center py-3">{c.greeting}</p>}

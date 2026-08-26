@@ -111,6 +111,58 @@ O usa herramientas de previsualización:
 - `VITE_TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY`: protección opcional de formularios con Cloudflare Turnstile.
 - `VITE_CAL_LINK`: URL pública de Cal.com. Si no existe, los CTA vuelven al formulario interno.
 
+## Límites del asistente IA (protección del presupuesto de Groq)
+
+La clave de Groq gratuita tiene límites de uso diario. El asistente aplica tres niveles de protección configurables por variables de entorno (no hace falta configurarlas: tienen valores por defecto seguros):
+
+| Variable | Por defecto | Qué controla |
+|---|---|---|
+| `ASSISTANT_DAILY_LLM_LIMIT` | `300` | Llamadas a Groq al día en toda la web (contador global en Supabase, tabla `ai_usage`). Al alcanzarlo, el asistente sigue respondiendo desde la base de conocimiento y deriva al equipo humano. |
+| `ASSISTANT_SESSION_MESSAGE_LIMIT` | `15` | Mensajes máximos por conversación (IP + `session_id`) al día. |
+| `ASSISTANT_IP_CHAT_LIMIT` | `12` | Mensajes máximos por IP en 10 minutos (ventana deslizante). |
+
+Cuando se alcanza cualquiera de estos límites, el widget no corta la ayuda: muestra un aviso amable y ofrece WhatsApp, email y el formulario de lead.
+
+### Migración de Supabase necesaria
+
+Ejecuta en Supabase → SQL Editor (también incluido en `supabase_schema.sql`):
+
+```sql
+create table if not exists public.ai_usage (
+  day          date primary key,
+  llm_calls    integer not null default 0,
+  tokens_est   bigint  not null default 0,
+  updated_at   timestamptz not null default now()
+);
+
+alter table public.ai_usage enable row level security;
+
+create or replace function public.bump_ai_usage(p_calls integer default 1, p_tokens bigint default 0)
+returns table (calls integer, tokens bigint)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.ai_usage (day, llm_calls, tokens_est, updated_at)
+  values (current_date, p_calls, p_tokens, now())
+  on conflict (day)
+  do update set
+    llm_calls  = public.ai_usage.llm_calls + excluded.llm_calls,
+    tokens_est = public.ai_usage.tokens_est + excluded.tokens_est,
+    updated_at = now();
+
+  return query
+    select au.llm_calls, au.tokens_est
+    from public.ai_usage au
+    where au.day = current_date;
+end;
+$$;
+
+revoke all on function public.bump_ai_usage(integer, bigint) from public, anon, authenticated;
+grant execute on function public.bump_ai_usage(integer, bigint) to service_role;
+```
+
 ## MFA obligatorio para administración
 
 La migración `supabase_rls_admin.sql` debe ejecutarse después de activar MFA TOTP para la cuenta administradora. Añade `is_admin_mfa()` y exige `auth.jwt() ->> 'aal' = 'aal2'` para insertar, actualizar o borrar posts y para modificar imágenes. Las Functions `translate`, `distribute` y `upload-image` también validan JWT, pertenencia a `admins` y AAL2 antes de ejecutar operaciones.

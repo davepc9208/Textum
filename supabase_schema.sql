@@ -132,7 +132,47 @@ create policy "Admins can read leads"
   to authenticated
   using (public.is_admin_mfa());
 
--- 6. Storage: bucket blog-images
+-- 6. Presupuesto diario del asistente IA (Groq)
+-- Contador por día usado por functions/api/assistant.js para no agotar
+-- los créditos gratuitos. Nunca es público: solo el service role lo escribe.
+create table if not exists public.ai_usage (
+  day          date primary key,
+  llm_calls    integer not null default 0,
+  tokens_est   bigint  not null default 0,
+  updated_at   timestamptz not null default now()
+);
+
+alter table public.ai_usage enable row level security;
+
+-- Incremento atómico del contador del día y devolución del total.
+-- La función es security definer y solo se concede al service role,
+-- de modo que un visitante no puede leer ni manipular el contador.
+create or replace function public.bump_ai_usage(p_calls integer default 1, p_tokens bigint default 0)
+returns table (calls integer, tokens bigint)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.ai_usage (day, llm_calls, tokens_est, updated_at)
+  values (current_date, p_calls, p_tokens, now())
+  on conflict (day)
+  do update set
+    llm_calls  = public.ai_usage.llm_calls + excluded.llm_calls,
+    tokens_est = public.ai_usage.tokens_est + excluded.tokens_est,
+    updated_at = now();
+
+  return query
+    select au.llm_calls, au.tokens_est
+    from public.ai_usage au
+    where au.day = current_date;
+end;
+$$;
+
+revoke all on function public.bump_ai_usage(integer, bigint) from public, anon, authenticated;
+grant execute on function public.bump_ai_usage(integer, bigint) to service_role;
+
+-- 7. Storage: bucket blog-images
 insert into storage.buckets (id, name, public)
 values ('blog-images', 'blog-images', true)
 on conflict (id) do nothing;
