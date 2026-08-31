@@ -25,11 +25,6 @@ export default {
         serif: ['Cormorant Garamond', 'Georgia', 'serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
-      animation: {
-        float: 'floatOrb 8s ease-in-out infinite',
-        shimmer: 'shimmer 4s linear infinite',
-        gradient: 'gradientShift 12s ease infinite',
-      },
     },
   },
   plugins: [typography],

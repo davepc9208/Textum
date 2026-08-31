@@ -56,31 +56,65 @@ test('blog SSR uses the requested English canonical and all hreflang variants', 
   }
 });
 
-test('collection SSR is bot-only and returns localized metadata', async () => {
-  let restore = mockSupabase([post]);
-  try {
-    const human = await collectionPost({
-      request: new Request(`${origin}/colecciones/principio/pt-01?lang=en`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
-      env,
-      params: { tipo: 'principio', slug: 'pt-01' },
-      next: async () => new Response('spa-shell'),
-    });
-    assert.equal(human.status, 200);
-    assert.equal(await human.text(), 'spa-shell');
+test('collection SSR renders the article for every visitor (no cloaking)', async () => {
+  for (const ua of ['Mozilla/5.0', 'Googlebot']) {
+    const restore = mockSupabase([post]);
+    try {
+      const response = await collectionPost({
+        request: new Request(`${origin}/colecciones/principio/pt-01?lang=en`, { headers: { 'User-Agent': ua } }),
+        env,
+        params: { tipo: 'principio', slug: 'pt-01' },
+      });
+      const html = await response.text();
+      assert.equal(response.status, 200);
+      assert.match(html, /<html lang="en">/);
+      assert.match(html, /<h1>Test principle<\/h1>/);
+      assert.match(html, /hreflang="es"/);
+      assert.match(html, /hreflang="en"/);
+      assert.match(html, /rel="canonical" href="https:\/\/www\.mentoriatextum\.com\/colecciones\/principio\/pt-01\?lang=en"/);
+    } finally {
+      restore();
+    }
+  }
+});
 
-    restore();
-    restore = mockSupabase([post]);
-    const bot = await collectionPost({
-      request: new Request(`${origin}/colecciones/principio/pt-01?lang=en`, { headers: { 'User-Agent': 'Googlebot' } }),
+test('SSR splices head + article + data island into the real SPA shell', async () => {
+  const shell = [
+    '<!doctype html><html lang="es"><head>',
+    '<link rel="icon" href="/favicon.svg">',
+    '<!-- SSR:HEAD:START -->',
+    '<title>Home</title><meta name="description" content="home">',
+    '<!-- SSR:HEAD:END -->',
+    '</head><body>',
+    '<h1 id="ssr-home-h1" style="position:absolute">Home hidden heading</h1>',
+    '<div id="ssr-content" hidden></div>',
+    '<div id="root"></div>',
+    '<script type="module" src="/assets/index-abc123.js"></script>',
+    '</body></html>',
+  ].join('\n');
+
+  const restore = mockSupabase([{ ...post, collection_type: null }]);
+  try {
+    const response = await blogPost({
+      request: new Request(`${origin}/blog/test-principle`, { headers: { 'User-Agent': 'Mozilla/5.0' } }),
       env,
-      params: { tipo: 'principio', slug: 'pt-01' },
+      params: { slug: 'test-principle' },
+      next: async () => new Response(shell, { headers: { 'Content-Type': 'text/html' } }),
     });
-    const html = await bot.text();
-    assert.equal(bot.status, 200);
-    assert.match(html, /<html lang="en">/);
-    assert.match(html, /<h1>Test principle<\/h1>/);
-    assert.match(html, /hreflang="es"/);
-    assert.match(html, /hreflang="en"/);
+    const html = await response.text();
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('X-SSR'), 'shell');
+    // El bundle real de la SPA sigue presente
+    assert.match(html, /assets\/index-abc123\.js/);
+    // La home <title> ha sido sustituida por la del artículo
+    assert.doesNotMatch(html, /<title>Home<\/title>/);
+    assert.match(html, /Principio de prueba/);
+    // El heading oculto de la home se elimina en páginas de artículo
+    assert.doesNotMatch(html, /ssr-home-h1/);
+    // Contenido del artículo inyectado + data island para React
+    assert.match(html, /<div id="ssr-content"><style/);
+    assert.match(html, /<script id="__SSR_DATA__" type="application\/json">/);
+    assert.match(html, /"type":"post"/);
   } finally {
     restore();
   }

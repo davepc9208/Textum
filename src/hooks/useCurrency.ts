@@ -1,19 +1,12 @@
 // src/hooks/useCurrency.ts
-// v4.0 — fixes críticos de rendimiento:
 //
-// FIX 1: fetch con cache:'force-cache' — elimina la doble llamada a /cdn-cgi/trace
-//         que aparecía en el árbol de dependencia de red de Lighthouse (1346ms + 1376ms).
-//         Con force-cache, el navegador reutiliza la respuesta si ya la tiene en cache.
+// Detección de moneda 100% en cliente, sin red: se lee una caché en localStorage
+// (7 días) y, si no hay, se estima por zona horaria (Europe/* y Atlantic/* → EUR;
+// el resto → USD). Sin llamadas a /cdn-cgi/trace ni a APIs de geolocalización,
+// para no añadir peticiones a la ruta crítica.
 //
-// FIX 2: AbortController con cleanup correcto — la versión anterior podía causar
-//         una segunda llamada si el componente se remontaba antes de que
-//         terminara el fetch, porque el timer y el abort no se coordinaban bien.
-//
-// FIX 3: requestIdleCallback con timeout reducido a 1000ms — antes era 2000ms,
-//         lo que retrasaba innecesariamente la detección en dispositivos rápidos.
-//
-// FIX 4: guessFromTimezone() ahora también cubre zonas horarias de Canarias y
-//         territorios de ultramar europeos que usan EUR.
+// Los precios que se muestran son orientativos; el importe real se fija en el
+// servidor en el momento del cobro.
 
 import { useState } from 'react';
 

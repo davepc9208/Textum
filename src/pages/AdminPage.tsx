@@ -764,6 +764,10 @@ function PostEditor({
 
             <div className="flex items-center gap-3">
               <button
+                type="button"
+                role="switch"
+                aria-checked={form.published}
+                aria-label={form.published ? 'Artículo publicado — pulsa para pasar a borrador' : 'Artículo en borrador — pulsa para publicar'}
                 onClick={() => set('published', !form.published)}
                 className={`w-11 h-6 rounded-full transition-colors duration-200 relative ${form.published ? 'bg-gold' : 'bg-navy/20'}`}
               >
@@ -962,7 +966,7 @@ function LeadsPanel() {
     setErr('');
     const { data, error } = await supabase
       .from('leads')
-      .select('*')
+      .select('id,name,email,institution,country,role,resource_slug,resource_type,resource_title,lang,source,created_at,email_sent,downloaded_at,unsubscribed_at')
       .order('created_at', { ascending: false })
       .limit(500);
     if (error) {
@@ -1270,6 +1274,7 @@ export default function AdminPage() {
                     {post.published ? 'PUBLICADO' : 'BORRADOR'}
                   </span>
                   <button onClick={() => togglePublished(post)} title="Cambiar estado"
+                    aria-label={post.published ? `Despublicar «${post.title_es}»` : `Publicar «${post.title_es}»`}
                     className="p-2 text-navy/40 hover:text-navy transition-colors">
                     {post.published ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
@@ -1284,6 +1289,7 @@ export default function AdminPage() {
                     📤 DISTRIBUIR
                   </button>
                   <button onClick={() => handleDelete(post.id)}
+                    aria-label={`Eliminar «${post.title_es}»`}
                     className="p-2 text-red-400/60 hover:text-red-500 transition-colors">
                     <Trash2 size={15} />
                   </button>

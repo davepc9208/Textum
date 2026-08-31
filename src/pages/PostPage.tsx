@@ -2,10 +2,11 @@
 // Fix 6: BreadcrumbList JSON-LD añadido
 // Fix 7: ShareCard y ShareButtons reciben url canónica explícita
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link, } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, X } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
+import { ssrPost, dropSsrContent } from '../lib/ssrData';
 import { useLang } from '../i18n/LangContext';
 import { useSEO, injectSchema, removeSchema } from '../hooks/useSEO';
 import Navbar from '../components/Navbar';
@@ -59,12 +60,15 @@ export default function PostPage() {
   const { slug } = useParams<{ slug: string }>();
   const { lang, t } = useLang();
   const b = t.blog;
-  const [post, setPost] = useState<Post | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [post, setPost] = useState<Post | null>(() => ssrPost(slug));
+  const [loading, setLoading] = useState(() => !ssrPost(slug));
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Quita el artículo pre-renderizado por SSR en cuanto React monta el real.
+  useLayoutEffect(() => { dropSsrContent(); }, []);
 
   const openLightbox = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -87,6 +91,8 @@ export default function PostPage() {
 
   useEffect(() => {
     if (!slug) return;
+    // El SSR ya entregó este artículo en la primera carga: no repetimos la consulta.
+    if (reloadKey === 0 && ssrPost(slug)) return;
     let cancelled = false;
     setLoading(true);
     setLoadError(false);

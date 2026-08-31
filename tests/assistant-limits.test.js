@@ -72,6 +72,76 @@ test('assistant allows a fresh conversation (different session) after the first 
   }
 });
 
+test('assistant asks for Turnstile from the 3rd turn when a secret is configured', async () => {
+  const restoreCache = installFakeCache();
+  try {
+    const convo = [
+      { role: 'user', content: 'hola' },
+      { role: 'assistant', content: 'hola, cuéntame' },
+      { role: 'user', content: 'tengo una tesis' },
+      { role: 'assistant', content: 'entiendo' },
+      { role: 'user', content: 'necesito ayuda con la metodología' },
+    ];
+    const env = { ASSISTANT_IP_CHAT_LIMIT: '100', TURNSTILE_SECRET_KEY: 'secret' };
+    const blocked = await onRequestPost({ request: chatBody(convo, 'captcha-1'), env });
+    assert.equal(blocked.status, 403);
+    const data = await blocked.json();
+    assert.equal(data.captcha_required, true);
+  } finally {
+    restoreCache();
+  }
+});
+
+test('assistant lets the first two turns through without Turnstile', async () => {
+  const restoreCache = installFakeCache();
+  try {
+    const env = { ASSISTANT_IP_CHAT_LIMIT: '100', TURNSTILE_SECRET_KEY: 'secret' };
+    const first = await onRequestPost({
+      request: chatBody([
+        { role: 'user', content: 'hola' },
+        { role: 'assistant', content: 'hola' },
+        { role: 'user', content: 'segunda pregunta' },
+      ], 'captcha-2'),
+      env,
+    });
+    assert.equal(first.status, 200);
+  } finally {
+    restoreCache();
+  }
+});
+
+test('assistant accepts the conversation once Turnstile verifies', async () => {
+  const restoreCache = installFakeCache();
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = typeof input === 'string' ? input : input.url;
+    if (url.includes('turnstile/v0/siteverify')) {
+      return new Response(JSON.stringify({ success: true }), { status: 200 });
+    }
+    throw new Error(`unexpected fetch: ${url}`);
+  };
+  try {
+    const convo = [
+      { role: 'user', content: 'hola' },
+      { role: 'assistant', content: 'hola' },
+      { role: 'user', content: 'tercera' },
+      { role: 'assistant', content: 'ok' },
+      { role: 'user', content: 'cuarta pregunta más larga' },
+    ];
+    const env = { ASSISTANT_IP_CHAT_LIMIT: '100', TURNSTILE_SECRET_KEY: 'secret' };
+    const request = new Request(`${origin}/api/assistant`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'chat', lang: 'es', session_id: 'captcha-3', turnstileToken: 'tok-abcdefghij', messages: convo }),
+    });
+    const ok = await onRequestPost({ request, env });
+    assert.equal(ok.status, 200);
+  } finally {
+    globalThis.fetch = originalFetch;
+    restoreCache();
+  }
+});
+
 test('assistant enforces the per-IP 10-minute window limit', async () => {
   const restoreCache = installFakeCache();
   try {

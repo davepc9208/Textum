@@ -1,15 +1,29 @@
-﻿# Cloudflare Pages — Blog SEO Dinámico
+﻿# Cloudflare Pages — Blog SEO (render en el edge para todos)
 
-Esta solución genera automáticamente metadatos Open Graph dinámicos para los posts del blog cuando se comparten en redes sociales.
+Los artículos de blog y colecciones se renderizan en el servidor **para todos los
+visitantes** (no solo bots): se evita el "cloaking" y el contenido es indexable y
+compartible sin ejecutar JavaScript.
 
 ## Cómo funciona
 
-1. Cuando alguien comparte un link de blog (ej: `https://www.mentoriatextum.com/blog/como-escribir-bien`)
-2. La función serverless en `functions/blog/[slug].js` intercepta el request
-3. Fetch de los datos del post desde Supabase usando el slug
-4. Genera HTML con metadatos OG dinámicos (título, descripción, imagen, etc.)
-5. Retorna ese HTML a bots de redes sociales (Facebook, Twitter, LinkedIn, WhatsApp)
-6. El navegador es redirigido a la aplicación React normal
+1. Petición a `https://www.mentoriatextum.com/blog/como-escribir-bien`.
+2. La función `functions/blog/[slug].js` (o `functions/colecciones/[tipo]/[slug].js`)
+   la intercepta y lee el post desde Supabase por su slug (caché de 5 min).
+3. Toma el shell real de la SPA (`/index.html`) y, entre los marcadores
+   `<!-- SSR:HEAD:START -->` / `<!-- SSR:HEAD:END -->`, sustituye el `<head>` por
+   el del artículo (title, description, canonical, hreflang, OG/Twitter, JSON-LD
+   Article + BreadcrumbList).
+4. Inyecta el artículo ya renderizado en `<div id="ssr-content">` (visible al
+   instante; tapa el spinner de Suspense) y un `<script id="__SSR_DATA__">` con el
+   post en JSON.
+5. En el cliente, `PostPage` / `ColeccionPiecePage` leen ese "data island" y
+   pintan el artículo sin repetir la consulta a Supabase; al montar, quitan el
+   `#ssr-content`.
+6. Si no se puede obtener el shell (p. ej. en tests), la función devuelve una
+   página HTML autónoma con todo el SEO.
+
+Marcadores y contenedores en `index.html` (`SSR:HEAD:*`, `#ssr-content`,
+`#ssr-home-h1`): **no eliminar** — las funciones SSR dependen de ellos.
 
 ## Configuración requerida
 

@@ -127,6 +127,16 @@ export async function requireAdmin(request, env, options = {}) {
 
   const user = await userResponse.json();
   const claims = decodeJwtPayload(token) || {};
+
+  // Los claims se leen sin verificar la firma: los atamos a la respuesta ya
+  // validada de /auth/v1/user y rechazamos tokens caducados. La verificación de
+  // firma real la hace Supabase al aceptar este token (y de nuevo PostgREST en
+  // el RPC is_admin, que reevalúa aal con el JWT verificado).
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (!claims.sub || claims.sub !== user.id || (typeof claims.exp === 'number' && claims.exp < nowSec)) {
+    return { ok: false, response: jsonResponse({ error: 'Sesión no válida.' }, 401, request, env, requestId) };
+  }
+
   if (requireMfa && claims.aal !== 'aal2') {
     return { ok: false, response: jsonResponse({ error: 'Se requiere MFA para esta operación.' }, 403, request, env, requestId) };
   }
@@ -160,9 +170,10 @@ export function validateText(value, { min = 0, max = 10000 } = {}) {
 
 export async function enforceRateLimit(request, namespace, max = 8, windowSec = 600) {
   try {
-    const ip = request.headers.get('CF-Connecting-IP')
-      || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      || 'unknown';
+    // Solo CF-Connecting-IP: lo fija el edge de Cloudflare y no es falsificable.
+    // X-Forwarded-For lo controla el cliente y permitiría un bucket nuevo por
+    // cada valor inventado.
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
     if (typeof caches === 'undefined' || !caches.default) return true;
     const key = new Request(`https://textum.internal/rate/${namespace}/${ip}`);
     const hit = await caches.default.match(key);
@@ -174,6 +185,30 @@ export async function enforceRateLimit(request, namespace, max = 8, windowSec = 
     return true;
   } catch {
     return true;
+  }
+}
+
+// Bandera booleana persistida en el caché del PoP (best-effort, no global).
+// Útil para "esta sesión ya pasó la verificación" sin volver a pedir captcha.
+export async function cacheRemember(key, ttlSec) {
+  try {
+    if (typeof caches === 'undefined' || !caches.default) return;
+    await caches.default.put(
+      new Request(`https://textum.internal/flag/${encodeURIComponent(key)}`),
+      new Response('1', { headers: { 'Cache-Control': `max-age=${ttlSec}` } }),
+    );
+  } catch {
+    /* no-op */
+  }
+}
+
+export async function cacheHas(key) {
+  try {
+    if (typeof caches === 'undefined' || !caches.default) return false;
+    const hit = await caches.default.match(new Request(`https://textum.internal/flag/${encodeURIComponent(key)}`));
+    return Boolean(hit);
+  } catch {
+    return false;
   }
 }
 

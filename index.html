@@ -10,6 +10,19 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
+    <meta name="theme-color" content="#0d1f3c" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://images.pexels.com" />
+    <link rel="dns-prefetch" href="https://didxrqnhnxbhskdazkzz.supabase.co" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap"
+    />
+
+    <!-- SSR:HEAD:START · las funciones de blog/colecciones reemplazan todo lo que hay
+         entre estos dos marcadores por el <head> del artículo servido. No quitar. -->
+    <!-- SSR:HEAD:START -->
     <!-- SEO base -->
     <title>TEXTUM — Mentoría Académica Internacional | Tesis, publicación y defensa</title>
     <meta name="description" content="Mentoría académica para TFG, TFM y tesis doctoral: metodología TEXTUM FLUX®, publicación en Scopus/Latindex y defensa oral. Diagnóstico gratuito. España y Latinoamérica." />
@@ -43,18 +56,6 @@
     <meta name="twitter:description" content="Mentoría académica para TFG, TFM y tesis doctoral. Método TEXTUM FLUX®. Diagnóstico gratuito." />
     <meta name="twitter:image"       content="https://www.mentoriatextum.com/og-default.png" />
     <meta name="twitter:image:alt"   content="TEXTUM — Mentoría Académica Internacional" />
-
-    <meta name="theme-color" content="#0d1f3c" />
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="dns-prefetch" href="https://images.pexels.com" />
-    <link rel="dns-prefetch" href="https://didxrqnhnxbhskdazkzz.supabase.co" />
-
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap"
-    />
 
     <link rel="alternate" hreflang="es" href="https://www.mentoriatextum.com/" />
     <link rel="alternate" hreflang="en" href="https://www.mentoriatextum.com/?lang=en" />
@@ -226,10 +227,16 @@
       ]
     }
     </script>
+    <!-- SSR:HEAD:END -->
 
   </head>
   <body>
-    <h1 style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;clip-path:inset(50%)">TEXTUM — Mentoría Académica Internacional para TFG, TFM, tesis doctoral, publicación científica y defensa oral</h1>
+    <h1 id="ssr-home-h1" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;clip-path:inset(50%)">TEXTUM — Mentoría Académica Internacional para TFG, TFM, tesis doctoral, publicación científica y defensa oral</h1>
+    <!-- Contenido pre-renderizado por las funciones SSR (blog/colecciones). En el
+         resto de páginas queda oculto y vacío. Mientras está visible, tapa el #root
+         para que no se vea el spinner de Suspense. -->
+    <style>#ssr-content:not([hidden]) ~ #root{position:absolute;left:-9999px;top:0;visibility:hidden}</style>
+    <div id="ssr-content" hidden></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

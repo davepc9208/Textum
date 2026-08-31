@@ -66,7 +66,7 @@ export async function onRequest(context) {
   // HTML 404 instead of the real file, the module script would never execute
   // and the page would render blank after deploy.
   const lastSegment = url.pathname.split('/').pop() || '';
-  const hasFileExtension = lastSegment.includes('.') && !lastSegment.endsWith('.');
+  const hasFileExtension = /\.[a-zA-Z0-9]{1,8}$/.test(lastSegment);
   if (hasFileExtension) {
     return typeof context.next === 'function'
       ? await context.next()

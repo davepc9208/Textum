@@ -62,37 +62,9 @@ function PageLoader() {
   );
 }
 
-const ORG_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type': 'EducationalOrganization',
-  name: 'TEXTUM — Mentoría Académica Internacional',
-  url: 'https://www.mentoriatextum.com',
-  logo: 'https://www.mentoriatextum.com/favicon.svg',
-  foundingDate: '2024',
-  description: 'Programas de mentoría académica internacional para titulación, publicación científica y defensa académica con rigor metodológico y uso ético de IA.',
-  areaServed: ['ES', 'EC', 'PE', 'MX', 'CO', 'AR', 'GB', 'DE', 'FR', 'IT'],
-  founder: [
-    { '@type': 'Person', name: 'Vilma María Pérez Viñas', jobTitle: 'Doctora en Ciencias Pedagógicas', sameAs: 'https://orcid.org/0000-0003-3041-096X' },
-    { '@type': 'Person', name: 'Yadyra de la Caridad Piñera Concepción', jobTitle: 'Doctora en Ciencias Pedagógicas', sameAs: 'https://orcid.org/0000-0002-8947-1364' },
-  ],
-  contactPoint: { '@type': 'ContactPoint', email: 'contacto@mentoriatextum.com', contactType: 'customer support', availableLanguage: ['Spanish', 'English'] },
-  sameAs: ['https://orcid.org/0000-0003-3041-096X', 'https://orcid.org/0000-0002-8947-1364'],
-};
-
-const SERVICES_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type': 'ItemList',
-  name: 'Programas de Mentoría Académica TEXTUM',
-  itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Titulación — Ajuste de Estilo y Norma',          url: 'https://www.mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 2, name: 'Titulación — Mentoría Avanzada FLUX',            url: 'https://www.mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 3, name: 'Titulación — Co-creación de Alta Intensidad',    url: 'https://www.mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 4, name: 'Publicación — Adaptación Editorial',             url: 'https://www.mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 5, name: 'Publicación — Pre-arbitraje Científico + FLUX',  url: 'https://www.mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 6, name: 'Publicación — Acompañamiento Editorial Premium', url: 'https://www.mentoriatextum.com/#servicios' },
-    { '@type': 'ListItem', position: 7, name: 'Defensa — Alta Defensa y Oratoria Académica',   url: 'https://www.mentoriatextum.com/#servicios' },
-  ],
-};
+// NOTA: el schema de EducationalOrganization y el ItemList de programas viven en
+// index.html (versión completa con @id, fundadoras, ORCID y precios). No se
+// vuelven a inyectar aquí para no enviar nodos duplicados y contradictorios.
 
 const BLOG_SCHEMA = {
   '@context': 'https://schema.org',
@@ -118,12 +90,6 @@ function HomePage() {
     ogType: 'website',
     lang,
   });
-
-  useEffect(() => {
-    injectSchema(ORG_SCHEMA, 'schema-org');
-    injectSchema(SERVICES_SCHEMA, 'schema-services');
-    return () => { removeSchema('schema-org'); removeSchema('schema-services'); };
-  }, []);
 
   return (
     <div className="relative">

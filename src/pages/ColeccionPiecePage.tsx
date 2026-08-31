@@ -2,10 +2,11 @@
 // Artículo individual de una Colección — /colecciones/:tipo/:slug
 // Mismo render que PostPage pero con breadcrumb de colección y sin ShareCard
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, X, Download } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
+import { ssrColeccion, dropSsrContent } from '../lib/ssrData';
 import { useLang } from '../i18n/LangContext';
 import { useSEO, injectSchema, removeSchema } from '../hooks/useSEO';
 import { sanitizeHtml } from '../lib/sanitize';
@@ -47,12 +48,14 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
 export default function ColeccionPiecePage() {
   const { tipo, slug } = useParams<{ tipo: string; slug: string }>();
   const { lang, t } = useLang();
-  const [post, setPost] = useState<Post | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [post, setPost] = useState<Post | null>(() => ssrColeccion(tipo, slug));
+  const [loading, setLoading] = useState(() => !ssrColeccion(tipo, slug));
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => { dropSsrContent(); }, []);
 
   const openLightbox = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -72,6 +75,7 @@ export default function ColeccionPiecePage() {
 
   useEffect(() => {
     if (!slug) return;
+    if (reloadKey === 0 && ssrColeccion(tipo, slug)) return;
     setLoading(true);
     setLoadError(false);
     Promise.resolve(supabase.from('posts').select('*').eq('slug', slug).eq('collection_type', tipo).eq('published', true).single())

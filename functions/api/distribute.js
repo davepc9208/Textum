@@ -1,8 +1,8 @@
 // functions/api/distribute.js
-import { GROQ_API_URL, callGroqWithFallback } from '../_shared/groq.js';
+// Generador de contenido de distribución (solo admin con MFA). Las fechas de
+// republicación se calculan dinámicamente desde new Date() en cada llamada.
+import { callGroqWithFallback } from '../_shared/groq.js';
 import { corsHeaders, fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
-// Fix: fechas de republicación ahora se generan dinámicamente desde new Date()
-// en lugar de estar hardcodeadas en julio 2026.
 
 const VERSION = "5.1.0-dynamic-dates";
 

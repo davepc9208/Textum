@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { callGroqWithFallback } from '../_shared/groq.js';
 import {
+  cacheHas,
+  cacheRemember,
   corsHeaders,
   enforceRateLimit,
   fetchWithRetry,
@@ -329,12 +331,13 @@ export async function onRequestPost(context) {
     return jsonResponse({ error: 'La solicitud supera el tamaño permitido.' }, 413, request, env, requestId);
   }
 
+  let lang = 'es';
   try {
     const body = await request.json();
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return jsonResponse({ error: 'Body inválido.' }, 400, request, env, requestId);
     }
-    const lang = body.lang === 'en' ? 'en' : 'es';
+    lang = body.lang === 'en' ? 'en' : 'es';
 
     // Límite por IP (ventana de 10 minutos) — antiabuso básico.
     const ipChatLimit = limitFromEnv(env, 'ASSISTANT_IP_CHAT_LIMIT', IP_CHAT_LIMIT);
@@ -354,6 +357,37 @@ export async function onRequestPost(context) {
         error: lang === 'en' ? 'You have reached the limit of this conversation. If you need more help, contact the team directly.' : 'Alcanzaste el límite de esta conversación. Si necesitas más ayuda, contacta directamente con el equipo.',
         limit_reached: true,
       }, 429, request, env, requestId);
+    }
+
+    // Verificación anti-bot del chat: los primeros turnos son libres; a partir
+    // del gate se pide Turnstile UNA vez por sesión (24 h). Si Turnstile no está
+    // configurado (env.TURNSTILE_SECRET_KEY ausente), no se exige nada.
+    if (body.mode === 'chat' && env.TURNSTILE_SECRET_KEY) {
+      const gate = limitFromEnv(env, 'ASSISTANT_CAPTCHA_GATE', 5);
+      const verifyKey = `assistant-verified-${sessionId}`;
+      let verified = await cacheHas(verifyKey);
+      if (!verified && typeof body.turnstileToken === 'string' && body.turnstileToken) {
+        const captcha = await verifyTurnstile(body.turnstileToken, request, env);
+        if (captcha.ok) {
+          verified = true;
+          await cacheRemember(verifyKey, 86400);
+        } else {
+          return jsonResponse({
+            error: lang === 'en'
+              ? 'The security check could not be verified. Please try again.'
+              : 'No se pudo verificar la comprobación de seguridad. Inténtalo de nuevo.',
+            captcha_required: true,
+          }, 403, request, env, requestId);
+        }
+      }
+      if (!verified && Array.isArray(body.messages) && body.messages.length >= gate) {
+        return jsonResponse({
+          error: lang === 'en'
+            ? 'Please complete the quick security check to keep chatting.'
+            : 'Completa la comprobación de seguridad rápida para seguir chateando.',
+          captcha_required: true,
+        }, 403, request, env, requestId);
+      }
     }
 
     if (body.mode === 'lead') return saveLead({ ...body, lang }, request, env, requestId);

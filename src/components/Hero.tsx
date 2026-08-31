@@ -8,6 +8,8 @@ import { diagnosisHref, trackConversion } from '../lib/conversion';
 
 function canRunCanvas(): boolean {
   if (typeof navigator === 'undefined') return true;
+  if (typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false;
   const cores = navigator.hardwareConcurrency ?? 4;
   if (cores <= 2) return false;
   const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
@@ -60,9 +62,10 @@ export default function Hero() {
 
     let raf: number;
     let paused = false;
+    let offscreen = false;
 
     function draw() {
-      if (paused) return;
+      if (paused || offscreen) return;
       ctx.clearRect(0, 0, W, H);
       particles.forEach((p) => {
         p.x += p.vx; p.y += p.vy;
@@ -93,17 +96,36 @@ export default function Hero() {
       raf = requestAnimationFrame(draw);
     }
 
+    const resume = () => {
+      if (!paused && !offscreen) {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(draw);
+      }
+    };
     const onVisibility = () => {
       paused = document.hidden;
-      if (!paused) raf = requestAnimationFrame(draw);
+      resume();
     };
     document.addEventListener('visibilitychange', onVisibility);
+
+    // Pausa el bucle de partículas cuando el Hero sale de la pantalla:
+    // no tiene sentido gastar CPU dibujando algo que no se ve mientras se lee.
+    let io: IntersectionObserver | undefined;
+    if (canvas.parentElement && 'IntersectionObserver' in window) {
+      io = new IntersectionObserver(([entry]) => {
+        offscreen = !entry.isIntersecting;
+        if (offscreen) { cancelAnimationFrame(raf); } else { resume(); }
+      }, { threshold: 0 });
+      io.observe(canvas.parentElement);
+    }
+
     draw();
 
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
       document.removeEventListener('visibilitychange', onVisibility);
+      io?.disconnect();
     };
   }, [showCanvas]);
 

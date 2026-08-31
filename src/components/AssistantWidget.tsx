@@ -204,15 +204,36 @@ export default function AssistantWidget() {
   const [leadError, setLeadError] = useState('');
   const [lead, setLead] = useState({ name: '', email: '', country: '', deadline: '', privacyAccepted: false });
   const [turnstileToken, setTurnstileToken] = useState('');
+  const [chatToken, setChatToken] = useState('');
+  const [captchaRequired, setCaptchaRequired] = useState(false);
   const [caseNote, setCaseNote] = useState('');
   const [lastNeed, setLastNeed] = useState<Need>('flux');
   const nextId = useRef(1);
+  const pendingMessagesRef = useRef<Message[] | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Móvil: el lanzador se aparta mientras se hace scroll hacia abajo (lectura)
+  // y reaparece al parar o al subir. En escritorio no aplica (clases sm:).
+  const [hiddenByScroll, setHiddenByScroll] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open, showLeadForm]);
+
+  useEffect(() => {
+    if (open) { setHiddenByScroll(false); return; }
+    let lastY = window.scrollY;
+    let idle: number | undefined;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setHiddenByScroll(y > lastY + 4 && y > 240);
+      lastY = y;
+      window.clearTimeout(idle);
+      idle = window.setTimeout(() => setHiddenByScroll(false), 850);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); window.clearTimeout(idle); };
+  }, [open]);
 
   useEffect(() => {
     setMessages([]);
@@ -221,6 +242,9 @@ export default function AssistantWidget() {
     setLeadSent(false);
     setLimitReached(false);
     setLeadError('');
+    setCaptchaRequired(false);
+    setChatToken('');
+    pendingMessagesRef.current = null;
   }, [lang]);
 
   const openWidget = () => {
@@ -235,7 +259,7 @@ export default function AssistantWidget() {
 
   const closeWidget = () => setOpen(false);
 
-  const receiveAnswer = async (nextMessages: Message[]) => {
+  const receiveAnswer = async (nextMessages: Message[], token = chatToken) => {
     setLoading(true);
     try {
       const response = await fetch('/api/assistant', {
@@ -245,14 +269,25 @@ export default function AssistantWidget() {
           mode: 'chat',
           lang,
           session_id: sessionIdRef.current,
+          turnstileToken: token,
           messages: nextMessages.slice(-10).map(({ role, content }) => ({ role, content })),
         }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         if (response.status === 429) setLimitReached(true);
+        if (response.status === 403 && data.captcha_required) {
+          // Guardamos la conversación pendiente y mostramos la verificación.
+          pendingMessagesRef.current = nextMessages;
+          setChatToken('');
+          setCaptchaRequired(true);
+          setLoading(false);
+          return;
+        }
         throw new Error(data.error || c.unavailable);
       }
+      setCaptchaRequired(false);
+      pendingMessagesRef.current = null;
       if (data.limit_reached) setLimitReached(true);
       const need = (data.need || 'flux') as Need;
       setLastNeed(need);
@@ -266,9 +301,19 @@ export default function AssistantWidget() {
     }
   };
 
+  const handleChatToken = (token: string) => {
+    setChatToken(token);
+    if (token && pendingMessagesRef.current) {
+      const pending = pendingMessagesRef.current;
+      pendingMessagesRef.current = null;
+      setCaptchaRequired(false);
+      void receiveAnswer(pending, token);
+    }
+  };
+
   const sendMessage = async (value = input) => {
     const content = value.trim();
-    if (!content || loading || limitReached) return;
+    if (!content || loading || limitReached || (captchaRequired && !chatToken)) return;
     const userMessage = makeMessage(nextId.current++, content, 'user');
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
@@ -361,18 +406,23 @@ export default function AssistantWidget() {
 
   return (
     <>
-      <div className={`fixed bottom-[5.75rem] right-5 sm:bottom-[6.25rem] sm:right-6 z-[70] transition-all duration-300 ${open ? 'pointer-events-none opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-        {inviteVisible && !open && <div className="absolute right-0 bottom-full mb-3 w-60 rounded-2xl bg-navy/95 backdrop-blur-xl border border-gold/40 px-4 py-3 text-white shadow-[0_12px_38px_rgba(13,31,60,0.35)]"><p className="text-sm leading-snug">{lang === 'es' ? '¿No sabes qué programa necesitas?' : 'Not sure which programme you need?'}</p><span className="block text-[10px] text-gold mt-1 tracking-wide">{lang === 'es' ? 'Te orientamos en 2 minutos' : 'Get guidance in 2 minutes'}</span></div>}
+      <div className={`fixed bottom-[5.75rem] right-4 sm:bottom-[6.25rem] sm:right-6 z-[70] transition-all duration-300 ${
+        open
+          ? 'pointer-events-none opacity-0 scale-95'
+          : hiddenByScroll
+            ? 'translate-y-24 opacity-0 pointer-events-none sm:translate-y-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto'
+            : 'opacity-100 scale-100'
+      }`}>
+        {inviteVisible && !open && !hiddenByScroll && <div className="absolute right-0 bottom-full mb-3 w-[min(15rem,calc(100vw-2rem))] rounded-2xl bg-navy/95 backdrop-blur-xl border border-gold/40 px-4 py-3 text-white shadow-[0_12px_38px_rgba(13,31,60,0.35)]"><p className="text-sm leading-snug">{lang === 'es' ? '¿No sabes qué programa necesitas?' : 'Not sure which programme you need?'}</p><span className="block text-[10px] text-gold mt-1 tracking-wide">{lang === 'es' ? 'Te orientamos en 2 minutos' : 'Get guidance in 2 minutes'}</span></div>}
         {!open && inviteVisible && <span className="absolute -right-1 -top-1 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ef4444] px-1 text-[10px] font-bold text-white shadow-[0_0_0_3px_rgba(13,31,60,0.8)] animate-pulse">1</span>}
         <button
           type="button"
           onClick={openWidget}
           aria-label={c.open}
-          className="group flex items-center gap-2.5 rounded-full bg-navy text-gold border border-gold/45 px-4 py-3 shadow-[0_12px_36px_rgba(13,31,60,0.3)] hover:bg-navy-light hover:border-gold transition-all touch-manipulation"
+          className="group flex items-center justify-center gap-2.5 rounded-full bg-navy text-gold border border-gold/45 p-3.5 opacity-80 sm:opacity-100 sm:px-4 sm:py-3 shadow-[0_12px_36px_rgba(13,31,60,0.3)] hover:opacity-100 hover:bg-navy-light hover:border-gold focus-visible:opacity-100 active:opacity-100 transition-all touch-manipulation"
         >
           <Sparkles size={18} aria-hidden="true" className="drop-shadow-[0_0_8px_rgba(226,192,110,0.7)]" />
           <span className="hidden sm:inline text-[11px] tracking-[0.12em] font-semibold">{lang === 'es' ? '¿TE ORIENTAMOS?' : 'NEED GUIDANCE?'}</span>
-          <span className="sm:hidden text-[11px] tracking-[0.08em] font-semibold">IA</span>
         </button>
       </div>
 
@@ -464,10 +514,20 @@ export default function AssistantWidget() {
                   <button type="button" onClick={showForm} className="w-full flex items-center justify-between gap-3 text-sm text-white bg-gold/20 border border-gold/65 rounded-xl px-4 py-3 hover:bg-gold/35 hover:shadow-[0_0_22px_rgba(201,168,76,0.2)] transition-all mb-3">
                     <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-gold" /> {c.dynamicCta}</span><ArrowRight size={13} />
                   </button>
+                  {captchaRequired && turnstileConfigured && (
+                    <div className="mb-3">
+                      <p className="text-[11px] text-white/70 mb-2">
+                        {lang === 'es'
+                          ? 'Verificación rápida para seguir chateando (una sola vez).'
+                          : 'Quick check to keep chatting (just once).'}
+                      </p>
+                      <TurnstileWidget onToken={handleChatToken} />
+                    </div>
+                  )}
                   <form onSubmit={(event) => { event.preventDefault(); void sendMessage(); }} className="flex items-center gap-2">
                     <label htmlFor="assistant-input" className="sr-only">{c.placeholder}</label>
                     <input id="assistant-input" value={input} onChange={(event) => setInput(event.target.value)} placeholder={c.placeholder} maxLength={1400} className="min-w-0 flex-1 bg-white/95 border border-white/50 rounded-full px-4 py-3 text-sm text-navy placeholder-navy/45 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/30" />
-                    <button type="submit" disabled={!input.trim() || loading} aria-label={c.send} className="w-10 h-10 flex items-center justify-center rounded-full bg-navy text-gold hover:bg-navy-light disabled:opacity-40 transition-colors flex-shrink-0"><Send size={15} /></button>
+                    <button type="submit" disabled={!input.trim() || loading || (captchaRequired && !chatToken)} aria-label={c.send} className="w-10 h-10 flex items-center justify-center rounded-full bg-navy text-gold hover:bg-navy-light disabled:opacity-40 transition-colors flex-shrink-0"><Send size={15} /></button>
                   </form>
                   <p className="text-[10px] text-navy/35 mt-2 text-center">{c.security}</p>
                 </div>

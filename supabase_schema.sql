@@ -11,14 +11,22 @@ create table if not exists public.posts (
   excerpt_en   text not null default '',
   content_es   text not null default '',
   content_en   text not null default '',
+  keywords_es  text not null default '',
+  keywords_en  text not null default '',
   author       text not null default '',
   cover_url    text not null default '',
   cover_alt    text,
   category     text,
+  collection_type text,
   published    boolean not null default false,
   reading_time integer not null default 1,
   created_at   timestamptz not null default now()
 );
+
+-- Columnas añadidas después del CREATE inicial (idempotente para BD ya existentes)
+alter table public.posts add column if not exists keywords_es     text not null default '';
+alter table public.posts add column if not exists keywords_en     text not null default '';
+alter table public.posts add column if not exists collection_type text;
 
 create index if not exists posts_published_cursor_idx
   on public.posts (published, collection_type, created_at desc, id desc);
