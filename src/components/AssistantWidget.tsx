@@ -413,8 +413,9 @@ export default function AssistantWidget() {
             ? 'translate-y-24 opacity-0 pointer-events-none sm:translate-y-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto'
             : 'opacity-100 scale-100'
       }`}>
-        {inviteVisible && !open && !hiddenByScroll && <div className="absolute right-0 bottom-full mb-3 w-[min(15rem,calc(100vw-2rem))] rounded-2xl bg-navy/95 backdrop-blur-xl border border-gold/40 px-4 py-3 text-white shadow-[0_12px_38px_rgba(13,31,60,0.35)]"><p className="text-sm leading-snug">{lang === 'es' ? '¿No sabes qué programa necesitas?' : 'Not sure which programme you need?'}</p><span className="block text-[10px] text-gold mt-1 tracking-wide">{lang === 'es' ? 'Te orientamos en 2 minutos' : 'Get guidance in 2 minutes'}</span></div>}
-        {!open && inviteVisible && <span className="absolute -right-1 -top-1 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ef4444] px-1 text-[10px] font-bold text-white shadow-[0_0_0_3px_rgba(13,31,60,0.8)] animate-pulse">1</span>}
+        {/* Burbuja de invitación: solo en tablet/desktop. En móvil molesta la lectura. */}
+        {inviteVisible && !open && !hiddenByScroll && <div className="hidden sm:block absolute right-0 bottom-full mb-3 w-[min(15rem,calc(100vw-2rem))] rounded-2xl bg-navy/95 backdrop-blur-xl border border-gold/40 px-4 py-3 text-white shadow-[0_12px_38px_rgba(13,31,60,0.35)]"><p className="text-sm leading-snug">{lang === 'es' ? '¿No sabes qué programa necesitas?' : 'Not sure which programme you need?'}</p><span className="block text-[10px] text-gold mt-1 tracking-wide">{lang === 'es' ? 'Te orientamos en 2 minutos' : 'Get guidance in 2 minutes'}</span></div>}
+        {!open && inviteVisible && <span className="hidden sm:flex absolute -right-1 -top-1 z-10 h-5 min-w-5 items-center justify-center rounded-full bg-[#ef4444] px-1 text-[10px] font-bold text-white shadow-[0_0_0_3px_rgba(13,31,60,0.8)] animate-pulse">1</span>}
         <button
           type="button"
           onClick={openWidget}
