@@ -1,9 +1,9 @@
 name: Quality gates
 
+# Sin filtro de ramas: los gates de calidad corren en cada push y cada PR.
 on:
   pull_request:
   push:
-    branches: [main]
 
 permissions:
   contents: read

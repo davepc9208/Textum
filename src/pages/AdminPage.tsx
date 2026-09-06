@@ -948,10 +948,24 @@ type Lead = {
   resource_title: string | null;
   lang: string | null;
   source: string | null;
+  status: string | null;
+  utm_source?: string | null;
+  utm_campaign?: string | null;
+  referrer?: string | null;
   created_at: string;
   email_sent?: boolean | null;
   downloaded_at?: string | null;
   unsubscribed_at?: string | null;
+};
+
+const LEAD_STATUSES = ['nuevo', 'contactado', 'diagnostico', 'propuesta', 'cliente', 'perdido'] as const;
+const STATUS_STYLE: Record<string, string> = {
+  nuevo:       'border-navy/20 text-navy/60 bg-white',
+  contactado:  'border-blue-200 text-blue-700 bg-blue-50',
+  diagnostico: 'border-amber-200 text-amber-700 bg-amber-50',
+  propuesta:   'border-violet-200 text-violet-700 bg-violet-50',
+  cliente:     'border-green-200 text-green-700 bg-green-50',
+  perdido:     'border-red-200 text-red-600 bg-red-50',
 };
 
 function LeadsPanel() {
@@ -960,13 +974,15 @@ function LeadsPanel() {
   const [err, setErr] = useState('');
   const [q, setQ] = useState('');
   const [filterResource, setFilterResource] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const fetchLeads = async () => {
     setLoading(true);
     setErr('');
     const { data, error } = await supabase
       .from('leads')
-      .select('id,name,email,institution,country,role,resource_slug,resource_type,resource_title,lang,source,created_at,email_sent,downloaded_at,unsubscribed_at')
+      .select('id,name,email,institution,country,role,resource_slug,resource_type,resource_title,lang,source,status,utm_source,utm_campaign,referrer,created_at,email_sent,downloaded_at,unsubscribed_at')
       .order('created_at', { ascending: false })
       .limit(500);
     if (error) {
@@ -980,10 +996,23 @@ function LeadsPanel() {
 
   useEffect(() => { fetchLeads(); }, []);
 
+  const updateStatus = async (id: string, status: string) => {
+    setSavingId(id);
+    const prev = leads;
+    setLeads(curr => curr.map(l => (l.id === id ? { ...l, status } : l)));
+    const { error } = await supabase.from('leads').update({ status }).eq('id', id);
+    if (error) {
+      setErr(`No se pudo guardar el estado: ${error.message}`);
+      setLeads(prev);
+    }
+    setSavingId(null);
+  };
+
   const resources = Array.from(new Set(leads.map(l => l.resource_slug).filter(Boolean))) as string[];
 
   const filtered = leads.filter(l => {
     if (filterResource && l.resource_slug !== filterResource) return false;
+    if (filterStatus && (l.status || 'nuevo') !== filterStatus) return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (
@@ -998,9 +1027,10 @@ function LeadsPanel() {
 
   const activeCount = leads.filter(l => !l.unsubscribed_at).length;
   const unsubCount = leads.filter(l => !!l.unsubscribed_at).length;
+  const clientCount = leads.filter(l => l.status === 'cliente').length;
 
   const exportCsv = () => {
-    const header = ['fecha', 'nombre', 'email', 'institucion', 'pais', 'rol', 'recurso', 'tipo', 'idioma', 'baja'];
+    const header = ['fecha', 'nombre', 'email', 'institucion', 'pais', 'rol', 'recurso', 'tipo', 'idioma', 'estado', 'utm_source', 'utm_campaign', 'referrer', 'baja'];
     const rows = filtered.map(l => [
       new Date(l.created_at).toISOString(),
       JSON.stringify(l.name ?? ''),
@@ -1011,6 +1041,10 @@ function LeadsPanel() {
       JSON.stringify(l.resource_slug ?? ''),
       JSON.stringify(l.resource_type ?? ''),
       JSON.stringify(l.lang ?? ''),
+      JSON.stringify(l.status ?? 'nuevo'),
+      JSON.stringify(l.utm_source ?? ''),
+      JSON.stringify(l.utm_campaign ?? ''),
+      JSON.stringify(l.referrer ?? ''),
       l.unsubscribed_at ? 'si' : 'no',
     ].join(','));
     const csv = [header.join(','), ...rows].join('\n');
@@ -1029,7 +1063,7 @@ function LeadsPanel() {
         <div>
           <h1 className="font-serif text-3xl text-navy">Leads</h1>
           <p className="text-sm text-navy/50 mt-1">
-            {leads.length} registros · {activeCount} activos · {unsubCount} dados de baja
+            {leads.length} registros · {activeCount} activos · {clientCount} clientes · {unsubCount} dados de baja
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -1060,6 +1094,16 @@ function LeadsPanel() {
             className="w-full bg-white border border-navy/15 rounded-sm pl-9 pr-4 py-2.5 text-sm text-navy focus:outline-none focus:border-gold/60"
           />
         </div>
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          className="bg-white border border-navy/15 rounded-sm px-4 py-2.5 text-sm text-navy focus:outline-none focus:border-gold/60"
+        >
+          <option value="">Todos los estados</option>
+          {LEAD_STATUSES.map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
         <select
           value={filterResource}
           onChange={e => setFilterResource(e.target.value)}
@@ -1097,8 +1141,9 @@ function LeadsPanel() {
                   <th className="px-4 py-3 font-medium">Nombre</th>
                   <th className="px-4 py-3 font-medium">Email</th>
                   <th className="px-4 py-3 font-medium">País</th>
-                  <th className="px-4 py-3 font-medium">Recurso</th>
-                  <th className="px-4 py-3 font-medium">Estado</th>
+                  <th className="px-4 py-3 font-medium">Origen</th>
+                  <th className="px-4 py-3 font-medium">Pipeline</th>
+                  <th className="px-4 py-3 font-medium">Suscripción</th>
                 </tr>
               </thead>
               <tbody>
@@ -1129,8 +1174,25 @@ function LeadsPanel() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-[10px] tracking-widest px-2 py-0.5 rounded-full border border-gold/30 text-gold bg-gold/5">
-                        {(l.resource_slug || '—').toUpperCase()}
+                        {(l.resource_slug || l.source || '—').toUpperCase()}
                       </span>
+                      {(l.utm_source || l.referrer) && (
+                        <span className="block text-[10px] text-navy/40 mt-1 truncate max-w-[140px]">
+                          {l.utm_campaign || l.utm_source || l.referrer}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <select
+                        value={l.status || 'nuevo'}
+                        disabled={savingId === l.id}
+                        onChange={e => updateStatus(l.id, e.target.value)}
+                        className={`text-[10px] tracking-widest uppercase px-2 py-1 rounded-full border focus:outline-none focus:border-gold/60 disabled:opacity-50 ${STATUS_STYLE[l.status || 'nuevo'] ?? STATUS_STYLE.nuevo}`}
+                      >
+                        {LEAD_STATUSES.map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {l.unsubscribed_at ? (

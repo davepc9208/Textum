@@ -9,7 +9,9 @@
       "url": "https://www.mentoriatextum.com",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://www.mentoriatextum.com/favicon.svg"
+        "url": "https://www.mentoriatextum.com/logo-512.png",
+        "width": 512,
+        "height": 512
       },
       "description": "Plataforma internacional de mentoría académica especializada en acompañamiento metodológico para investigadores, doctorandos y estudiantes de posgrado. Titulación, publicación científica y defensa oral. Método TEXTUM FLUX®.",
       "foundingDate": "2024",

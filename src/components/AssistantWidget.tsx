@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle, Mail, Send, ShieldCheck, Sparkles, X } from 'l
 import { useLang } from '../i18n/LangContext';
 import { localizedPath } from '../lib/locale';
 import { trackConversion } from '../lib/conversion';
+import { getAttribution } from '../lib/attribution';
 import TurnstileWidget from './TurnstileWidget';
 import { turnstileConfigured } from '../lib/turnstile';
 
@@ -357,6 +358,7 @@ export default function AssistantWidget() {
           summary,
           privacy_accepted: lead.privacyAccepted,
           turnstileToken,
+          attribution: getAttribution(),
         }),
       });
       const data = await response.json().catch(() => ({}));

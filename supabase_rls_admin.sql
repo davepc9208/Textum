@@ -76,11 +76,37 @@ create policy "Admins can delete posts"
 
 -- 4. Leads — la información personal solo es visible con admin + MFA
 alter table public.leads enable row level security;
+
+alter table public.leads add column if not exists status           text not null default 'nuevo';
+alter table public.leads add column if not exists utm_term         text;
+alter table public.leads add column if not exists utm_content      text;
+alter table public.leads add column if not exists gclid            text;
+alter table public.leads add column if not exists fbclid           text;
+alter table public.leads add column if not exists referrer         text;
+alter table public.leads add column if not exists landing_path     text;
+alter table public.leads add column if not exists first_seen_at    timestamptz;
+alter table public.leads add column if not exists sequence_step    integer not null default 0;
+alter table public.leads add column if not exists sequence_next_at timestamptz;
+alter table public.leads add column if not exists sequence_paused  boolean not null default false;
+alter table public.leads add column if not exists last_nurture_at  timestamptz;
+
+create index if not exists leads_status_idx on public.leads (status, created_at desc);
+create index if not exists leads_nurture_queue_idx
+  on public.leads (sequence_next_at)
+  where unsubscribed_at is null and sequence_paused = false;
+
 drop policy if exists "Admins can read leads" on public.leads;
 create policy "Admins can read leads"
   on public.leads for select
   to authenticated
   using (public.is_admin_mfa());
+
+drop policy if exists "Admins can update leads" on public.leads;
+create policy "Admins can update leads"
+  on public.leads for update
+  to authenticated
+  using (public.is_admin_mfa())
+  with check (public.is_admin_mfa());
 
 -- 5. Storage — solo admins pueden subir/editar/borrar imágenes
 drop policy if exists "Authenticated upload blog images" on storage.objects;

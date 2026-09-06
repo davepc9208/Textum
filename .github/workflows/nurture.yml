@@ -1,0 +1,33 @@
+name: Nurture emails
+
+# Dispara la secuencia de nurture (functions/api/nurture-run.js) una vez al día.
+# Requiere el secreto de repositorio CRON_SECRET (mismo valor que en Cloudflare
+# Pages → Settings → Environment variables). Solo se ejecuta desde la rama por
+# defecto (main): mientras trabajes en otra rama, no se lanza.
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # 09:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nurture
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger nurture run
+        run: |
+          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+            -X POST 'https://www.mentoriatextum.com/api/nurture-run' \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "HTTP $code"
+          cat /tmp/out.json || true
+          echo
+          test "$code" = "200"

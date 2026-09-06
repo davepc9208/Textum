@@ -72,7 +72,7 @@ const BLOG_SCHEMA = {
   name: 'Blog TEXTUM — Mentoría Académica',
   url: 'https://www.mentoriatextum.com/blog',
   description: 'Artículos y guías académicas sobre investigación, redacción científica y defensa oral.',
-  publisher: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica', logo: { '@type': 'ImageObject', url: 'https://www.mentoriatextum.com/favicon.svg' } },
+  publisher: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica', logo: { '@type': 'ImageObject', url: 'https://www.mentoriatextum.com/logo-512.png' } },
 };
 
 function HomePage() {

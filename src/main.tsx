@@ -7,6 +7,10 @@ import AppErrorBoundary from './components/AppErrorBoundary';
 import App from './App.tsx';
 import './index.css';
 import './monitoring';
+import { initAttribution } from './lib/attribution';
+
+// Captura la atribución de marketing en la primera carga (antes de que React monte).
+initAttribution();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

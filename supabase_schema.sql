@@ -57,11 +57,46 @@ create table if not exists public.leads (
   assistant_consent_at timestamptz,
   assistant_deadline text,
   assistant_priority text,
+  -- Pipeline comercial (gestionado desde el panel admin)
+  status           text not null default 'nuevo',
+  -- Atribución de marketing (first-touch)
+  utm_term         text,
+  utm_content      text,
+  gclid            text,
+  fbclid           text,
+  referrer         text,
+  landing_path     text,
+  first_seen_at    timestamptz,
+  -- Secuencia de nurture por email
+  sequence_step    integer not null default 0,
+  sequence_next_at timestamptz,
+  sequence_paused  boolean not null default false,
+  last_nurture_at  timestamptz,
   created_at       timestamptz not null default now()
 );
 
+-- Columnas idempotentes para bases de datos ya existentes
+alter table public.leads add column if not exists status           text not null default 'nuevo';
+alter table public.leads add column if not exists utm_term         text;
+alter table public.leads add column if not exists utm_content      text;
+alter table public.leads add column if not exists gclid            text;
+alter table public.leads add column if not exists fbclid           text;
+alter table public.leads add column if not exists referrer         text;
+alter table public.leads add column if not exists landing_path     text;
+alter table public.leads add column if not exists first_seen_at    timestamptz;
+alter table public.leads add column if not exists sequence_step    integer not null default 0;
+alter table public.leads add column if not exists sequence_next_at timestamptz;
+alter table public.leads add column if not exists sequence_paused  boolean not null default false;
+alter table public.leads add column if not exists last_nurture_at  timestamptz;
+
 create index if not exists leads_created_at_idx on public.leads (created_at desc);
 create index if not exists leads_email_idx on public.leads (lower(email));
+create index if not exists leads_status_idx on public.leads (status, created_at desc);
+-- Cola de nurture: leads activos con un paso pendiente y ya vencido.
+create index if not exists leads_nurture_queue_idx
+  on public.leads (sequence_next_at)
+  where unsubscribed_at is null and sequence_paused = false;
+
 alter table public.leads enable row level security;
 
 -- 3. Administradores autorizados
@@ -133,12 +168,20 @@ create policy "Admins can delete posts"
   to authenticated
   using (public.is_admin_mfa());
 
--- 5. Leads: solo el administrador con MFA puede leer datos personales
+-- 5. Leads: solo el administrador con MFA puede leer / actualizar datos personales
 drop policy if exists "Admins can read leads" on public.leads;
 create policy "Admins can read leads"
   on public.leads for select
   to authenticated
   using (public.is_admin_mfa());
+
+-- El panel admin cambia el `status` del lead (pipeline comercial).
+drop policy if exists "Admins can update leads" on public.leads;
+create policy "Admins can update leads"
+  on public.leads for update
+  to authenticated
+  using (public.is_admin_mfa())
+  with check (public.is_admin_mfa());
 
 -- 6. Presupuesto diario del asistente IA (Groq)
 -- Contador por día usado por functions/api/assistant.js para no agotar

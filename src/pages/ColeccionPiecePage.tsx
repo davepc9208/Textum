@@ -110,7 +110,7 @@ export default function ColeccionPiecePage() {
       image: post.cover_url,
       datePublished: post.created_at,
       author: { '@type': 'Person', name: post.author },
-      publisher: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica', logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.svg` } },
+      publisher: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica', logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo-512.png` } },
       mainEntityOfPage: { '@type': 'WebPage', '@id': localizedUrl(`/colecciones/${tipo}/${post.slug}`, lang) },
     }, 'schema-coleccion-piece');
     injectSchema({

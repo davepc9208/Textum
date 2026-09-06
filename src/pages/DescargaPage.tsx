@@ -9,6 +9,7 @@ import Footer from '../components/Footer';
 import TurnstileWidget from '../components/TurnstileWidget';
 import { turnstileConfigured } from '../lib/turnstile';
 import { diagnosisHref, trackConversion } from '../lib/conversion';
+import { getAttribution } from '../lib/attribution';
 import { localizedPath } from '../lib/locale';
 
 const RESOURCES: Record<string, { title_es: string; title_en: string; type: string }> = {
@@ -105,6 +106,7 @@ export default function DescargaPage() {
   source: 'coleccion',
   privacy_accepted: true,
   turnstileToken,
+  ...getAttribution(),
 }),
       });
 

@@ -8,6 +8,7 @@ import { useLang } from '../i18n/LangContext';
 import TurnstileWidget from './TurnstileWidget';
 import { turnstileConfigured } from '../lib/turnstile';
 import { trackConversion } from '../lib/conversion';
+import { getAttribution } from '../lib/attribution';
 
 function Toast({ type, message, onClose }: { type: 'success' | 'error'; message: string; onClose: () => void }) {
   useEffect(() => {
@@ -79,7 +80,7 @@ export default function Contact() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, turnstileToken, lang }),
+        body: JSON.stringify({ ...form, turnstileToken, lang, attribution: getAttribution() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || (lang === 'es' ? 'No se pudo enviar la solicitud.' : 'The request could not be sent.'));

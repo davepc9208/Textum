@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { callGroqWithFallback } from '../_shared/groq.js';
+import { attributionForInsert } from '../_shared/attribution.js';
 import {
   cacheHas,
   cacheRemember,
@@ -264,12 +265,16 @@ async function saveLead(body, request, env, requestId) {
     lang,
     source: 'assistant-widget',
     privacy_accepted: true,
+    status: 'nuevo',
+    sequence_step: 0,
+    sequence_next_at: new Date(Date.now() + 2 * 86400 * 1000).toISOString(),
     assistant_need: need,
     assistant_program: program,
     assistant_summary: summary.trim(),
     assistant_deadline: deadline.trim(),
     assistant_priority: priority,
     assistant_consent_at: new Date().toISOString(),
+    ...attributionForInsert(body.attribution),
   });
 
   if (insertError) {

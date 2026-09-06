@@ -26,15 +26,68 @@ export function setCookieConsent(value: 'accepted' | 'rejected') {
   window.dispatchEvent(new CustomEvent('textum-cookie-consent', { detail: value }));
 }
 
-/** Inicializa Microsoft Clarity solo si el usuario aceptó analítica */
+const GA4_ID = (import.meta.env.VITE_GA4_ID as string | undefined)?.trim() || '';
+const META_PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined)?.trim() || '';
+
+let analyticsStarted = false;
+
+function loadScript(src: string) {
+  return new Promise<void>((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`No se pudo cargar ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
+function initGa4(id: string) {
+  const w = window as Window & { dataLayer?: unknown[]; gtag?: (...a: unknown[]) => void };
+  w.dataLayer = w.dataLayer || [];
+  w.gtag = function gtag(...args: unknown[]) { w.dataLayer!.push(args); };
+  w.gtag('js', new Date());
+  w.gtag('config', id, { anonymize_ip: true });
+  void loadScript(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`);
+}
+
+type FbqFn = {
+  (...args: unknown[]): void;
+  callMethod?: (...args: unknown[]) => void;
+  queue: unknown[][];
+  loaded: boolean;
+  version: string;
+};
+
+function initMetaPixel(id: string) {
+  const w = window as Window & { fbq?: FbqFn; _fbq?: FbqFn };
+  if (w.fbq) return;
+  const fbq = function (...args: unknown[]) {
+    if (fbq.callMethod) fbq.callMethod(...args);
+    else fbq.queue.push(args);
+  } as FbqFn;
+  fbq.queue = [];
+  fbq.loaded = true;
+  fbq.version = '2.0';
+  w.fbq = fbq;
+  w._fbq = fbq;
+  void loadScript('https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', id);
+  fbq('track', 'PageView');
+}
+
+/** Inicializa la analítica (Clarity + GA4 + Meta Pixel) solo con consentimiento. */
 export async function initAnalyticsIfAllowed() {
-  if (getCookieConsent() !== 'accepted') return;
+  if (getCookieConsent() !== 'accepted' || analyticsStarted) return;
+  analyticsStarted = true;
   try {
     const Clarity = (await import('@microsoft/clarity')).default;
     Clarity.init('xzsgo2fjo4');
   } catch (e) {
     console.warn('[TEXTUM] Clarity no se pudo inicializar', e);
   }
+  if (GA4_ID) { try { initGa4(GA4_ID); } catch (e) { console.warn('[TEXTUM] GA4 no se pudo inicializar', e); } }
+  if (META_PIXEL_ID) { try { initMetaPixel(META_PIXEL_ID); } catch (e) { console.warn('[TEXTUM] Meta Pixel no se pudo inicializar', e); } }
 }
 
 export default function CookieBanner() {

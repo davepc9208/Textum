@@ -1,6 +1,11 @@
 ﻿// functions/api/lead-magnet.js
 import { createClient } from '@supabase/supabase-js';
 import { corsHeaders, enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
+import { attributionForInsert } from '../_shared/attribution.js';
+
+// Días hasta el primer email de la secuencia de nurture (el email de entrega
+// del PDF sale de inmediato desde este mismo endpoint).
+const NURTURE_FIRST_DELAY_DAYS = 2;
 
 const ALLOWED_RESOURCES = new Set([
   'principio:pt-01',
@@ -112,6 +117,7 @@ export async function onRequestPost(context) {
     const cleanEmail = email.trim().toLowerCase();
 
     // 1. Guardar lead
+    const nurtureNextAt = new Date(Date.now() + NURTURE_FIRST_DELAY_DAYS * 86400 * 1000).toISOString();
     const { data: lead, error: insertError } = await supabase
       .from('leads')
       .insert({
@@ -125,10 +131,11 @@ export async function onRequestPost(context) {
         resource_title,
         lang,
         source,
-        utm_source,
-        utm_medium,
-        utm_campaign,
         privacy_accepted: !!privacy_accepted,
+        status: 'nuevo',
+        sequence_step: 0,
+        sequence_next_at: nurtureNextAt,
+        ...attributionForInsert({ utm_source, utm_medium, utm_campaign, ...body }),
       })
       .select()
       .single();

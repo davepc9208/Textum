@@ -1,6 +1,7 @@
 // functions/api/contact.js
 // Cloudflare Pages Function para el formulario de contacto.
 import { corsHeaders, enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
+import { attributionSummaryHtml } from '../_shared/attribution.js';
 
 const MAX_BODY_BYTES = 32 * 1024;
 
@@ -21,7 +22,7 @@ export async function onRequestPost(context) {
   if (Number(request.headers.get('Content-Length') || 0) > MAX_BODY_BYTES) {
     return jsonResponse({ error: 'La solicitud supera el tamaño permitido.' }, 413, request, env, requestId);
   }
-  if (!await enforceRateLimit(request, 'contact', 5, 600)) {
+  if (!await enforceRateLimit(request, 'contact', 8, 600)) {
     return jsonResponse({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, 429, request, env, requestId, { 'Retry-After': '600' });
   }
 
@@ -36,7 +37,7 @@ export async function onRequestPost(context) {
       return jsonResponse({ error: 'Body inválido.' }, 400, request, env, requestId);
     }
 
-    const { name, email, service, message, turnstileToken, lang } = body;
+    const { name, email, service, message, turnstileToken, lang, attribution } = body;
     english = lang === 'en';
 
     if (!validateText(name, { min: 2, max: 120 })
@@ -74,6 +75,7 @@ export async function onRequestPost(context) {
           <p><strong>Servicio de interés:</strong> ${escapeHtml(service || 'No especificado')}</p>
           <p><strong>Mensaje:</strong></p>
           <p>${escapeHtml(message).replace(/\n/g, '<br/>')}</p>
+          ${attributionSummaryHtml(attribution, escapeHtml)}
         `,
       }),
     }, { retries: 0, timeoutMs: 8000 });

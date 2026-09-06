@@ -164,7 +164,7 @@ export default function PostPage() {
       publisher: {
         '@type': 'Organization',
         name: 'TEXTUM — Mentoría Académica',
-        logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.svg` },
+        logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo-512.png`, width: 512, height: 512 },
       },
       mainEntityOfPage: {
         '@type': 'WebPage',

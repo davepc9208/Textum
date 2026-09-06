@@ -6,6 +6,7 @@ import { onRequest as blogPost } from '../functions/blog/[slug].js';
 import { onRequestPost as contact, onRequestOptions as contactOptions } from '../functions/api/contact.js';
 import { onRequestPost as leadMagnet, onRequestOptions as leadMagnetOptions } from '../functions/api/lead-magnet.js';
 import { onRequestPost as uploadImage } from '../functions/api/upload-image.js';
+import { onRequestPost as nurtureRun } from '../functions/api/nurture-run.js';
 import { onRequest as catchAll } from '../functions/[[path]].js';
 
 const origin = 'https://www.mentoriatextum.com';
@@ -209,6 +210,25 @@ test('rejects image uploads without a bearer token', async () => {
   const response = await uploadImage({
     request: new Request(`${origin}/api/upload-image`, { method: 'POST', body: form }),
     env: {},
+  });
+  assert.equal(response.status, 401);
+});
+
+test('nurture-run returns 503 when CRON_SECRET is not configured', async () => {
+  const response = await nurtureRun({
+    request: new Request(`${origin}/api/nurture-run`, { method: 'POST' }),
+    env: {},
+  });
+  assert.equal(response.status, 503);
+});
+
+test('nurture-run rejects a wrong bearer token with 401', async () => {
+  const response = await nurtureRun({
+    request: new Request(`${origin}/api/nurture-run`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer wrong' },
+    }),
+    env: { CRON_SECRET: 'right', SUPABASE_URL: 'https://s.co', SUPABASE_SERVICE_ROLE_KEY: 'k', RESEND_API_KEY: 'r' },
   });
   assert.equal(response.status, 401);
 });

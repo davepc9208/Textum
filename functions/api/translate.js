@@ -103,18 +103,20 @@ async function translateHtmlContent(apiKey, content_es) {
     );
   }
 
-  // Contenido largo: dividir en chunks y traducir por partes
+  // Contenido largo: dividir en chunks y traducir SECUENCIALMENTE.
+  // En paralelo (Promise.all) se disparan N peticiones a Groq a la vez y su
+  // rate limit gratuito devuelve 429 con artículos largos.
   console.log(`[translate] Contenido largo (${content_es.length} chars) — dividiendo en chunks`);
   const chunks = splitHtmlIntoChunks(content_es, MAX_CONTENT_CHARS);
-  const translatedChunks = await Promise.all(
-    chunks.map((chunk, i) =>
-      callGroq(
-        apiKey,
-        SYSTEM_HTML,
-        `Traduce al inglés el texto dentro de este HTML (parte ${i + 1} de ${chunks.length}). Devuelve SOLO el HTML:\n\n${chunk}`
-      )
-    )
-  );
+  const translatedChunks = [];
+  for (let i = 0; i < chunks.length; i += 1) {
+    const translated = await callGroq(
+      apiKey,
+      SYSTEM_HTML,
+      `Traduce al inglés el texto dentro de este HTML (parte ${i + 1} de ${chunks.length}). Devuelve SOLO el HTML:\n\n${chunks[i]}`,
+    );
+    translatedChunks.push(translated);
+  }
   return translatedChunks.join("\n");
 }
 
@@ -160,17 +162,15 @@ export async function onRequest(context) {
   }
 
   try {
-    // Título y excerpt en paralelo (son cortos) + contenido (puede ser largo)
-    const [title_en, excerpt_en, content_en, keywords_en] = await Promise.all([
-      callGroq(apiKey, SYSTEM_TEXT, `Traduce este título académico al inglés:\n\n${title_es}`),
-      excerpt_es
-        ? callGroq(apiKey, SYSTEM_TEXT, `Traduce este resumen académico al inglés:\n\n${excerpt_es}`)
-        : Promise.resolve(""),
-      translateHtmlContent(apiKey, content_es),
-      keywords_es
-        ? callGroq(apiKey, SYSTEM_TEXT, `Traduce estas palabras clave al inglés (mantén el formato de lista separada por comas):\n\n${keywords_es}`)
-        : Promise.resolve(""),
-    ]);
+    // Secuencial: una llamada a Groq cada vez para no chocar con su rate limit.
+    const title_en = await callGroq(apiKey, SYSTEM_TEXT, `Traduce este título académico al inglés:\n\n${title_es}`);
+    const excerpt_en = excerpt_es
+      ? await callGroq(apiKey, SYSTEM_TEXT, `Traduce este resumen académico al inglés:\n\n${excerpt_es}`)
+      : "";
+    const content_en = await translateHtmlContent(apiKey, content_es);
+    const keywords_en = keywords_es
+      ? await callGroq(apiKey, SYSTEM_TEXT, `Traduce estas palabras clave al inglés (mantén el formato de lista separada por comas):\n\n${keywords_es}`)
+      : "";
 
     return json({ success: true, title_en, excerpt_en, content_en, keywords_en }, 200, request, env);
 
