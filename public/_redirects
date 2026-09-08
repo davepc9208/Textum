@@ -1,4 +1,9 @@
-# Legacy language prefixes → canonical root plus query-based English
+# Legacy language prefixes → canonical root plus query-based English.
+# NOTA: Cloudflare Pages NO aplica _redirects a peticiones que resuelve una
+# Pages Function (y functions/[[path]].js matchea todas las URLs), así que
+# estos redirects legacy viven de verdad en el catch-all (LEGACY_REDIRECTS y
+# legacyPrefixedPath). Quedan aquí como respaldo si algún día se retira el
+# catch-all.
 /es      /   301
 /en      /?lang=en   301
 /es/     /   301

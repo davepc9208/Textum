@@ -26,16 +26,15 @@ function localizedUrl(path, lang) {
   return url.toString();
 }
 
-function detectLang(request, post) {
+// Idioma determinista: solo ?lang=en (o ?lang=es) cambia el idioma servido.
+// El Accept-Language se ignora porque hace que la MISMA URL sirva contenido
+// distinto según el navegador — Googlebot (Accept-Language: *) puede recibir
+// inglés sin ?lang=en y contradecir el hreflang/canonical declarado.
+// La SPA ya resuelve igual (getLocaleFromUrl → ?lang=).
+function detectLang(request) {
   const url = new URL(request.url);
   const langParam = url.searchParams.get('lang');
   if (langParam === 'en') return 'en';
-  if (langParam === 'es') return 'es';
-
-  const acceptLang = (request.headers.get('accept-language') || '').toLowerCase();
-  if (acceptLang.includes('en') && !acceptLang.startsWith('es')) {
-    return (post.title_en && post.content_en) ? 'en' : 'es';
-  }
   return 'es';
 }
 
@@ -227,7 +226,7 @@ export async function onRequest(context) {
 
   if (!post) return notFoundResponse(request);
 
-  const lang = detectLang(request, post);
+  const lang = detectLang(request);
 
   return renderSsrPage({
     request,

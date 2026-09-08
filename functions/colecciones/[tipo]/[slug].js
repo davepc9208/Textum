@@ -15,12 +15,12 @@ function typeLabel(type, lang) {
   return lang === 'en' ? 'TEXTUM Tools' : 'Herramientas TEXTUM';
 }
 
+// Idioma determinista: solo ?lang=en cambia el idioma servido (misma razón
+// que functions/blog/[slug].js: el Accept-Language produce contenido
+// inconsistente para Googlebot y contradice el hreflang declarado).
 function langFromRequest(request) {
   const url = new URL(request.url);
-  const explicit = url.searchParams.get('lang');
-  if (explicit === 'en' || explicit === 'es') return explicit;
-  const acceptLanguage = request.headers.get('accept-language') || '';
-  return /^en(?:-|,|;)/i.test(acceptLanguage) ? 'en' : 'es';
+  return url.searchParams.get('lang') === 'en' ? 'en' : 'es';
 }
 
 function localizedUrl(path, lang) {

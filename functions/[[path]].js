@@ -1,7 +1,71 @@
 // functions/[[path]].js
 // Cloudflare Pages catch-all — SPA shell for known routes, static 404 for the rest.
 // NO imports from _shared/security.js or any other module.
-// Redirects for /es, /en, /es/blog/*, /en/blog/* are handled by public/_redirects.
+//
+// IMPORTANTE: las reglas de public/_redirects NO se aplican a peticiones que
+// resuelve una Pages Function (docs de Cloudflare), y este catch-all matchea
+// todas las URLs. Por eso los redirects legacy /es /en /contacto viven aquí.
+
+// Legacy prefixed URLs (indexadas antes de migrar a ?lang=en) → canonical 301.
+const LEGACY_REDIRECTS = {
+  '/es': '/',
+  '/es/': '/',
+  '/en': '/?lang=en',
+  '/en/': '/?lang=en',
+  '/contacto': '/#contacto',
+  '/es/contacto': '/#contacto',
+  '/en/contacto': '/?lang=en#contacto',
+};
+
+// Conserva el query string (p. ej. ?utm_...) al redirigir legacy paths.
+function redirect301(target, search) {
+  const url = new URL(target, 'https://www.mentoriatextum.com');
+  const targetParams = new URLSearchParams(url.search);
+  for (const [key, value] of new URLSearchParams(search)) {
+    if (!targetParams.has(key)) targetParams.append(key, value);
+  }
+  url.search = targetParams.toString();
+  return new Response(null, {
+    status: 301,
+    headers: { Location: `${url.pathname}${url.search}${url.hash}` },
+  });
+}
+
+function legacyRedirect(pathname, search) {
+  const target = LEGACY_REDIRECTS[pathname];
+  return target ? redirect301(target, search) : null;
+}
+
+// Google indexó rutas /es/... y /en/... de artículos legacy: redirige 301
+// preservando el slug. /en/* añade ?lang=en (idioma que servía esa ruta).
+// Se normaliza la barra final (/es/blog/foo/ → /blog/foo) porque las rutas de
+// la app no aceptan barra final y caerían en el 404.
+function legacyPrefixedPath(pathname, search) {
+  const match = /^\/(es|en)\/(.+)$/.exec(pathname);
+  if (!match) return null;
+  const rest = match[2].replace(/\/+$/, '');
+  return redirect301(match[1] === 'en' ? `/${rest}?lang=en` : `/${rest}`, search);
+}
+
+// Reescribe canonical/hreflang/og:url declarados en index.html (todos apuntan
+// a la home) para que canonicalicen a la ruta servida. Con ?lang=en la
+// canonical es la variante EN — igual que hace useSEO en el cliente — para que
+// el HTML servido y el DOM renderizado no discrepen.
+function rewriteCanonicals(html, pathname, lang) {
+  const es = `https://www.mentoriatextum.com${pathname}`;
+  const en = `${es}?lang=en`;
+  const self = lang === 'en' ? en : es;
+  let out = html
+    .replace(/<link rel="canonical" href="[^"]*" \/>/, `<link rel="canonical" href="${self}" />`)
+    .replace(/<link rel="alternate" hreflang="es" href="[^"]*" \/>/, `<link rel="alternate" hreflang="es" href="${es}" />`)
+    .replace(/<link rel="alternate" hreflang="en" href="[^"]*" \/>/, `<link rel="alternate" hreflang="en" href="${en}" />`)
+    .replace(/<link rel="alternate" hreflang="x-default" href="[^"]*" \/>/, `<link rel="alternate" hreflang="x-default" href="${es}" />`)
+    .replace(/<meta property="og:url"\s+content="[^"]*"\s*\/>/, `<meta property="og:url" content="${self}" />`);
+  if (lang === 'en') {
+    out = out.replace(/<html lang="es">/i, '<html lang="en">');
+  }
+  return out;
+}
 
 const APP_ROUTES = [
   /^\/$/,
@@ -46,6 +110,9 @@ export async function onRequest(context) {
       : new Response('Method not allowed', { status: 405 });
   }
 
+  const legacy = legacyRedirect(url.pathname, url.search) || legacyPrefixedPath(url.pathname, url.search);
+  if (legacy) return legacy;
+
   if (isAppRoute(url.pathname)) {
     const response = typeof context.next === 'function'
       ? await context.next()
@@ -53,6 +120,18 @@ export async function onRequest(context) {
     const headers = new Headers(response.headers);
     if (isNoIndexAppRoute(url.pathname)) {
       headers.set('X-Robots-Tag', 'noindex, nofollow');
+    }
+    // Canonical por ruta: el shell declara la canonical de la home; reescribe
+    // canonical/hreflang/og:url para que la ruta servida se canonicalice a sí
+    // misma (evita "duplicada, Google eligió otra canónica" en /blog, /colecciones...).
+    if (!isNoIndexAppRoute(url.pathname)) {
+      const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'es';
+      const html = await response.text();
+      const rewritten = rewriteCanonicals(html, url.pathname, lang);
+      return new Response(rewritten, {
+        status: 200,
+        headers,
+      });
     }
     return new Response(response.body, {
       status: 200,

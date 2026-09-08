@@ -56,6 +56,35 @@ test('blog SSR uses the requested English canonical and all hreflang variants', 
   }
 });
 
+test('blog SSR ignores Accept-Language: only ?lang decides the served language', async () => {
+  const restore = mockSupabase([
+    { ...post, collection_type: null, title_en: 'English title', content_en: '<p>English</p>' },
+  ]);
+  try {
+    const spanish = await blogPost({
+      request: new Request(`${origin}/blog/test-principle`, { headers: { 'Accept-Language': 'en-US,en;q=0.9' } }),
+      env,
+      params: { slug: 'test-principle' },
+    });
+    const spanishHtml = await spanish.text();
+    assert.equal(spanish.status, 200);
+    assert.match(spanishHtml, /<html lang="es">/);
+    assert.match(spanishHtml, /Principio de prueba/);
+    assert.doesNotMatch(spanishHtml, /English title/);
+
+    const english = await blogPost({
+      request: new Request(`${origin}/blog/test-principle?lang=en`),
+      env,
+      params: { slug: 'test-principle' },
+    });
+    const englishHtml = await english.text();
+    assert.match(englishHtml, /<html lang="en">/);
+    assert.match(englishHtml, /English title/);
+  } finally {
+    restore();
+  }
+});
+
 test('collection SSR renders the article for every visitor (no cloaking)', async () => {
   for (const ua of ['Mozilla/5.0', 'Googlebot']) {
     const restore = mockSupabase([post]);
