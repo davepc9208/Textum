@@ -35,6 +35,13 @@ const COLLECTIONS = {
       desc: 'Instrumentos de apoyo para formular, revisar, representar y evaluar la calidad metodológica de una investigación. Recursos prácticos para investigadores y directores de tesis.',
       stripOpacity: 1.0,
     },
+    {
+      type: 'eii',
+      code: 'EII',
+      label: 'Enfoque Investigativo Integral',
+      desc: 'Concepción integral, articulada y recursiva de la investigación científica: una arquitectura conceptual y relacional para comprender cómo se configura, se articula y puede reconfigurarse el proceso investigador.',
+      stripOpacity: 1.0,
+    },
   ],
   en: [
     {
@@ -56,6 +63,13 @@ const COLLECTIONS = {
       code: 'HT',
       label: 'TEXTUM Tools',
       desc: 'Support instruments for formulating, reviewing, representing and evaluating the methodological quality of a research project. Practical resources for researchers and thesis supervisors.',
+      stripOpacity: 1.0,
+    },
+    {
+      type: 'eii',
+      code: 'EII',
+      label: 'Integral Research Approach',
+      desc: 'An integral, articulated and recursive conception of scientific research: a conceptual and relational architecture for understanding how the research process is configured, articulated and may be reconfigured.',
       stripOpacity: 1.0,
     },
   ],

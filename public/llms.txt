@@ -37,6 +37,7 @@
 - [Principios TEXTUM](https://www.mentoriatextum.com/colecciones/principio): Fundamentos que explican relaciones esenciales del proceso investigador.
 - [Categorías Metodológicas](https://www.mentoriatextum.com/colecciones/categoria): Componentes estructurales del diseño de una investigación científica.
 - [Herramientas TEXTUM](https://www.mentoriatextum.com/colecciones/herramienta): Matrices, esquemas y guías para formular, revisar y evaluar investigaciones.
+- [Enfoque Investigativo Integral](https://www.mentoriatextum.com/colecciones/eii): Concepción integral, articulada y recursiva de la investigación científica como totalidad dinámica.
 
 ## Blog académico
 

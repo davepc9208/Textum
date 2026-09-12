@@ -12,6 +12,7 @@ const ALLOWED_RESOURCES = new Set([
   'categoria:cm-01',
   'herramienta:ht-01',
   'herramienta:ht-02',
+  'eii:eii-01',
 ]);
 
 function isOptionalText(value, max) {

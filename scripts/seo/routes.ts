@@ -11,6 +11,7 @@ export const STATIC_ROUTES: Route[] = [
   { path: '/colecciones/principio', priority: 0.7, changefreq: 'monthly' },
   { path: '/colecciones/categoria', priority: 0.7, changefreq: 'monthly' },
   { path: '/colecciones/herramienta', priority: 0.7, changefreq: 'monthly' },
+  { path: '/colecciones/eii', priority: 0.7, changefreq: 'monthly' },
   { path: '/privacidad', priority: 0.3, changefreq: 'monthly' },
   { path: '/casos', priority: 0.7, changefreq: 'monthly' },
 ];

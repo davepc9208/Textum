@@ -622,6 +622,7 @@ function PostEditor({
     <option value="principio">PT — Principios TEXTUM</option>
     <option value="categoria">CM — Categorías Metodológicas</option>
     <option value="herramienta">HT — Herramientas TEXTUM</option>
+    <option value="eii">EII — Enfoque Investigativo Integral</option>
   </select>
   <p className="text-xs text-navy/40 mt-1.5">
     Si seleccionas un tipo de Colección, la pieza no aparecerá en el Blog.

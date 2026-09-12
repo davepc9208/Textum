@@ -149,6 +149,48 @@ test('SSR splices head + article + data island into the real SPA shell', async (
   }
 });
 
+test('collection SSR accepts the eii type with its own labels and canonicals', async () => {
+  const restore = mockSupabase([{ ...post, slug: 'eii-01', collection_type: 'eii', title_es: 'El Enfoque Investigativo Integral', title_en: 'The Integral Research Approach' }]);
+  try {
+    const spanish = await collectionPost({
+      request: new Request(`${origin}/colecciones/eii/eii-01`),
+      env,
+      params: { tipo: 'eii', slug: 'eii-01' },
+    });
+    const spanishHtml = await spanish.text();
+    assert.equal(spanish.status, 200);
+    assert.match(spanishHtml, /<html lang="es">/);
+    assert.match(spanishHtml, /<h1>El Enfoque Investigativo Integral<\/h1>/);
+    assert.match(spanishHtml, /Enfoque Investigativo Integral — TEXTUM<\/title>/);
+    assert.match(spanishHtml, /rel="canonical" href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii\/eii-01"/);
+    assert.match(spanishHtml, /hreflang="es" href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii\/eii-01"/);
+    assert.match(spanishHtml, /hreflang="en" href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii\/eii-01\?lang=en"/);
+    // Breadcrumb hacia el listado de la colección EII
+    assert.match(spanishHtml, /href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii"/);
+
+    const english = await collectionPost({
+      request: new Request(`${origin}/colecciones/eii/eii-01?lang=en`),
+      env,
+      params: { tipo: 'eii', slug: 'eii-01' },
+    });
+    const englishHtml = await english.text();
+    assert.match(englishHtml, /<html lang="en">/);
+    assert.match(englishHtml, /Integral Research Approach — TEXTUM<\/title>/);
+  } finally {
+    restore();
+  }
+});
+
+test('collection SSR rejects unknown collection types', async () => {
+  const response = await collectionPost({
+    request: new Request(`${origin}/colecciones/otro/xx`),
+    env,
+    params: { tipo: 'otro', slug: 'xx' },
+  });
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow');
+});
+
 test('dynamic sitemap has one canonical loc per resource and excludes contacto', async () => {
   const restore = mockSupabase([
     { slug: 'pt-01', collection_type: 'principio', created_at: '2026-01-01T00:00:00.000Z' },
@@ -160,7 +202,8 @@ test('dynamic sitemap has one canonical loc per resource and excludes contacto',
     assert.equal(response.status, 200);
     assert.match(xml, /xmlns:xhtml/);
     assert.doesNotMatch(xml, /contacto/);
-    assert.equal((xml.match(/<loc>/g) || []).length, 10);
+    assert.match(xml, /<loc>https:\/\/www\.mentoriatextum\.com\/colecciones\/eii<\/loc>/);
+    assert.equal((xml.match(/<loc>/g) || []).length, 11);
     assert.match(xml, /hreflang="en" href="https:\/\/www\.mentoriatextum\.com\/blog\/blog-01\?lang=en"/);
   } finally {
     restore();

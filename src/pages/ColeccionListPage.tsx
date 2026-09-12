@@ -13,13 +13,14 @@ import BackToTop from '../components/BackToTop';
 import { localizedPath } from '../lib/locale';
 import { PageError, PageSkeleton } from '../components/AsyncState';
 
-type CollectionType = 'principio' | 'categoria' | 'herramienta';
+type CollectionType = 'principio' | 'categoria' | 'herramienta' | 'eii';
 
 // Tipos reales según PRESENTACIÓN_DE_LA_COLECCIÓN.docx
 const META = {
   principio:   { es: { label: 'Principios TEXTUM',        code: 'PT', tag: 'Fundamentos metodológicos'   }, en: { label: 'TEXTUM Principles',          code: 'PT', tag: 'Methodological foundations' } },
   categoria:   { es: { label: 'Categorías Metodológicas', code: 'CM', tag: 'Componentes estructurales'   }, en: { label: 'Methodological Categories',   code: 'CM', tag: 'Structural components'      } },
   herramienta: { es: { label: 'Herramientas TEXTUM',      code: 'HT', tag: 'Instrumentos de evaluación'  }, en: { label: 'TEXTUM Tools',               code: 'HT', tag: 'Evaluation instruments'     } },
+  eii:         { es: { label: 'Enfoque Investigativo Integral', code: 'EII', tag: 'Totalidad dinámica'         }, en: { label: 'Integral Research Approach',  code: 'EII', tag: 'Dynamic whole'              } },
 };
 
 export default function ColeccionListPage() {

@@ -26,6 +26,7 @@ const TYPE_LABELS: Record<string, { es: string; en: string }> = {
   principio:   { es: 'Principios TEXTUM',        en: 'TEXTUM Principles'         },
   categoria:   { es: 'Categorías Metodológicas', en: 'Methodological Categories' },
   herramienta: { es: 'Herramientas TEXTUM',      en: 'TEXTUM Tools'              },
+  eii:         { es: 'Enfoque Investigativo Integral', en: 'Integral Research Approach' },
 };
 
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {

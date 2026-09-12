@@ -239,6 +239,7 @@ Las colecciones editoriales complementan el método:
 - **Principios TEXTUM (PT):** https://www.mentoriatextum.com/colecciones#principios
 - **Categorías Metodológicas (CM):** https://www.mentoriatextum.com/colecciones#categorias
 - **Herramientas TEXTUM (HT):** https://www.mentoriatextum.com/colecciones#herramientas
+- **Enfoque Investigativo Integral (EII):** https://www.mentoriatextum.com/colecciones/eii
 
 ---
 
