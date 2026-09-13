@@ -4,7 +4,7 @@
 
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link, } from 'react-router-dom';
-import { Calendar, Clock, ArrowLeft, X } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
 import { ssrPost, dropSsrContent } from '../lib/ssrData';
 import { useLang } from '../i18n/LangContext';
@@ -20,41 +20,9 @@ import { sanitizeHtml } from '../lib/sanitize';
 import { localizedPath, localizedUrl } from '../lib/locale';
 import { PageError, PageSkeleton } from '../components/AsyncState';
 import { NotFoundContent } from './NotFoundPage';
+import ArticleCover, { ImageLightbox } from '../components/ArticleCover';
 
 const SITE_URL = 'https://www.mentoriatextum.com';
-
-function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handler);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', handler);
-      document.body.style.overflow = '';
-    };
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-navy/95 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
-      onClick={onClose}
-    >
-      <button
-        onClick={onClose}
-        className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
-        aria-label="Cerrar"
-      >
-        <X size={18} />
-      </button>
-      <img
-        src={src}
-        alt={alt}
-        className="max-w-full max-h-[90vh] object-contain rounded-sm shadow-2xl cursor-default"
-        onClick={e => e.stopPropagation()}
-      />
-    </div>
-  );
-}
 
 export default function PostPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -224,23 +192,46 @@ export default function PostPage() {
         <NotFoundContent />
       ) : (
         <>
-          {/* Offset bajo navbar fija: evita que la portada suba y tape botones */}
-          <div className="pt-16 md:pt-20">
-            {post.cover_url && (
-              <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] overflow-hidden bg-navy">
-                <img
-                  src={post.cover_url}
-                  alt={post.cover_alt ?? postTitle}
-                  loading="eager"
-                  decoding="async"
-                  fetchPriority="high"
-                  className="absolute inset-0 w-full h-full object-contain p-3 sm:p-6"
-                />
+          <div className="pt-24 md:pt-28">
+            <div className="max-w-6xl mx-auto px-6 py-10 md:py-14">
+              <div className={`grid gap-10 lg:gap-14 items-center ${post.cover_url ? 'lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]' : ''}`}>
+                {post.cover_url && <ArticleCover src={post.cover_url} alt={post.cover_alt ?? postTitle} />}
+
+                <div className="max-w-3xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
+                    <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar size={13} aria-hidden="true" />
+                        {new Date(post.created_at).toLocaleDateString(
+                          lang === 'es' ? 'es-ES' : 'en-GB',
+                          { year: 'numeric', month: 'long', day: 'numeric' }
+                        )}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <Clock size={13} aria-hidden="true" />
+                        {post.reading_time} {b.minRead}
+                      </span>
+                    </div>
+                    <ShareButtons title={postTitle} url={canonicalUrl} />
+                  </div>
+
+                  <p className="text-xs tracking-[0.2em] text-gold uppercase mb-4">{b.by} {post.author}</p>
+                  <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-8">
+                    {postTitle}
+                  </h1>
+
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-px bg-gradient-to-r from-gold to-transparent" />
+                    <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true">
+                      <rect x="4" y="0" width="6" height="6" transform="rotate(45 4 4)" fill="#c9a84c" />
+                    </svg>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="max-w-3xl mx-auto px-6 py-16">
+          <div className="max-w-3xl mx-auto px-6 pb-16">
             <Link
               to={localizedPath('/blog', lang)}
               className="inline-flex items-center gap-2 text-gold text-sm mb-10 hover:gap-3 transition-all duration-200"
@@ -248,39 +239,6 @@ export default function PostPage() {
               <ArrowLeft size={14} aria-hidden="true" />
               {b.backToBlog}
             </Link>
-
-            {/* Meta — un solo contenedor limpio */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-              <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
-                <span className="flex items-center gap-1.5">
-                  <Calendar size={13} aria-hidden="true" />
-                  {new Date(post.created_at).toLocaleDateString(
-                    lang === 'es' ? 'es-ES' : 'en-GB',
-                    { year: 'numeric', month: 'long', day: 'numeric' }
-                  )}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock size={13} aria-hidden="true" />
-                  {post.reading_time} {b.minRead}
-                </span>
-                <span className="text-gold font-medium">
-                  {b.by} {post.author}
-                </span>
-              </div>
-              {/* Fix 7: url canónica explícita */}
-              <ShareButtons title={postTitle} url={canonicalUrl} />
-            </div>
-
-            <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-8">
-              {postTitle}
-            </h1>
-
-            <div className="flex items-center gap-4 mb-10">
-              <div className="w-16 h-px bg-gradient-to-r from-gold to-transparent" />
-              <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true">
-                <rect x="4" y="0" width="6" height="6" transform="rotate(45 4 4)" fill="#c9a84c" />
-              </svg>
-            </div>
 
             <div
               ref={contentRef}
@@ -296,7 +254,7 @@ export default function PostPage() {
             />
 
             {lightbox && (
-              <Lightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
+              <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
             )}
 
             {/* CTA WhatsApp — aparece antes del ShareCard */}
