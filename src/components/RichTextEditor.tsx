@@ -31,7 +31,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import {
   Bold, Italic, Heading1, Heading2, Heading3, Heading4,
   List, ListOrdered, Quote, Link as LinkIcon, Image as ImageIcon,
-  Undo, Redo, Loader2, Check, X, Table as TableIcon,
+  Undo, Redo, Loader2, Check, X, Table as TableIcon, FileText,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Underline as UnderlineIcon, Highlighter, Code,
   Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
@@ -95,50 +95,71 @@ function escapeHtml(s: string): string {
  * que hace que el pegado "no se vea" o se descarte entero.
  */
 function cleanPastedHtml(html: string): string {
-  if (!html) return '';
-  let out = html;
-  const body = out.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  if (body) out = body[1];
+  if (!html || typeof DOMParser === 'undefined') return '';
 
-  out = out
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<span[^>]*font-weight\s*:\s*(?:bold|[6-9]00)[^>]*>([\s\S]*?)<\/span>/gi, '<strong>$1</strong>')
-    .replace(/<span[^>]*font-style\s*:\s*italic[^>]*>([\s\S]*?)<\/span>/gi, '<em>$1</em>')
-    .replace(/<\/?o:[^>]*>/gi, '')
-    .replace(/<\/?w:[^>]*>/gi, '')
-    .replace(/<\/?m:[^>]*>/gi, '')
-    .replace(/<\/?v:[^>]*>/gi, '')
-    .replace(/\s*mso-[a-z-]+:[^;"]+;?/gi, '')
-    .replace(/<p[^>]*class="[^"]*MsoTitle[^"]*"[^>]*>([\s\S]*?)<\/p>/gi, '<h1>$1</h1>')
-    .replace(/<p[^>]*class="[^"]*MsoHeading1[^"]*"[^>]*>([\s\S]*?)<\/p>/gi, '<h2>$1</h2>')
-    .replace(/<p[^>]*class="[^"]*MsoHeading2[^"]*"[^>]*>([\s\S]*?)<\/p>/gi, '<h3>$1</h3>')
-    .replace(/<p[^>]*class="[^"]*MsoHeading3[^"]*"[^>]*>([\s\S]*?)<\/p>/gi, '<h4>$1</h4>')
-    .replace(/\s*class="[^"]*Mso[^"]*"/gi, '')
-    .replace(/\s*class='[^']*Mso[^']*'/gi, '')
-    // Quitar TODOS los estilos inline (colores de Word = texto invisible)
-    .replace(/\s*style="[^"]*"/gi, '')
-    .replace(/\s*style='[^']*'/gi, '')
-    // Quitar color/face en font legacy
-    .replace(/<\/?font[^>]*>/gi, '')
-    .replace(/<div(\s[^>]*)?>/gi, '<p>')
-    .replace(/<\/div>/gi, '</p>')
-    // spans vacíos o solo con formato → mantener contenido
-    .replace(/<span[^>]*>/gi, '')
-    .replace(/<\/span>/gi, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/(<p>\s*<\/p>\s*)+/gi, '<p></p>');
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const root = doc.body;
+  root.querySelectorAll('script,style,meta,link,iframe,object,embed,form,input,button').forEach((node) => node.remove());
 
-  // Normalizar etiquetas de formato que TipTap sí entiende
-  out = out
-    .replace(/<b(\s[^>]*)?>/gi, '<strong>')
-    .replace(/<\/b>/gi, '</strong>')
-    .replace(/<i(\s[^>]*)?>/gi, '<em>')
-    .replace(/<\/i>/gi, '</em>');
+  // Word suele envolver cada fragmento con spans: convertimos sus marcas
+  // visuales a etiquetas semánticas para no perder negritas parciales.
+  root.querySelectorAll('span').forEach((span) => {
+    const style = span.getAttribute('style') || '';
+    const tags: string[] = [];
+    if (/font-weight\s*:\s*(?:bold|[6-9]00)|mso-bidi-font-weight\s*:\s*bold/i.test(style)) tags.push('strong');
+    if (/font-style\s*:\s*italic|mso-bidi-font-style\s*:\s*italic/i.test(style)) tags.push('em');
+    if (/text-decoration(?:-line)?\s*:[^;]*(?:underline)/i.test(style)) tags.push('u');
+    if (/vertical-align\s*:\s*super/i.test(style)) tags.push('sup');
+    if (/vertical-align\s*:\s*sub/i.test(style)) tags.push('sub');
 
-  const textOnly = out.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-  return textOnly ? out.trim() : '';
+    if (tags.length > 0) {
+      let content: Node = doc.createDocumentFragment();
+      while (span.firstChild) content.appendChild(span.firstChild);
+      for (const tag of tags.reverse()) {
+        const wrapper = doc.createElement(tag);
+        wrapper.appendChild(content);
+        content = wrapper;
+      }
+      span.replaceWith(content);
+    } else {
+      while (span.firstChild) span.parentNode?.insertBefore(span.firstChild, span);
+      span.remove();
+    }
+  });
+
+  root.querySelectorAll('b').forEach((node) => {
+    const strong = doc.createElement('strong');
+    strong.innerHTML = node.innerHTML;
+    node.replaceWith(strong);
+  });
+  root.querySelectorAll('i').forEach((node) => {
+    const em = doc.createElement('em');
+    em.innerHTML = node.innerHTML;
+    node.replaceWith(em);
+  });
+
+  // Elimina únicamente atributos técnicos/de seguridad. Se conserva style
+  // para que Tiptap pueda leer color, familia, alineación y otros marks.
+  root.querySelectorAll('*').forEach((element) => {
+    Array.from(element.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      if (name.startsWith('on') || name.startsWith('mso-') || name === 'xmlns' || name === 'class') {
+        element.removeAttribute(attribute.name);
+      }
+    });
+    if (element.tagName === 'A') {
+      const href = element.getAttribute('href') || '';
+      if (!/^(?:https?:|mailto:|tel:|\/|#)/i.test(href)) element.removeAttribute('href');
+      element.setAttribute('target', '_blank');
+      element.setAttribute('rel', 'noopener noreferrer');
+    }
+    if (element.tagName === 'IMG') {
+      const src = element.getAttribute('src') || '';
+      if (!/^(?:https?:|data:image\/|blob:)/i.test(src)) element.remove();
+    }
+  });
+
+  return root.innerHTML.trim();
 }
 
 /** Decide HTML final a insertar: limpio si conserva el texto; si no, plano */
@@ -154,71 +175,6 @@ function htmlForPaste(htmlRaw: string, plain: string): string {
   if (cleaned) return cleaned;
   if (plainLen > 0) return plainToParagraphs(plain);
   return '';
-}
-
-type PastePayload = {
-  html: string;
-  plain: string;
-  imageFiles: File[];
-  from: number;
-  to: number;
-};
-
-type PasteMode = 'formatted' | 'plain';
-
-function PasteChoiceDialog({
-  onChoose,
-  onCancel,
-}: {
-  onChoose: (mode: PasteMode) => void;
-  onCancel: () => void;
-}) {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCancel();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onCancel]);
-
-  return (
-    <div className="fixed inset-0 z-[80] bg-navy/45 backdrop-blur-[2px] flex items-center justify-center p-4" role="presentation">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="paste-choice-title"
-        className="w-full max-w-md rounded-2xl bg-cream border border-gold/30 shadow-2xl p-6 sm:p-7"
-      >
-        <p className="text-[10px] tracking-[0.2em] text-gold uppercase mb-2">Pegado inteligente</p>
-        <h2 id="paste-choice-title" className="font-serif text-2xl text-navy mb-2">¿Cómo quieres pegar este contenido?</h2>
-        <p className="text-sm text-navy/60 leading-relaxed mb-5">
-          El portapapeles contiene formato externo de Word, PDF o una página web. Elige cómo incorporarlo al artículo.
-        </p>
-        <div className="space-y-3">
-          <button
-            type="button"
-            autoFocus
-            onClick={() => onChoose('formatted')}
-            className="w-full text-left rounded-xl border border-gold/45 bg-white px-4 py-3.5 hover:border-gold hover:shadow-md transition-all"
-          >
-            <span className="block text-sm font-medium text-navy">Formato editorial limpio</span>
-            <span className="block text-xs text-navy/55 mt-1">Conserva títulos, listas, tablas, enlaces, negrita y cursiva; elimina la basura visual.</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onChoose('plain')}
-            className="w-full text-left rounded-xl border border-navy/15 bg-white px-4 py-3.5 hover:border-gold hover:shadow-md transition-all"
-          >
-            <span className="block text-sm font-medium text-navy">Texto limpio</span>
-            <span className="block text-xs text-navy/55 mt-1">Convierte el contenido en párrafos normales, ideal para PDFs problemáticos.</span>
-          </button>
-        </div>
-        <button type="button" onClick={onCancel} className="mt-5 text-xs text-navy/45 hover:text-navy underline underline-offset-2">
-          Cancelar
-        </button>
-      </div>
-    </div>
-  );
 }
 
 // ─── Toolbar button ─────────────────────────────────────────────────────────
@@ -424,11 +380,13 @@ export default function RichTextEditor({
   onUploadError,
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const docxInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [importingDocx, setImportingDocx] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showImageUrlInput, setShowImageUrlInput] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [pastePayload, setPastePayload] = useState<PastePayload | null>(null);
+  const pasteAsPlainRef = useRef(false);
   const lastEmitted = useRef<string | null>(null);
   const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
 
@@ -544,33 +502,35 @@ export default function RichTextEditor({
           // Subíndice/Superíndice
           'prose-sub:align-sub prose-sup:align-super',
       },
-      // Pegado controlado: Word/PDF/HTML se confirma antes de insertarlo.
+      handleKeyDown: (_view, event) => {
+        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'v') {
+          pasteAsPlainRef.current = true;
+        }
+        return false;
+      },
       handlePaste: (_view, event) => {
         const cd = event.clipboardData;
         if (!cd) return false;
 
         const htmlRaw = cd.getData('text/html') ?? '';
         const plain = cd.getData('text/plain') ?? '';
+        const pasteAsPlain = pasteAsPlainRef.current;
+        pasteAsPlainRef.current = false;
+        const plainLooksLikeHtml = /<\/?(?:p|div|section|article|h[1-6]|li|br|table|tr|td|th)\b/i.test(plain);
 
-        // Imágenes puras
-        const items = cd.items;
+        // Imágenes puras del portapapeles se siguen subiendo al servidor.
         const imageFiles: File[] = [];
-        if (items) {
-          for (let i = 0; i < items.length; i++) {
-            if (items[i].type.startsWith('image/')) {
-              const file = items[i].getAsFile();
-              if (file) imageFiles.push(file);
-            }
+        for (let i = 0; i < (cd.items?.length ?? 0); i++) {
+          if (cd.items[i].type.startsWith('image/')) {
+            const file = cd.items[i].getAsFile();
+            if (file) imageFiles.push(file);
           }
         }
-        const plainLooksLikeHtml = /<\/?(?:p|div|section|article|h[1-6]|li|br|table|tr|td|th)\b/i.test(plain);
-        const hasText =
-          plain.trim().length > 0 ||
-          htmlRaw.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim().length > 0;
+        const hasText = plain.trim().length > 0 || htmlRaw.replace(/<[^>]+>/g, '').trim().length > 0;
 
         if (imageFiles.length > 0 && !hasText) {
           event.preventDefault();
-          (async () => {
+          void (async () => {
             const ed = editorRef.current;
             for (const file of imageFiles) {
               const { url, error } = await uploadImage(file);
@@ -584,23 +544,18 @@ export default function RichTextEditor({
           return true;
         }
 
-        if (htmlRaw.trim().length > 10 || plainLooksLikeHtml) {
+        if (pasteAsPlain || htmlRaw.trim().length > 10 || plainLooksLikeHtml || plain.trim()) {
           event.preventDefault();
-          setPastePayload({
-            html: htmlRaw,
-            plain,
-            imageFiles,
-            from: _view.state.selection.from,
-            to: _view.state.selection.to,
-          });
+          const contentToInsert = pasteAsPlain || !htmlRaw.trim()
+            ? plainToParagraphs(plain)
+            : htmlForPaste(htmlRaw, plain);
+          if (contentToInsert) {
+            editorRef.current?.chain().focus().insertContent(contentToInsert).run();
+          }
           return true;
         }
 
-        if (plain.trim()) {
-          event.preventDefault();
-          editorRef.current?.chain().focus().insertContent(plainToParagraphs(plain)).run();
-          return true;
-        }
+        return false;
       },
     },
   });
@@ -620,37 +575,12 @@ export default function RichTextEditor({
     editor.commands.setContent(content || '', { emitUpdate: false });
   }, [content, editor]);
 
-  const handlePasteChoice = useCallback(async (mode: PasteMode) => {
-    const payload = pastePayload;
-    setPastePayload(null);
-    if (!payload || !editorRef.current) return;
-
-    const ed = editorRef.current;
-    const contentToInsert = mode === 'plain'
-      ? plainToParagraphs(payload.plain || payload.html)
-      : htmlForPaste(payload.html, payload.plain);
-
-    ed.chain()
-      .focus()
-      .setTextSelection({ from: payload.from, to: payload.to })
-      .insertContent(contentToInsert)
-      .run();
-
-    // Las imágenes incrustadas se suben después de insertar el texto.
-    for (const file of payload.imageFiles) {
-      const { url, error } = await uploadImage(file);
-      if (error) {
-        onUploadError?.(`Error al pegar imagen: ${error}`);
-        continue;
-      }
-      if (url && editorRef.current) {
-        editorRef.current.chain().focus().setImage({ src: url }).run();
-      }
-    }
-  }, [onUploadError, pastePayload]);
-
   const handleImagePick = useCallback(() => {
     fileInputRef.current?.click();
+  }, []);
+
+  const handleDocxPick = useCallback(() => {
+    docxInputRef.current?.click();
   }, []);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -665,6 +595,44 @@ export default function RichTextEditor({
       editor.chain().focus().setImage({ src: url }).run();
     }
     e.target.value = '';
+  }, [editor, onUploadError]);
+
+  const handleDocxChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !editor) return;
+
+    setImportingDocx(true);
+    try {
+      const mammothModule = await import('mammoth');
+      const mammoth = mammothModule.default ?? mammothModule;
+      const result = await mammoth.convertToHtml(
+        { arrayBuffer: await file.arrayBuffer() },
+        {
+          includeDefaultStyleMap: true,
+          ignoreEmptyParagraphs: false,
+          convertImage: mammoth.images.dataUri,
+          styleMap: [
+            "p[style-name='Title'] => h1:fresh",
+            "p[style-name='Subtitle'] => h2:fresh",
+            "p[style-name='Heading 1'] => h2:fresh",
+            "p[style-name='Heading 2'] => h3:fresh",
+            "p[style-name='Heading 3'] => h4:fresh",
+          ],
+        },
+      );
+      const convertedHtml = cleanPastedHtml(result.value);
+      if (!convertedHtml) throw new Error('El documento no contiene contenido editable.');
+      editor.chain().focus().insertContent(convertedHtml).run();
+      const warnings = result.messages.filter((message) => message.type === 'warning');
+      if (warnings.length > 0) {
+        onUploadError?.(`Word importado con ${warnings.length} aviso${warnings.length === 1 ? '' : 's'} de conversión. Revisa el resultado.`);
+      }
+    } catch (error) {
+      onUploadError?.(`No se pudo importar el documento Word: ${error instanceof Error ? error.message : 'error desconocido'}`);
+    } finally {
+      setImportingDocx(false);
+    }
   }, [editor, onUploadError]);
 
   const handleLinkButtonClick = useCallback(() => {
@@ -968,6 +936,14 @@ export default function RichTextEditor({
           }
         </ToolbarButton>
 
+        <ToolbarButton
+          title="Importar documento Word (.docx)"
+          onClick={handleDocxPick}
+          disabled={importingDocx}
+        >
+          {importingDocx ? <Loader2 size={15} className="animate-spin" /> : <FileText size={15} />}
+        </ToolbarButton>
+
         <ToolbarSeparator />
 
         {/* ── Undo/Redo ── */}
@@ -986,12 +962,19 @@ export default function RichTextEditor({
           <Redo size={15} />
         </ToolbarButton>
 
-        <input
+      <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
           className="hidden"
           onChange={handleFileChange}
+        />
+        <input
+          ref={docxInputRef}
+          type="file"
+          accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          className="hidden"
+          onChange={handleDocxChange}
         />
       </div>
 
@@ -1022,17 +1005,10 @@ export default function RichTextEditor({
         />
       )}
 
-      {pastePayload && (
-        <PasteChoiceDialog
-          onChoose={handlePasteChoice}
-          onCancel={() => setPastePayload(null)}
-        />
-      )}
-
       {/* ── Content ── */}
       <EditorContent editor={editor} />
       <p className="px-4 pb-3 text-[11px] text-navy/40">
-        Al pegar desde Word o PDF podrás elegir el formato. Usa <kbd className="rounded border border-navy/15 bg-navy/5 px-1 py-0.5 font-mono text-[10px]">Ctrl/Cmd + Shift + V</kbd> para pegar como texto limpio.
+        El pegado conserva el formato disponible (negritas, cursivas, títulos, listas y tablas). <button type="button" onClick={handleDocxPick} className="text-gold hover:underline">Importa un .docx</button> para una conversión más fiel de Word. Usa <kbd className="rounded border border-navy/15 bg-navy/5 px-1 py-0.5 font-mono text-[10px]">Ctrl/Cmd + Shift + V</kbd> para pegar sin formato.
       </p>
     </div>
   );
