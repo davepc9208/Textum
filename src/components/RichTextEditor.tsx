@@ -67,12 +67,18 @@ async function uploadImage(file: File): Promise<{ url: string | null; error: str
 
 
 
-/** Convierte texto plano en párrafos HTML */
+/** Convierte texto plano en párrafos HTML y neutraliza etiquetas que algunos PDF copian literalmente. */
 function plainToParagraphs(plain: string): string {
-  const lines = plain.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split(/\n+/);
-  const parts = lines.map((l) => l.trim()).filter(Boolean);
+  const normalized = plain
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?(?:p|div|section|article|h[1-6]|li|tr|blockquote)[^>]*>/gi, '\n')
+    .replace(/<\/?(?:span|strong|b|em|i|u|a|ul|ol|table|thead|tbody|td|th)[^>]*>/gi, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
+  const parts = normalized.split(/\n+/).map((line) => line.trim()).filter(Boolean);
   if (parts.length === 0) return '<p></p>';
-  return parts.map((l) => `<p>${escapeHtml(l)}</p>`).join('');
+  return parts.map((line) => `<p>${escapeHtml(line)}</p>`).join('');
 }
 
 function escapeHtml(s: string): string {
@@ -95,15 +101,20 @@ function cleanPastedHtml(html: string): string {
   if (body) out = body[1];
 
   out = out
-    .replace(/<!--\[if[\s\S]*?endif\]-->/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<\/?(html|head|meta|link|body|xml)[^>]*>/gi, '')
+    .replace(/<span[^>]*font-weight\s*:\s*(?:bold|[6-9]00)[^>]*>([\s\S]*?)<\/span>/gi, '<strong>$1</strong>')
+    .replace(/<span[^>]*font-style\s*:\s*italic[^>]*>([\s\S]*?)<\/span>/gi, '<em>$1</em>')
     .replace(/<\/?o:[^>]*>/gi, '')
     .replace(/<\/?w:[^>]*>/gi, '')
     .replace(/<\/?m:[^>]*>/gi, '')
     .replace(/<\/?v:[^>]*>/gi, '')
     .replace(/\s*mso-[a-z-]+:[^;"]+;?/gi, '')
+    .replace(/<p[^>]*class="[^"]*MsoTitle[^"]*"[^>]*>([\s\S]*?)<\/p>/gi, '<h1>$1</h1>')
+    .replace(/<p[^>]*class="[^"]*MsoHeading1[^"]*"[^>]*>([\s\S]*?)<\/p>/gi, '<h2>$1</h2>')
+    .replace(/<p[^>]*class="[^"]*MsoHeading2[^"]*"[^>]*>([\s\S]*?)<\/p>/gi, '<h3>$1</h3>')
+    .replace(/<p[^>]*class="[^"]*MsoHeading3[^"]*"[^>]*>([\s\S]*?)<\/p>/gi, '<h4>$1</h4>')
     .replace(/\s*class="[^"]*Mso[^"]*"/gi, '')
     .replace(/\s*class='[^']*Mso[^']*'/gi, '')
     // Quitar TODOS los estilos inline (colores de Word = texto invisible)
@@ -143,6 +154,71 @@ function htmlForPaste(htmlRaw: string, plain: string): string {
   if (cleaned) return cleaned;
   if (plainLen > 0) return plainToParagraphs(plain);
   return '';
+}
+
+type PastePayload = {
+  html: string;
+  plain: string;
+  imageFiles: File[];
+  from: number;
+  to: number;
+};
+
+type PasteMode = 'formatted' | 'plain';
+
+function PasteChoiceDialog({
+  onChoose,
+  onCancel,
+}: {
+  onChoose: (mode: PasteMode) => void;
+  onCancel: () => void;
+}) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onCancel();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel]);
+
+  return (
+    <div className="fixed inset-0 z-[80] bg-navy/45 backdrop-blur-[2px] flex items-center justify-center p-4" role="presentation">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="paste-choice-title"
+        className="w-full max-w-md rounded-2xl bg-cream border border-gold/30 shadow-2xl p-6 sm:p-7"
+      >
+        <p className="text-[10px] tracking-[0.2em] text-gold uppercase mb-2">Pegado inteligente</p>
+        <h2 id="paste-choice-title" className="font-serif text-2xl text-navy mb-2">¿Cómo quieres pegar este contenido?</h2>
+        <p className="text-sm text-navy/60 leading-relaxed mb-5">
+          El portapapeles contiene formato externo de Word, PDF o una página web. Elige cómo incorporarlo al artículo.
+        </p>
+        <div className="space-y-3">
+          <button
+            type="button"
+            autoFocus
+            onClick={() => onChoose('formatted')}
+            className="w-full text-left rounded-xl border border-gold/45 bg-white px-4 py-3.5 hover:border-gold hover:shadow-md transition-all"
+          >
+            <span className="block text-sm font-medium text-navy">Formato editorial limpio</span>
+            <span className="block text-xs text-navy/55 mt-1">Conserva títulos, listas, tablas, enlaces, negrita y cursiva; elimina la basura visual.</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onChoose('plain')}
+            className="w-full text-left rounded-xl border border-navy/15 bg-white px-4 py-3.5 hover:border-gold hover:shadow-md transition-all"
+          >
+            <span className="block text-sm font-medium text-navy">Texto limpio</span>
+            <span className="block text-xs text-navy/55 mt-1">Convierte el contenido en párrafos normales, ideal para PDFs problemáticos.</span>
+          </button>
+        </div>
+        <button type="button" onClick={onCancel} className="mt-5 text-xs text-navy/45 hover:text-navy underline underline-offset-2">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
 }
 
 // ─── Toolbar button ─────────────────────────────────────────────────────────
@@ -352,6 +428,7 @@ export default function RichTextEditor({
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showImageUrlInput, setShowImageUrlInput] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [pastePayload, setPastePayload] = useState<PastePayload | null>(null);
   const lastEmitted = useRef<string | null>(null);
   const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
 
@@ -467,8 +544,8 @@ export default function RichTextEditor({
           // Subíndice/Superíndice
           'prose-sub:align-sub prose-sup:align-super',
       },
-      // Pegado controlado: Word/Docs a menudo falla con el parser por defecto
-            handlePaste: (_view, event) => {
+      // Pegado controlado: Word/PDF/HTML se confirma antes de insertarlo.
+      handlePaste: (_view, event) => {
         const cd = event.clipboardData;
         if (!cd) return false;
 
@@ -486,6 +563,7 @@ export default function RichTextEditor({
             }
           }
         }
+        const plainLooksLikeHtml = /<\/?(?:p|div|section|article|h[1-6]|li|br|table|tr|td|th)\b/i.test(plain);
         const hasText =
           plain.trim().length > 0 ||
           htmlRaw.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim().length > 0;
@@ -506,35 +584,23 @@ export default function RichTextEditor({
           return true;
         }
 
-        // Word / Docs / HTML con formato (+ imágenes del portapapeles si hay)
-        if (htmlRaw.length > 10 || plain.trim().length > 0) {
+        if (htmlRaw.trim().length > 10 || plainLooksLikeHtml) {
           event.preventDefault();
-          const toInsert = htmlForPaste(htmlRaw, plain);
-          const ed = editorRef.current;
-          if (ed && toInsert) {
-            ed.chain().focus().insertContent(toInsert).run();
-          } else if (ed && plain.trim()) {
-            ed.chain().focus().insertContent(plainToParagraphs(plain)).run();
-          }
-          // Imágenes embebidas en el pegado de Word (archivos del clipboard)
-          if (imageFiles.length > 0) {
-            (async () => {
-              for (const file of imageFiles) {
-                const { url, error } = await uploadImage(file);
-                if (error) {
-                  onUploadError?.(`Error al pegar imagen: ${error}`);
-                  continue;
-                }
-                if (url && editorRef.current) {
-                  editorRef.current.chain().focus().setImage({ src: url }).run();
-                }
-              }
-            })();
-          }
+          setPastePayload({
+            html: htmlRaw,
+            plain,
+            imageFiles,
+            from: _view.state.selection.from,
+            to: _view.state.selection.to,
+          });
           return true;
         }
 
-        return false;
+        if (plain.trim()) {
+          event.preventDefault();
+          editorRef.current?.chain().focus().insertContent(plainToParagraphs(plain)).run();
+          return true;
+        }
       },
     },
   });
@@ -553,6 +619,35 @@ export default function RichTextEditor({
     if ((!content || content === '<p></p>') && currentText.length > 0) return;
     editor.commands.setContent(content || '', { emitUpdate: false });
   }, [content, editor]);
+
+  const handlePasteChoice = useCallback(async (mode: PasteMode) => {
+    const payload = pastePayload;
+    setPastePayload(null);
+    if (!payload || !editorRef.current) return;
+
+    const ed = editorRef.current;
+    const contentToInsert = mode === 'plain'
+      ? plainToParagraphs(payload.plain || payload.html)
+      : htmlForPaste(payload.html, payload.plain);
+
+    ed.chain()
+      .focus()
+      .setTextSelection({ from: payload.from, to: payload.to })
+      .insertContent(contentToInsert)
+      .run();
+
+    // Las imágenes incrustadas se suben después de insertar el texto.
+    for (const file of payload.imageFiles) {
+      const { url, error } = await uploadImage(file);
+      if (error) {
+        onUploadError?.(`Error al pegar imagen: ${error}`);
+        continue;
+      }
+      if (url && editorRef.current) {
+        editorRef.current.chain().focus().setImage({ src: url }).run();
+      }
+    }
+  }, [onUploadError, pastePayload]);
 
   const handleImagePick = useCallback(() => {
     fileInputRef.current?.click();
@@ -927,8 +1022,18 @@ export default function RichTextEditor({
         />
       )}
 
+      {pastePayload && (
+        <PasteChoiceDialog
+          onChoose={handlePasteChoice}
+          onCancel={() => setPastePayload(null)}
+        />
+      )}
+
       {/* ── Content ── */}
       <EditorContent editor={editor} />
+      <p className="px-4 pb-3 text-[11px] text-navy/40">
+        Al pegar desde Word o PDF podrás elegir el formato. Usa <kbd className="rounded border border-navy/15 bg-navy/5 px-1 py-0.5 font-mono text-[10px]">Ctrl/Cmd + Shift + V</kbd> para pegar como texto limpio.
+      </p>
     </div>
   );
 }
