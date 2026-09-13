@@ -6,6 +6,14 @@ type ArticleCoverProps = {
   alt: string;
 };
 
+type ArticleHeroProps = ArticleCoverProps & {
+  title: string;
+  author: string;
+  date: string;
+  readingTime: string;
+  category?: string | null;
+};
+
 export function ImageLightbox({ src, alt, onClose }: ArticleCoverProps & { onClose: () => void }) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -43,6 +51,69 @@ export function ImageLightbox({ src, alt, onClose }: ArticleCoverProps & { onClo
         onClick={(event) => event.stopPropagation()}
       />
     </div>
+  );
+}
+
+export function ArticleHero({
+  src,
+  alt,
+  title,
+  author,
+  date,
+  readingTime,
+  category,
+}: ArticleHeroProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <div className="relative overflow-hidden bg-navy shadow-[0_18px_45px_rgba(13,31,60,0.16)]">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Ampliar portada"
+          className="group absolute inset-0 z-10 h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold"
+        >
+          <img
+            src={src}
+            alt={alt}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]"
+          />
+        </button>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#061326] via-[#061326]/55 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#061326]/35 via-transparent to-transparent" />
+
+        <div className="relative z-20 flex min-h-[26rem] items-end px-6 pb-8 pt-28 sm:min-h-[31rem] sm:px-10 sm:pb-10 lg:min-h-[34rem] lg:px-14 lg:pb-12">
+          <div className="max-w-4xl">
+            {category && (
+              <span className="mb-4 inline-flex border border-gold/60 bg-gold px-3 py-1 text-[10px] font-medium tracking-[0.2em] text-navy uppercase">
+                {category}
+              </span>
+            )}
+            <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs tracking-wide text-white/75 sm:text-sm">
+              <span className="font-medium text-gold">{author}</span>
+              <span className="h-1 w-1 rounded-full bg-gold/70" aria-hidden="true" />
+              <span>{date}</span>
+              <span className="h-1 w-1 rounded-full bg-gold/70" aria-hidden="true" />
+              <span>{readingTime}</span>
+            </div>
+            <h1 className="max-w-4xl font-serif text-4xl font-light leading-[0.98] text-white sm:text-5xl lg:text-6xl">
+              {title}
+            </h1>
+            <div className="mt-6 flex items-center gap-3" aria-hidden="true">
+              <div className="h-px w-16 bg-gold" />
+              <svg width="8" height="8" viewBox="0 0 8 8" className="text-gold">
+                <rect x="4" y="0" width="6" height="6" transform="rotate(45 4 4)" fill="currentColor" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      {open && <ImageLightbox src={src} alt={alt} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 

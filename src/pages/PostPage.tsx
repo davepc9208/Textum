@@ -4,7 +4,7 @@
 
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link, } from 'react-router-dom';
-import { Calendar, Clock, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
 import { ssrPost, dropSsrContent } from '../lib/ssrData';
 import { useLang } from '../i18n/LangContext';
@@ -20,7 +20,7 @@ import { sanitizeHtml } from '../lib/sanitize';
 import { localizedPath, localizedUrl } from '../lib/locale';
 import { PageError, PageSkeleton } from '../components/AsyncState';
 import { NotFoundContent } from './NotFoundPage';
-import ArticleCover, { ImageLightbox } from '../components/ArticleCover';
+import { ArticleHero, ImageLightbox } from '../components/ArticleCover';
 
 const SITE_URL = 'https://www.mentoriatextum.com';
 
@@ -88,6 +88,13 @@ export default function PostPage() {
   const postTitle   = post ? (lang === 'es' ? post.title_es   : post.title_en)   : '';
   const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
   const content     = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
+  const categoryLabel = post?.category
+    ? ({
+        'filosofia-metodo': lang === 'es' ? 'Filosofía y Método TEXTUM' : 'TEXTUM Philosophy & Method',
+        'rigor-escritura': lang === 'es' ? 'Rigor y Escritura Científica' : 'Rigour & Scientific Writing',
+        'sustentacion-defensa': lang === 'es' ? 'Sustentación y Defensa Oral' : 'Defence & Oral Presentation',
+      } as Record<string, string>)[post.category] ?? post.category
+    : null;
 
   // URL canónica del artículo — usada en SEO, ShareCard y ShareButtons
   const canonicalUrl = post ? localizedUrl(`/blog/${post.slug}`, lang) : undefined;
@@ -193,48 +200,43 @@ export default function PostPage() {
       ) : (
         <>
           <div className="pt-24 md:pt-28">
-            <div className="max-w-6xl mx-auto px-6 py-10 md:py-14">
-              <div className={`grid gap-10 lg:gap-14 items-center ${post.cover_url ? 'lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]' : ''}`}>
-                {post.cover_url && <ArticleCover src={post.cover_url} alt={post.cover_alt ?? postTitle} />}
-
-                <div className="max-w-3xl">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
-                    <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
-                      <span className="flex items-center gap-1.5">
-                        <Calendar size={13} aria-hidden="true" />
-                        {new Date(post.created_at).toLocaleDateString(
-                          lang === 'es' ? 'es-ES' : 'en-GB',
-                          { year: 'numeric', month: 'long', day: 'numeric' }
-                        )}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Clock size={13} aria-hidden="true" />
-                        {post.reading_time} {b.minRead}
-                      </span>
-                    </div>
-                    <ShareButtons title={postTitle} url={canonicalUrl} />
+            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12">
+              {post.cover_url ? (
+                <ArticleHero
+                  src={post.cover_url}
+                  alt={post.cover_alt ?? postTitle}
+                  title={postTitle}
+                  author={post.author}
+                  date={new Date(post.created_at).toLocaleDateString(
+                    lang === 'es' ? 'es-ES' : 'en-GB',
+                    { year: 'numeric', month: 'long', day: 'numeric' }
+                  )}
+                  readingTime={`${post.reading_time} ${b.minRead}`}
+                  category={categoryLabel}
+                />
+              ) : (
+                <div className="mx-auto max-w-4xl pb-4 pt-4 md:pb-8">
+                  <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-navy/50">
+                    <span className="font-medium text-gold">{post.author}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{new Date(post.created_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{post.reading_time} {b.minRead}</span>
                   </div>
-
-                  <p className="text-xs tracking-[0.2em] text-gold uppercase mb-4">{b.by} {post.author}</p>
-                  <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-8">
-                    {postTitle}
-                  </h1>
-
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-px bg-gradient-to-r from-gold to-transparent" />
-                    <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true">
-                      <rect x="4" y="0" width="6" height="6" transform="rotate(45 4 4)" fill="#c9a84c" />
-                    </svg>
-                  </div>
+                  <h1 className="font-serif text-4xl font-light leading-tight text-navy sm:text-5xl">{postTitle}</h1>
                 </div>
+              )}
+
+              <div className="mt-5 flex justify-end">
+                <ShareButtons title={postTitle} url={canonicalUrl} />
               </div>
             </div>
           </div>
 
-          <div className="max-w-3xl mx-auto px-6 pb-16">
+          <div className="mx-auto max-w-3xl px-6 pb-16">
             <Link
               to={localizedPath('/blog', lang)}
-              className="inline-flex items-center gap-2 text-gold text-sm mb-10 hover:gap-3 transition-all duration-200"
+              className="mb-10 inline-flex items-center gap-2 text-sm text-gold transition-all duration-200 hover:gap-3"
             >
               <ArrowLeft size={14} aria-hidden="true" />
               {b.backToBlog}
