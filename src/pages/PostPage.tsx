@@ -3,7 +3,7 @@
 // Fix 7: ShareCard y ShareButtons reciben url canónica explícita
 
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
-import { useParams, Link, } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
 import { ssrPost, dropSsrContent } from '../lib/ssrData';
@@ -18,6 +18,7 @@ import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 import { sanitizeHtml } from '../lib/sanitize';
 import { localizedPath, localizedUrl } from '../lib/locale';
+import { postCover, postCoverAlt, postSlug, slugFilter } from '../lib/postLocalization';
 import { PageError, PageSkeleton } from '../components/AsyncState';
 import { NotFoundContent } from './NotFoundPage';
 import { ArticleHero, ImageLightbox } from '../components/ArticleCover';
@@ -27,6 +28,7 @@ const SITE_URL = 'https://www.mentoriatextum.com';
 export default function PostPage() {
   const { slug } = useParams<{ slug: string }>();
   const { lang, t } = useLang();
+  const navigate = useNavigate();
   const b = t.blog;
   const [post, setPost] = useState<Post | null>(() => ssrPost(slug));
   const [loading, setLoading] = useState(() => !ssrPost(slug));
@@ -67,7 +69,8 @@ export default function PostPage() {
     Promise.resolve(supabase
       .from('posts')
       .select('*')
-      .eq('slug', slug)
+      .or(`slug.eq.${slugFilter(slug)},slug_es.eq.${slugFilter(slug)},slug_en.eq.${slugFilter(slug)}`)
+      .is('collection_type', null)
       .eq('published', true)
       .single())
       .then(({ data, error }) => {
@@ -83,11 +86,14 @@ export default function PostPage() {
         setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [slug, reloadKey]);
+  }, [lang, slug, reloadKey]);
 
   const postTitle   = post ? (lang === 'es' ? post.title_es   : post.title_en)   : '';
   const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
   const content     = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
+  const localizedSlug = post ? postSlug(post, lang) : slug ?? '';
+  const localizedCover = post ? postCover(post, lang) : '';
+  const localizedCoverAlt = post ? postCoverAlt(post, lang, postTitle) : postTitle;
   const categoryLabel = post?.category
     ? ({
         'filosofia-metodo': lang === 'es' ? 'Filosofía y Método TEXTUM' : 'TEXTUM Philosophy & Method',
@@ -96,15 +102,25 @@ export default function PostPage() {
       } as Record<string, string>)[post.category] ?? post.category
     : null;
 
+  // Cuando se cambia el idioma dentro del artículo, la URL también cambia al slug localizado.
+  useEffect(() => {
+    if (!post || !slug || slug === localizedSlug) return;
+    navigate(localizedPath(`/blog/${localizedSlug}`, lang), { replace: true });
+  }, [lang, localizedSlug, navigate, post, slug]);
+
   // URL canónica del artículo — usada en SEO, ShareCard y ShareButtons
-  const canonicalUrl = post ? localizedUrl(`/blog/${post.slug}`, lang) : undefined;
+  const canonicalUrl = post ? localizedUrl(`/blog/${localizedSlug}`, lang) : undefined;
 
   useSEO(post ? {
     title: `${postTitle} — TEXTUM Mentoría Académica`,
     description: postExcerpt.slice(0, 155),
-    canonical: `/blog/${post.slug}`,
-    ogImage: post.cover_url,
-    ogImageAlt: post.cover_alt ?? postTitle,
+    canonical: `/blog/${localizedSlug}`,
+    alternatePaths: {
+      es: `/blog/${postSlug(post, 'es')}`,
+      en: `/blog/${postSlug(post, 'en')}`,
+    },
+    ogImage: localizedCover,
+    ogImageAlt: localizedCoverAlt,
     ogType: 'article',
     articleMeta: {
       publishedTime: post.created_at,
@@ -130,7 +146,7 @@ export default function PostPage() {
       '@type': 'Article',
       headline: postTitle,
       description: postExcerpt.slice(0, 155),
-      image: post.cover_url,
+      image: localizedCover,
       datePublished: post.created_at,
       author: {
         '@type': 'Person',
@@ -143,7 +159,7 @@ export default function PostPage() {
       },
       mainEntityOfPage: {
         '@type': 'WebPage',
-        '@id': localizedUrl(`/blog/${post.slug}`, lang),
+        '@id': localizedUrl(`/blog/${localizedSlug}`, lang),
       },
       timeRequired: `PT${post.reading_time}M`,
       inLanguage: lang === 'es' ? 'es-ES' : 'en-GB',
@@ -165,7 +181,7 @@ export default function PostPage() {
           '@type': 'ListItem',
           position: 2,
           name: postTitle,
-          item: localizedUrl(`/blog/${post.slug}`, lang),
+          item: localizedUrl(`/blog/${localizedSlug}`, lang),
         },
       ],
     };
@@ -177,7 +193,7 @@ export default function PostPage() {
       removeSchema('schema-article');
       removeSchema('schema-breadcrumb');
     };
-  }, [post, lang, postTitle, postExcerpt]);
+  }, [post, lang, postTitle, postExcerpt, localizedSlug, localizedCover]);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -201,10 +217,10 @@ export default function PostPage() {
         <>
           <div className="pt-24 md:pt-28">
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12">
-              {post.cover_url ? (
+              {localizedCover ? (
                 <ArticleHero
-                  src={post.cover_url}
-                  alt={post.cover_alt ?? postTitle}
+                  src={localizedCover}
+                  alt={localizedCoverAlt}
                   title={postTitle}
                   author={post.author}
                   date={new Date(post.created_at).toLocaleDateString(

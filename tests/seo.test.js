@@ -36,6 +36,37 @@ function mockSupabase(result) {
   return () => { globalThis.fetch = originalFetch; };
 }
 
+test('blog SSR uses independent English slug and cover when they are configured', async () => {
+  const restore = mockSupabase([{
+    ...post,
+    collection_type: null,
+    slug: 'articulo-es',
+    slug_es: 'articulo-es',
+    slug_en: 'english-article',
+    cover_url: 'https://cdn.example/es-cover.png',
+    cover_url_es: 'https://cdn.example/es-cover.png',
+    cover_url_en: 'https://cdn.example/en-cover.png',
+    cover_alt_es: 'Portada en español',
+    cover_alt_en: 'English cover',
+  }]);
+  try {
+    const response = await blogPost({
+      request: new Request(`${origin}/blog/english-article?lang=en`),
+      env,
+      params: { slug: 'english-article' },
+    });
+    const html = await response.text();
+    assert.equal(response.status, 200);
+    assert.ok(html.includes('canonical" href="https://www.mentoriatextum.com/blog/english-article?lang=en'), 'canonical EN');
+    assert.ok(html.includes('hreflang="es" href="https://www.mentoriatextum.com/blog/articulo-es"'), 'hreflang ES');
+    assert.ok(html.includes('hreflang="en" href="https://www.mentoriatextum.com/blog/english-article?lang=en"'), 'hreflang EN');
+    assert.ok(html.includes('og:image" content="https://cdn.example/en-cover.png"'), 'OG image EN');
+    assert.ok(html.includes('English cover'), 'alt EN');
+  } finally {
+    restore();
+  }
+});
+
 test('blog SSR uses the requested English canonical and all hreflang variants', async () => {
   const restore = mockSupabase([{ ...post, collection_type: null }]);
   try {
@@ -133,14 +164,10 @@ test('SSR splices head + article + data island into the real SPA shell', async (
     const html = await response.text();
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('X-SSR'), 'shell');
-    // El bundle real de la SPA sigue presente
     assert.match(html, /assets\/index-abc123\.js/);
-    // La home <title> ha sido sustituida por la del artículo
     assert.doesNotMatch(html, /<title>Home<\/title>/);
     assert.match(html, /Principio de prueba/);
-    // El heading oculto de la home se elimina en páginas de artículo
     assert.doesNotMatch(html, /ssr-home-h1/);
-    // Contenido del artículo inyectado + data island para React
     assert.match(html, /<div id="ssr-content"><style/);
     assert.match(html, /<script id="__SSR_DATA__" type="application\/json">/);
     assert.match(html, /"type":"post"/);
@@ -165,7 +192,6 @@ test('collection SSR accepts the eii type with its own labels and canonicals', a
     assert.match(spanishHtml, /rel="canonical" href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii\/eii-01"/);
     assert.match(spanishHtml, /hreflang="es" href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii\/eii-01"/);
     assert.match(spanishHtml, /hreflang="en" href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii\/eii-01\?lang=en"/);
-    // Breadcrumb hacia el listado de la colección EII
     assert.match(spanishHtml, /href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii"/);
 
     const english = await collectionPost({
@@ -191,7 +217,7 @@ test('collection SSR rejects unknown collection types', async () => {
   assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow');
 });
 
-test('dynamic sitemap has one canonical loc per resource and excludes contacto', async () => {
+test('dynamic sitemap publishes one URL per locale with correct hreflang pairs', async () => {
   const restore = mockSupabase([
     { slug: 'pt-01', collection_type: 'principio', created_at: '2026-01-01T00:00:00.000Z' },
     { slug: 'blog-01', collection_type: null, created_at: '2026-01-02T00:00:00.000Z' },
@@ -203,7 +229,7 @@ test('dynamic sitemap has one canonical loc per resource and excludes contacto',
     assert.match(xml, /xmlns:xhtml/);
     assert.doesNotMatch(xml, /contacto/);
     assert.match(xml, /<loc>https:\/\/www\.mentoriatextum\.com\/colecciones\/eii<\/loc>/);
-    assert.equal((xml.match(/<loc>/g) || []).length, 11);
+    assert.equal((xml.match(/<loc>/g) || []).length, 22);
     assert.match(xml, /hreflang="en" href="https:\/\/www\.mentoriatextum\.com\/blog\/blog-01\?lang=en"/);
   } finally {
     restore();

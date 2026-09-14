@@ -46,7 +46,25 @@ $$;
 revoke all on function public.is_admin_mfa() from public;
 grant execute on function public.is_admin_mfa() to authenticated;
 
--- 3. Posts — reemplazar política permisiva anterior
+-- 3. Posts — columnas localizadas para slug y portada
+alter table public.posts add column if not exists slug_es      text;
+alter table public.posts add column if not exists slug_en      text;
+alter table public.posts add column if not exists cover_url_es text;
+alter table public.posts add column if not exists cover_url_en text;
+alter table public.posts add column if not exists cover_alt_es text;
+alter table public.posts add column if not exists cover_alt_en text;
+
+update public.posts set slug_es = coalesce(nullif(slug_es, ''), slug) where slug_es is null or slug_es = '';
+update public.posts set cover_url_es = coalesce(nullif(cover_url_es, ''), cover_url) where cover_url_es is null or cover_url_es = '';
+update public.posts set cover_alt_es = coalesce(nullif(cover_alt_es, ''), cover_alt) where cover_alt_es is null or cover_alt_es = '';
+update public.posts set slug_en = coalesce(nullif(slug_en, ''), slug) where slug_en is null or slug_en = '';
+update public.posts set cover_url_en = coalesce(nullif(cover_url_en, ''), cover_url) where cover_url_en is null or cover_url_en = '';
+update public.posts set cover_alt_en = coalesce(nullif(cover_alt_en, ''), cover_alt) where cover_alt_en is null or cover_alt_en = '';
+
+create unique index if not exists posts_slug_es_unique_idx on public.posts (slug_es);
+create unique index if not exists posts_slug_en_unique_idx on public.posts (slug_en);
+
+-- 4. Posts — reemplazar política permisiva anterior
 drop policy if exists "Authenticated users have full access" on public.posts;
 
 drop policy if exists "Admins can read all posts" on public.posts;

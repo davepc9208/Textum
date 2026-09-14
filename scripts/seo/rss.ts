@@ -9,14 +9,16 @@ export async function generateRss() {
     const items = posts.map((p) => {
       const title = locale === "es" ? p.title_es : p.title_en;
       const excerpt = locale === "es" ? p.excerpt_es : p.excerpt_en;
+      const slug = locale === 'es' ? (p.slug_es || p.slug) : (p.slug_en || p.slug_es || p.slug);
+      const url = `${SITE_URL}/blog/${slug}${locale === 'en' ? '?lang=en' : ''}`;
 
       return `
   <item>
     <title><![CDATA[${title}]]></title>
-    <link>${SITE_URL}/blog/${p.slug}${locale === 'en' ? '?lang=en' : ''}</link>
+    <link>${url}</link>
     <description><![CDATA[${excerpt ?? ""}]]></description>
     <pubDate>${new Date(p.created_at).toUTCString()}</pubDate>
-    <guid>${SITE_URL}/blog/${p.slug}${locale === 'en' ? '?lang=en' : ''}</guid>
+    <guid>${url}</guid>
   </item>`;
     });
 

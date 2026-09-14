@@ -11,6 +11,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BackToTop from '../components/BackToTop';
 import { localizedPath } from '../lib/locale';
+import { postCover, postCoverAlt, localizedPostPath } from '../lib/postLocalization';
 import { PageError, PageSkeleton } from '../components/AsyncState';
 
 type CollectionType = 'principio' | 'categoria' | 'herramienta' | 'eii';
@@ -167,7 +168,7 @@ export default function ColeccionListPage() {
             {posts.map((post, i) => (
               <Link
                 key={post.id}
-                to={localizedPath(`/colecciones/${collectionType}/${post.slug}`, lang)}
+                to={localizedPath(localizedPostPath(post, lang, `/colecciones/${collectionType}`), lang)}
                 className="group flex flex-col md:flex-row gap-6 bg-white border border-navy/8 rounded-sm p-6 md:p-8 hover:border-gold/30 hover:shadow-lg transition-all duration-300"
               >
                 {/* Número de pieza */}
@@ -180,10 +181,10 @@ export default function ColeccionListPage() {
 
                 {/* Contenido */}
                 <div className="flex-1 min-w-0">
-                  {post.cover_url && (
+                  {postCover(post, lang) && (
                     <img
-                      src={post.cover_url}
-                      alt={post.cover_alt ?? title(post)}
+                      src={postCover(post, lang)}
+                      alt={postCoverAlt(post, lang, title(post))}
                       loading="lazy"
                       decoding="async"
                       className="w-full aspect-[3/2] object-cover rounded-sm mb-5"

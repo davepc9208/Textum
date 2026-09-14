@@ -5,6 +5,9 @@
 create table if not exists public.posts (
   id           uuid primary key default gen_random_uuid(),
   slug         text not null unique,
+  -- Slugs localizados. `slug` se conserva como alias histórico del español.
+  slug_es      text,
+  slug_en      text,
   title_es     text not null default '',
   title_en     text not null default '',
   excerpt_es   text not null default '',
@@ -15,7 +18,12 @@ create table if not exists public.posts (
   keywords_en  text not null default '',
   author       text not null default '',
   cover_url    text not null default '',
+  -- Portadas y textos alternativos independientes por idioma.
+  cover_url_es text,
+  cover_url_en text,
   cover_alt    text,
+  cover_alt_es text,
+  cover_alt_en text,
   category     text,
   collection_type text,
   published    boolean not null default false,
@@ -27,9 +35,28 @@ create table if not exists public.posts (
 alter table public.posts add column if not exists keywords_es     text not null default '';
 alter table public.posts add column if not exists keywords_en     text not null default '';
 alter table public.posts add column if not exists collection_type text;
+alter table public.posts add column if not exists slug_es          text;
+alter table public.posts add column if not exists slug_en          text;
+alter table public.posts add column if not exists cover_url_es     text;
+alter table public.posts add column if not exists cover_url_en     text;
+alter table public.posts add column if not exists cover_alt_es     text;
+alter table public.posts add column if not exists cover_alt_en     text;
+
+-- Migración compatible: los artículos existentes conservan su URL y portada ES.
+update public.posts set slug_es = coalesce(nullif(slug_es, ''), slug) where slug_es is null or slug_es = '';
+update public.posts set cover_url_es = coalesce(nullif(cover_url_es, ''), cover_url) where cover_url_es is null or cover_url_es = '';
+update public.posts set cover_alt_es = coalesce(nullif(cover_alt_es, ''), cover_alt) where cover_alt_es is null or cover_alt_es = '';
+update public.posts set slug_en = coalesce(nullif(slug_en, ''), slug) where slug_en is null or slug_en = '';
+update public.posts set cover_url_en = coalesce(nullif(cover_url_en, ''), cover_url) where cover_url_en is null or cover_url_en = '';
+update public.posts set cover_alt_en = coalesce(nullif(cover_alt_en, ''), cover_alt) where cover_alt_en is null or cover_alt_en = '';
+
+create unique index if not exists posts_slug_es_unique_idx on public.posts (slug_es);
+create unique index if not exists posts_slug_en_unique_idx on public.posts (slug_en);
 
 create index if not exists posts_published_cursor_idx
   on public.posts (published, collection_type, created_at desc, id desc);
+create index if not exists posts_slug_es_idx on public.posts (slug_es);
+create index if not exists posts_slug_en_idx on public.posts (slug_en);
 
 -- 2. Leads captados desde recursos y formularios (PII; nunca público)
 create table if not exists public.leads (

@@ -13,6 +13,8 @@ import { useState, useCallback } from 'react';
 // Fix: importar el singleton en lugar de crear un segundo cliente.
 // Dos instancias de createClient pueden causar conflictos de caché de auth.
 import { supabase, Post as SupabasePost } from '../lib/supabase';
+import { postSlug } from '../lib/postLocalization';
+import { localizedUrl } from '../lib/locale';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -276,7 +278,7 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
       // Intentamos por id primero, luego por slug como fallback
       const filter = post.id
         ? supabase.from('posts').update({ published: true }).eq('id', post.id)
-        : supabase.from('posts').update({ published: true }).eq('slug', post.slug);
+        : supabase.from('posts').update({ published: true }).eq('slug', post.slug_es || post.slug);
 
       const { error: supabaseError } = await filter;
       if (supabaseError) throw new Error(supabaseError.message);
@@ -310,7 +312,7 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
         body: JSON.stringify({
           title,
           content,
-          slug: post.slug,
+          slug: postSlug(post, 'es'),
           excerpt,
           category: post.category ?? '',
           tags: post.tags ?? [],
@@ -318,7 +320,14 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(err.error ?? `HTTP ${res.status}`);
+        const message = String(err.error ?? `HTTP ${res.status}`);
+        if (res.status === 403 && /mfa|aal2/i.test(message)) {
+          throw new Error('La sesión necesita verificación MFA. Sal del panel y vuelve a entrar con tu código autenticador.');
+        }
+        if (res.status === 403 && /permis|permission/i.test(message)) {
+          throw new Error('La cuenta no tiene permisos de administrador en Supabase.');
+        }
+        throw new Error(message);
       }
       data = await res.json();
       if (!data.success) throw new Error('El Worker no devolvió success:true');
@@ -387,9 +396,9 @@ export default function AdminDistribute({ post, onPublishSuccess }: Props) {
         {steps.publish === 'done' && (
           <p className="text-xs text-emerald-400 flex items-center gap-2">
             <CheckIcon size={12} className="text-emerald-400" />
-            <a href={`https://mentoriatextum.com/blog/${post.slug}`} target="_blank" rel="noreferrer"
+            <a href={localizedUrl(`/blog/${postSlug(post, 'es')}`, 'es')} target="_blank" rel="noreferrer"
               className="underline underline-offset-2 text-gold/80 hover:text-gold truncate">
-              mentoriatextum.com/blog/{post.slug}
+              mentoriatextum.com/blog/{postSlug(post, 'es')}
             </a>
           </p>
         )}

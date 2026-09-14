@@ -3,7 +3,7 @@
 // Mismo render que PostPage pero con breadcrumb de colección y sin ShareCard
 
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, Download } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
 import { ssrColeccion, dropSsrContent } from '../lib/ssrData';
@@ -17,6 +17,7 @@ import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 import { NotFoundContent } from './NotFoundPage';
 import { localizedPath, localizedUrl } from '../lib/locale';
+import { postCover, postCoverAlt, postSlug, slugFilter } from '../lib/postLocalization';
 import { PageError, PageSkeleton } from '../components/AsyncState';
 import ArticleCover, { ImageLightbox } from '../components/ArticleCover';
 
@@ -32,6 +33,7 @@ const TYPE_LABELS: Record<string, { es: string; en: string }> = {
 
 export default function ColeccionPiecePage() {
   const { tipo, slug } = useParams<{ tipo: string; slug: string }>();
+  const navigate = useNavigate();
   const { lang, t } = useLang();
   const [post, setPost] = useState<Post | null>(() => ssrColeccion(tipo, slug));
   const [loading, setLoading] = useState(() => !ssrColeccion(tipo, slug));
@@ -63,23 +65,35 @@ export default function ColeccionPiecePage() {
     if (reloadKey === 0 && ssrColeccion(tipo, slug)) return;
     setLoading(true);
     setLoadError(false);
-    Promise.resolve(supabase.from('posts').select('*').eq('slug', slug).eq('collection_type', tipo).eq('published', true).single())
+    Promise.resolve(supabase.from('posts').select('*').or(`slug.eq.${slugFilter(slug)},slug_es.eq.${slugFilter(slug)},slug_en.eq.${slugFilter(slug)}`).eq('collection_type', tipo).eq('published', true).single())
       .then(({ data, error }) => { setPost(data); setLoadError(Boolean(error)); setLoading(false); })
       .catch(() => { setPost(null); setLoadError(true); setLoading(false); });
-  }, [slug, tipo, reloadKey]);
+  }, [lang, slug, tipo, reloadKey]);
 
   const postTitle   = post ? (lang === 'es' ? post.title_es   : post.title_en)   : '';
   const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
   const content     = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
-  const canonicalUrl = post ? localizedUrl(`/colecciones/${tipo}/${post.slug}`, lang) : undefined;
+  const localizedSlug = post ? postSlug(post, lang) : slug ?? '';
+  const localizedCover = post ? postCover(post, lang) : '';
+  const localizedCoverAlt = post ? postCoverAlt(post, lang, postTitle) : postTitle;
+  useEffect(() => {
+    if (!post || !tipo || !slug || slug === localizedSlug) return;
+    navigate(localizedPath(`/colecciones/${tipo}/${localizedSlug}`, lang), { replace: true });
+  }, [lang, localizedSlug, navigate, post, slug, tipo]);
+
+  const canonicalUrl = post ? localizedUrl(`/colecciones/${tipo}/${localizedSlug}`, lang) : undefined;
   const typeLabel = tipo ? (TYPE_LABELS[tipo]?.[lang] ?? '') : '';
 
   useSEO(post ? {
     title: `${postTitle} | ${typeLabel} — TEXTUM`,
     description: postExcerpt.slice(0, 155),
-    canonical: `/colecciones/${tipo}/${post.slug}`,
-    ogImage: post.cover_url,
-    ogImageAlt: post.cover_alt ?? postTitle,
+    canonical: `/colecciones/${tipo}/${localizedSlug}`,
+    alternatePaths: {
+      es: `/colecciones/${tipo}/${postSlug(post, 'es')}`,
+      en: `/colecciones/${tipo}/${postSlug(post, 'en')}`,
+    },
+    ogImage: localizedCover,
+    ogImageAlt: localizedCoverAlt,
     ogType: 'article',
     articleMeta: { publishedTime: post.created_at, author: post.author },
     lang,
@@ -92,11 +106,11 @@ export default function ColeccionPiecePage() {
       '@type': 'Article',
       headline: postTitle,
       description: postExcerpt.slice(0, 155),
-      image: post.cover_url,
+      image: localizedCover,
       datePublished: post.created_at,
       author: { '@type': 'Person', name: post.author },
       publisher: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica', logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo-512.png` } },
-      mainEntityOfPage: { '@type': 'WebPage', '@id': localizedUrl(`/colecciones/${tipo}/${post.slug}`, lang) },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': localizedUrl(`/colecciones/${tipo}/${localizedSlug}`, lang) },
     }, 'schema-coleccion-piece');
     injectSchema({
       '@context': 'https://schema.org',
@@ -104,11 +118,11 @@ export default function ColeccionPiecePage() {
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: lang === 'es' ? 'Colecciones' : 'Collections', item: localizedUrl('/colecciones', lang) },
         { '@type': 'ListItem', position: 2, name: typeLabel,     item: localizedUrl(`/colecciones/${tipo}`, lang) },
-        { '@type': 'ListItem', position: 3, name: postTitle,     item: localizedUrl(`/colecciones/${tipo}/${post.slug}`, lang) },
+        { '@type': 'ListItem', position: 3, name: postTitle,     item: localizedUrl(`/colecciones/${tipo}/${localizedSlug}`, lang) },
       ],
     }, 'schema-coleccion-breadcrumb');
     return () => { removeSchema('schema-coleccion-piece'); removeSchema('schema-coleccion-breadcrumb'); };
-  }, [post, lang, postTitle, postExcerpt, tipo, typeLabel]);
+  }, [post, lang, postTitle, postExcerpt, tipo, typeLabel, localizedSlug, localizedCover]);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -132,8 +146,8 @@ export default function ColeccionPiecePage() {
         <>
           <div className="pt-24 md:pt-28">
             <div className="max-w-6xl mx-auto px-6 py-10 md:py-14">
-              <div className={`grid gap-10 lg:gap-14 items-center ${post.cover_url ? 'lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]' : ''}`}>
-                {post.cover_url && <ArticleCover src={post.cover_url} alt={post.cover_alt ?? postTitle} />}
+              <div className={`grid gap-10 lg:gap-14 items-center ${localizedCover ? 'lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]' : ''}`}>
+                {localizedCover && <ArticleCover src={localizedCover} alt={localizedCoverAlt} />}
 
                 <div className="max-w-3xl">
                   {/* Breadcrumb */}
@@ -206,9 +220,8 @@ export default function ColeccionPiecePage() {
     {lang === 'es'
       ? 'Formato listo para citar, imprimir y usar offline (incluye QR y referencia APA).'
       : 'Ready-to-cite format for printing and offline use (includes QR and APA reference).'}
-  </p>
-  <Link
-    to={localizedPath(`/colecciones/${tipo}/${slug}/descargar`, lang)}
+  </p>    <Link
+    to={localizedPath(`/colecciones/${tipo}/${localizedSlug}/descargar`, lang)}
     className="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-cream text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
   >
     <Download size={15} />

@@ -72,7 +72,7 @@ export function ArticleHero({
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Ampliar portada"
-          className="group absolute inset-0 z-10 h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold"
+          className="group absolute inset-0 z-0 h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold"
         >
           <img
             src={src}
@@ -83,10 +83,24 @@ export function ArticleHero({
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]"
           />
         </button>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#061326] via-[#061326]/55 to-transparent" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#061326]/35 via-transparent to-transparent" />
+        {/* Capa uniforme explícita: no depende de las clases de opacidad de Tailwind. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{ backgroundColor: 'rgba(6, 19, 38, 0.68)' }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{ background: 'linear-gradient(to top, rgba(6, 19, 38, 0.98) 0%, rgba(6, 19, 38, 0.82) 44%, rgba(6, 19, 38, 0.58) 100%)' }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{ background: 'linear-gradient(to right, rgba(6, 19, 38, 0.72) 0%, rgba(6, 19, 38, 0.32) 58%, rgba(6, 19, 38, 0.12) 100%)' }}
+        />
 
-        <div className="relative z-20 flex min-h-[26rem] items-end px-6 pb-8 pt-28 sm:min-h-[31rem] sm:px-10 sm:pb-10 lg:min-h-[34rem] lg:px-14 lg:pb-12">
+        <div className="pointer-events-none relative z-20 flex min-h-[26rem] items-end px-6 pb-8 pt-28 sm:min-h-[31rem] sm:px-10 sm:pb-10 lg:min-h-[34rem] lg:px-14 lg:pb-12">
           <div className="max-w-4xl">
             {category && (
               <span className="mb-4 inline-flex border border-gold/60 bg-gold px-3 py-1 text-[10px] font-medium tracking-[0.2em] text-navy uppercase">

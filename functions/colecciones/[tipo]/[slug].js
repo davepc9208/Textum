@@ -49,12 +49,14 @@ function notFound(request) {
   });
 }
 
-async function fetchPost(env, slug, type) {
+async function fetchPost(env, slug, type, lang) {
   const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
   const supabaseKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseKey) throw new Error('Supabase environment is missing');
 
-  const endpoint = `${supabaseUrl}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&collection_type=eq.${encodeURIComponent(type)}&published=eq.true&select=*&limit=1`;
+  const field = lang === 'en' ? 'slug_en' : 'slug_es';
+  const encodedSlug = encodeURIComponent(slug);
+  const endpoint = `${supabaseUrl}/rest/v1/posts?or=%28${field}.eq.${encodedSlug},slug.eq.${encodedSlug}%29&collection_type=eq.${encodeURIComponent(type)}&published=eq.true&select=*&limit=1`;
   const response = await fetchWithRetry(endpoint, {
     headers: {
       apikey: supabaseKey,
@@ -68,16 +70,33 @@ async function fetchPost(env, slug, type) {
   return posts?.[0] ?? null;
 }
 
-function buildHead(post, type, slug, lang) {
+function localizedSlug(post, lang, requestedSlug = '') {
+  if (lang === 'en') return post.slug_en || requestedSlug || post.slug_es || post.slug;
+  return post.slug_es || requestedSlug || post.slug;
+}
+
+function localizedCover(post, lang) {
+  if (lang === 'en') return post.cover_url_en || post.cover_url_es || post.cover_url;
+  return post.cover_url_es || post.cover_url;
+}
+
+function localizedAlt(post, lang, title) {
+  if (lang === 'en') return post.cover_alt_en || post.cover_alt_es || post.cover_alt || title;
+  return post.cover_alt_es || post.cover_alt || title;
+}
+
+function buildHead(post, type, lang, requestedSlug) {
   const title = lang === 'en' ? (post.title_en || post.title_es) : post.title_es;
   const excerpt = lang === 'en' ? (post.excerpt_en || post.excerpt_es) : post.excerpt_es;
   const content = lang === 'en' ? (post.content_en || post.content_es) : post.content_es;
-  const path = `/colecciones/${type}/${slug}`;
+  const esSlug = localizedSlug(post, 'es', requestedSlug);
+  const enSlug = localizedSlug(post, 'en', requestedSlug);
+  const path = `/colecciones/${type}/${localizedSlug(post, lang)}`;
   const canonical = localizedUrl(path, lang);
-  const esUrl = localizedUrl(path, 'es');
-  const enUrl = localizedUrl(path, 'en');
+  const esUrl = localizedUrl(`/colecciones/${type}/${esSlug}`, 'es');
+  const enUrl = localizedUrl(`/colecciones/${type}/${enSlug}`, 'en');
   const description = (stripHtml(excerpt || content) || title).slice(0, 155);
-  const image = post.cover_url || `${SITE_URL}/og-default.png`;
+  const image = localizedCover(post, lang) || `${SITE_URL}/og-default.png`;
   const author = post.author || SITE_NAME;
   const label = typeLabel(type, lang);
 
@@ -131,7 +150,7 @@ function buildHead(post, type, slug, lang) {
 
 const SSR_STYLE = '<style>.ssr-article{font-family:Georgia,"Times New Roman",serif;max-width:800px;margin:0 auto;padding:24px;color:#0d1f3c;line-height:1.7}.ssr-article nav{font-size:14px;margin-bottom:16px;color:#666}.ssr-article nav a{color:#c9a84c;text-decoration:none}.ssr-article h1{font-size:2rem;font-weight:400;line-height:1.2;margin:.5rem 0 1rem}.ssr-article .ssr-meta{font-size:.9rem;color:#666;margin-bottom:1.5rem}.ssr-article img{max-width:100%;height:auto;border-radius:4px;margin:1rem 0}.ssr-article h2{font-size:1.5rem;margin-top:2rem}.ssr-article h3{font-size:1.25rem;margin-top:1.5rem}.ssr-article p{margin-bottom:1.1rem}.ssr-article ul,.ssr-article ol{margin-bottom:1.1rem;padding-left:1.5rem}.ssr-article blockquote{border-left:3px solid #c9a84c;padding-left:1rem;color:#555;font-style:italic}.ssr-article a{color:#b08b1e}</style>';
 
-function buildBody(post, type, slug, lang) {
+function buildBody(post, type, lang) {
   const title = lang === 'en' ? (post.title_en || post.title_es) : post.title_es;
   const excerpt = lang === 'en' ? (post.excerpt_en || post.excerpt_es) : post.excerpt_es;
   const content = lang === 'en' ? (post.content_en || post.content_es) : post.content_es;
@@ -148,7 +167,7 @@ function buildBody(post, type, slug, lang) {
   </nav>
   <h1>${escapeHtml(title)}</h1>
   <p class="ssr-meta">${escapeHtml(author)}</p>
-  ${post.cover_url ? `<img src="${escapeHtml(post.cover_url)}" alt="${escapeHtml(post.cover_alt || title)}" width="1200" height="630" />` : ''}
+  ${localizedCover(post, lang) ? `<img src="${escapeHtml(localizedCover(post, lang))}" alt="${escapeHtml(localizedAlt(post, lang, title))}" width="1200" height="630" />` : ''}
   ${excerpt ? `<p><em>${escapeHtml(excerpt)}</em></p>` : ''}
   <div>${sanitizeArticleHtml(content)}</div>
   <p style="margin-top:2rem"><a href="${localizedUrl('/', lang)}">${backLabel}</a></p>
@@ -163,7 +182,8 @@ export async function onRequest(context) {
 
   let post;
   try {
-    post = await fetchPost(env, slug, type);
+    const lang = langFromRequest(request);
+    post = await fetchPost(env, slug, type, lang);
   } catch (error) {
     console.error('[SSR] Collection error:', error);
     if (typeof context.next === 'function') return context.next();
@@ -179,8 +199,8 @@ export async function onRequest(context) {
     env,
     context,
     lang,
-    headHtml: buildHead(post, type, slug, lang),
-    bodyHtml: buildBody(post, type, slug, lang),
+    headHtml: buildHead(post, type, lang, slug),
+    bodyHtml: buildBody(post, type, lang),
     data: { type: 'coleccion', tipo: type, post },
   });
 }
