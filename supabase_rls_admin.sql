@@ -64,6 +64,15 @@ update public.posts set cover_alt_en = coalesce(nullif(cover_alt_en, ''), cover_
 create unique index if not exists posts_slug_es_unique_idx on public.posts (slug_es);
 create unique index if not exists posts_slug_en_unique_idx on public.posts (slug_en);
 
+-- 3 bis. collection_type: admitir el tipo EII (Enfoque Investigativo Integral).
+-- La base en producción conserva una restricción antigua que solo permite
+-- principio / categoria / herramienta, por lo que guardar EII fallaba con
+-- "violates check constraint \"posts_collection_type_check\"".
+-- Idempotente: si la restricción no existe, no hace nada.
+alter table public.posts drop constraint if exists posts_collection_type_check;
+alter table public.posts add constraint posts_collection_type_check
+  check (collection_type is null or collection_type in ('principio', 'categoria', 'herramienta', 'eii'));
+
 -- 4. Posts — reemplazar política permisiva anterior
 drop policy if exists "Authenticated users have full access" on public.posts;
 

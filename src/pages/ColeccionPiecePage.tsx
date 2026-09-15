@@ -55,9 +55,25 @@ export default function ColeccionPiecePage() {
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
-    el.querySelectorAll('img').forEach(img => { img.style.cursor = 'zoom-in'; });
+
+    el.querySelectorAll('img').forEach(img => {
+      img.style.cursor = 'zoom-in';
+      img.setAttribute('draggable', 'false');
+    });
+
+    // Solo lectura: bloquear copiar, cortar y menú contextual
+    const block = (e: Event) => e.preventDefault();
+    el.addEventListener('copy', block);
+    el.addEventListener('cut', block);
+    el.addEventListener('contextmenu', block);
     el.addEventListener('click', openLightbox);
-    return () => el.removeEventListener('click', openLightbox);
+
+    return () => {
+      el.removeEventListener('copy', block);
+      el.removeEventListener('cut', block);
+      el.removeEventListener('contextmenu', block);
+      el.removeEventListener('click', openLightbox);
+    };
   }, [post, openLightbox]);
 
   useEffect(() => {
@@ -190,7 +206,7 @@ export default function ColeccionPiecePage() {
           </div>
 
           <div className="max-w-3xl mx-auto px-6 pb-16">
-            {/* Legacy spacing retained only for content rhythm */}
+            {/* Solo lectura: sin selección de texto, copiar ni menú contextual */}
             <div
   ref={contentRef}
   className="prose prose-lg max-w-none
@@ -200,7 +216,17 @@ export default function ColeccionPiecePage() {
     prose-strong:text-navy
     prose-blockquote:border-l-gold prose-blockquote:text-navy/60 prose-blockquote:font-serif prose-blockquote:italic
     prose-li:text-navy/70
-    prose-img:rounded-sm prose-img:shadow-md"
+    prose-img:rounded-sm prose-img:shadow-md
+    select-none"
+  style={{
+    WebkitUserSelect: 'none',
+    MozUserSelect: 'none',
+    msUserSelect: 'none',
+    userSelect: 'none',
+  }}
+  onCopy={(e) => e.preventDefault()}
+  onCut={(e) => e.preventDefault()}
+  onContextMenu={(e) => e.preventDefault()}
   dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
 />
 

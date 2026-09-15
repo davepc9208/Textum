@@ -58,6 +58,12 @@ create index if not exists posts_published_cursor_idx
 create index if not exists posts_slug_es_idx on public.posts (slug_es);
 create index if not exists posts_slug_en_idx on public.posts (slug_en);
 
+-- Tipos de Colección admitidos, incluido EII (Enfoque Investigativo Integral).
+-- Idempotente: si la restricción no existe, no hace nada.
+alter table public.posts drop constraint if exists posts_collection_type_check;
+alter table public.posts add constraint posts_collection_type_check
+  check (collection_type is null or collection_type in ('principio', 'categoria', 'herramienta', 'eii'));
+
 -- 2. Leads captados desde recursos y formularios (PII; nunca público)
 create table if not exists public.leads (
   id               uuid primary key default gen_random_uuid(),
