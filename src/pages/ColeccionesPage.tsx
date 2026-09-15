@@ -46,28 +46,28 @@ const COLLECTIONS = {
   en: [
     {
       type: 'principio',
-      code: 'PT',
+      code: 'TP',
       label: 'TEXTUM Principles',
       desc: 'Foundations that explain the essential relationships organising and guiding the research process. Each principle develops a key aspect of scientific methodological thinking.',
       stripOpacity: 1.0,
     },
     {
       type: 'categoria',
-      code: 'CM',
+      code: 'MC',
       label: 'Methodological Categories',
       desc: 'Structural components that make up the design of a scientific investigation. They describe the essential elements that articulate the methodological system.',
       stripOpacity: 1.0,
     },
     {
       type: 'herramienta',
-      code: 'HT',
+      code: 'TT',
       label: 'TEXTUM Tools',
       desc: 'Support instruments for formulating, reviewing, representing and evaluating the methodological quality of a research project. Practical resources for researchers and thesis supervisors.',
       stripOpacity: 1.0,
     },
     {
       type: 'eii',
-      code: 'EII',
+      code: 'IRA',
       label: 'Integral Research Approach',
       desc: 'An integral, articulated and recursive conception of scientific research: a conceptual and relational architecture for understanding how the research process is configured, articulated and may be reconfigured.',
       stripOpacity: 1.0,
