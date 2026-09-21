@@ -12,43 +12,68 @@ import { diagnosisHref, trackConversion } from '../lib/conversion';
 import { getAttribution } from '../lib/attribution';
 import { localizedPath } from '../lib/locale';
 
-const RESOURCES: Record<string, { title_es: string; title_en: string; type: string }> = {
-  'pt-01': {
+type DownloadResource = {
+  id: string;
+  title_es: string;
+  title_en: string;
+  type: string;
+  publicSlugs: string[];
+};
+
+const RESOURCES: DownloadResource[] = [
+  {
+    id: 'pt-01',
     title_es: 'PT-01 · El problema científico orienta toda la investigación',
     title_en: 'PT-01 · The scientific problem guides the entire research',
     type: 'principio',
+    publicSlugs: ['pt-01', 'el-problema-cientifico-orienta-toda-la-investigacion', 'the-scientific-problem-guides-the-entire-research'],
   },
-  'cm-01': {
+  {
+    id: 'cm-01',
     title_es: 'CM-01 · Marco Teórico Referencial',
     title_en: 'CM-01 · Theoretical Referential Framework',
     type: 'categoria',
+    publicSlugs: ['cm-01', 'marco-teorico-referencial', 'theoretical-referential-framework'],
   },
-  'ht-01': {
+  {
+    id: 'ht-01',
     title_es: 'HT-01 · 20 preguntas para comprobar la coherencia metodológica',
     title_en: 'HT-01 · 20 questions to check methodological coherence',
+    publicSlugs: ['ht-01', '20-preguntas-para-comprobar-la-coherencia-metodologica', '20-questions-to-check-methodological-coherence'],
+
+
     type: 'herramienta',
+
   },
-  'ht-02': {
+  {
+    id: 'ht-02',
     title_es: 'HT-02 · 20 preguntas para comprobar la coherencia del MTR',
     title_en: 'HT-02 · 20 questions to check MTR coherence',
     type: 'herramienta',
+    publicSlugs: ['ht-02', '20-preguntas-para-comprobar-la-coherencia-del-mtr', '20-questions-to-check-mtr-coherence'],
   },
-  'eii-01': {
+  {
+    id: 'eii-01',
     title_es: 'EII-01 · El Enfoque Investigativo Integral: una concepción integral, articulada y recursiva de la investigación científica',
     title_en: 'EII-01 · The Integral Research Approach: an integral, articulated and recursive conception of scientific research',
     type: 'eii',
+    publicSlugs: ['eii-01', 'el-enfoque-investigativo-integral-una-concepcion-integral-articulada-y-recursiva-de-la-investigacion-cientifica', 'the-integral-research-approach-an-integral-articulated-and-recursive-conception-of-scientific-research'],
   },
-  'flux-01': {
+  {
+    id: 'flux-01',
     title_es: 'FLUX-01 · TEXTUM Flux®: una metodología dinámica para investigar, articular y transformar',
     title_en: 'FLUX-01 · TEXTUM Flux®: a dynamic methodology to investigate, connect and transform',
     type: 'flux',
+    publicSlugs: ['flux-01', 'textum-flux-metodo-de-mentoria-academica', 'textum-flux-a-dynamic-methodology-to-investigate-connect-and-transform'],
   },
-};
+];
 
 export default function DescargaPage() {
   const { tipo, slug } = useParams<{ tipo: string; slug: string }>();
   const { lang } = useLang();
-  const resource = slug && tipo && RESOURCES[slug]?.type === tipo ? RESOURCES[slug] : null;
+  const resource = slug && tipo
+    ? RESOURCES.find(item => item.type === tipo && (item.id === slug || item.publicSlugs.includes(slug))) ?? null
+    : null;
 
   useSEO({
     title: lang === 'es' ? 'Descarga de recurso — TEXTUM' : 'Resource download — TEXTUM',
@@ -109,7 +134,7 @@ export default function DescargaPage() {
   institution: form.institution || null,
   country: form.country || null,
   role: form.role || null,
-  resource_slug: slug,
+  resource_slug: resource.id,
   resource_type: resource.type,
   resource_title: lang === 'es' ? resource.title_es : resource.title_en,
   lang,                    // ← ya lo tenías
