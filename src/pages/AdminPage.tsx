@@ -1,10 +1,11 @@
 // AdminPage.tsx
 import { useState, useEffect, useRef } from 'react';
 import { supabase, Post } from '../lib/supabase';
-import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, ShieldCheck, Users, Download, Search } from 'lucide-react';
+import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, ShieldCheck, Users, Download, Search, Target } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import RichTextEditor from '../components/RichTextEditor';
 import AdminDistribute from '../components/AdminDistribute';
+import AdminProspecting from '../components/AdminProspecting';
 import { optimizeImage } from '../lib/imageOptimization';
 import { sanitizeHtml } from '../lib/sanitize';
 
@@ -27,6 +28,8 @@ function readingTime(html: string) {
 // ─── empty post template ────────────────────────────────────────────────────
 const EMPTY: Omit<Post, 'id' | 'created_at'> = {
   slug: '',
+  slug_es: '',
+  slug_en: '',
   title_es: '',
   title_en: '',
   excerpt_es: '',
@@ -37,7 +40,11 @@ const EMPTY: Omit<Post, 'id' | 'created_at'> = {
   content_en: '',
   author: '',
   cover_url: '',
+  cover_url_es: '',
+  cover_url_en: '',
   cover_alt: '',
+  cover_alt_es: '',
+  cover_alt_en: '',
   published: false,
   reading_time: 1,
   category: null,
@@ -100,6 +107,13 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
       code,
     });
     if (verErr) { setErr('Código incorrecto. Inténtalo de nuevo.'); setLoading(false); return; }
+    const verifiedSession = (await supabase.auth.getSession()).data.session;
+    const { data: verifiedAal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (!verifiedSession || verifiedAal?.currentLevel !== 'aal2') {
+      setErr('El código se aceptó, pero la sesión no se elevó a MFA. Cierra sesión y vuelve a entrar.');
+      setLoading(false);
+      return;
+    }
     onLogin();
     setLoading(false);
   };
@@ -167,6 +181,90 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
           <button type="submit" disabled={loading}
             className="btn-primary w-full py-3 text-xs tracking-[0.15em] rounded-sm disabled:opacity-70">
             <span>{loading ? 'ENTRANDO...' : 'ENTRAR'}</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function MfaChallenge({
+  factorId,
+  onVerified,
+}: {
+  factorId: string;
+  onVerified: (session: Session) => void;
+}) {
+  const [code, setCode] = useState('');
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setErr('');
+
+    const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
+    if (challengeError || !challenge) {
+      setErr('No se pudo iniciar la verificación MFA. Vuelve a intentarlo.');
+      setLoading(false);
+      return;
+    }
+
+    const { error: verificationError } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId: challenge.id,
+      code,
+    });
+    if (verificationError) {
+      setErr('El código no es válido o ha caducado. Comprueba la hora del autenticador.');
+      setLoading(false);
+      return;
+    }
+
+    const verifiedSession = (await supabase.auth.getSession()).data.session;
+    const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (!verifiedSession || assurance?.currentLevel !== 'aal2') {
+      setErr('El código se aceptó, pero la sesión no se elevó a MFA. Cierra sesión y vuelve a entrar.');
+      setLoading(false);
+      return;
+    }
+
+    onVerified(verifiedSession);
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen gradient-bg flex items-center justify-center px-4">
+      <div className="glass-navy rounded-sm p-10 w-full max-w-sm shadow-2xl">
+        <div className="text-center mb-8">
+          <ShieldCheck className="mx-auto mb-3 text-gold" size={28} />
+          <span className="font-serif text-3xl tracking-[0.2em] text-white">TEXTUM</span>
+          <p className="text-gold/60 text-xs tracking-widest mt-1 uppercase">Verificación en dos pasos</p>
+        </div>
+        <p className="text-white/65 text-sm leading-relaxed mb-6">
+          La contraseña es correcta. Introduce el código de tu aplicación autenticadora para activar los permisos de administración.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="admin-mfa-code" className="block text-white/50 text-xs tracking-widest mb-2 uppercase">Código de 6 dígitos</label>
+            <input
+              id="admin-mfa-code"
+              type="text"
+              inputMode="numeric"
+              autoFocus
+              value={code}
+              onChange={event => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              required
+              maxLength={6}
+              className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-3 text-white text-center text-2xl tracking-[0.3em] placeholder-white/25 focus:outline-none focus:border-gold/50 transition-all"
+              placeholder="000000"
+            />
+          </div>
+          {err && <p role="alert" className="text-red-300 text-xs leading-relaxed">{err}</p>}
+          <button type="submit" disabled={loading || code.length !== 6}
+            className="btn-primary w-full py-3 text-xs tracking-[0.15em] rounded-sm disabled:opacity-50">
+            <span>{loading ? 'VERIFICANDO...' : 'ENTRAR AL PANEL'}</span>
           </button>
         </form>
       </div>
@@ -396,7 +494,15 @@ function PostEditor({
 
   const handleTitleEs = (v: string) => {
     set('title_es', v);
-    if (!initial.id) set('slug', slugify(v));
+    if (!initial.id && !form.slug_es) {
+      set('slug_es', slugify(v));
+      set('slug', slugify(v));
+    }
+  };
+
+  const handleTitleEn = (v: string) => {
+    set('title_en', v);
+    if (!initial.id && !form.slug_en) set('slug_en', slugify(v));
   };
 
   // 🆕 Función para traducir al inglés con IA
@@ -429,6 +535,7 @@ function PostEditor({
       set('excerpt_en',  data.excerpt_en);
       set('content_en',  data.content_en);
       set('keywords_en', data.keywords_en ?? '');
+      if (!form.slug_en && data.title_en) set('slug_en', slugify(data.title_en));
       setLastTranslated(new Date().toLocaleTimeString('es-ES'));
       // Cambiar a la pestaña EN para que el usuario revise
       setTab('en');
@@ -443,23 +550,40 @@ function PostEditor({
     setSaving(true);
     setErr('');
 
-    if (!form.slug) { setErr('El slug (URL) no puede estar vacío.'); setSaving(false); return; }
+    const slugEs = slugify(form.slug_es || form.slug || form.title_es);
+    const slugEn = slugify(form.slug_en || form.title_en || form.title_es);
+    if (!slugEs) { setErr('El slug español (URL) no puede estar vacío.'); setSaving(false); return; }
+    if (!slugEn) { setErr('El slug inglés (URL) no puede estar vacío.'); setSaving(false); return; }
     if (!form.title_es) { setErr('El título en español es obligatorio.'); setSaving(false); return; }
 
-    const { data: existing } = await supabase
-      .from('posts')
-      .select('id')
-      .eq('slug', form.slug)
-      .single();
+    const [{ data: existingEs }, { data: existingEn }, { data: legacyEs }] = await Promise.all([
+      supabase.from('posts').select('id').eq('slug_es', slugEs).maybeSingle(),
+      supabase.from('posts').select('id').eq('slug_en', slugEn).maybeSingle(),
+      supabase.from('posts').select('id').eq('slug', slugEs).maybeSingle(),
+    ]);
 
-    if (existing && existing.id !== initial.id) {
-      setErr(`El slug "${form.slug}" ya está en uso por otro artículo. Elige uno diferente.`);
+    if ((existingEs && existingEs.id !== initial.id) || (legacyEs && legacyEs.id !== initial.id)) {
+      setErr(`El slug español "${slugEs}" ya está en uso por otro artículo.`);
+      setSaving(false);
+      return;
+    }
+    if (existingEn && existingEn.id !== initial.id) {
+      setErr(`El slug inglés "${slugEn}" ya está en uso por otro artículo.`);
       setSaving(false);
       return;
     }
 
+    const coverEs = form.cover_url_es || form.cover_url || '';
+    const coverAltEs = form.cover_alt_es || form.cover_alt || '';
     const payload = {
       ...form,
+      slug: slugEs,
+      slug_es: slugEs,
+      slug_en: slugEn,
+      cover_url: coverEs,
+      cover_url_es: coverEs,
+      cover_alt: coverAltEs,
+      cover_alt_es: coverAltEs,
       reading_time: readingTime(form.content_es + form.content_en),
     };
     let error;
@@ -563,8 +687,8 @@ function PostEditor({
 
           {preview ? (
             <div className="p-8 bg-cream min-h-[400px]">
-              {form.cover_url && (
-                <img src={form.cover_url} alt="" className="w-full h-56 object-cover rounded-sm mb-6" />
+              {(tab === 'es' ? (form.cover_url_es || form.cover_url) : form.cover_url_en) && (
+                <img src={(tab === 'es' ? (form.cover_url_es || form.cover_url) : form.cover_url_en) || ''} alt={tab === 'es' ? (form.cover_alt_es || form.cover_alt || '') : form.cover_alt_en || ''} className="w-full h-56 object-cover rounded-sm mb-6" />
               )}
               <p className="text-xs tracking-widest text-gold uppercase mb-2">{form.author}</p>
               <h1 className="font-serif text-3xl font-light text-navy mb-4">
@@ -581,7 +705,7 @@ function PostEditor({
                 <span className={`px-2 py-0.5 rounded-full border text-[10px] tracking-widest ${form.published ? 'text-green-700 border-green-200 bg-green-50' : 'text-navy/40 border-navy/15'}`}>
                   {form.published ? 'PUBLICADO' : 'BORRADOR'}
                 </span>
-                <span>· {form.reading_time} min · {form.slug}</span>
+                <span>· {form.reading_time} min · {tab === 'es' ? (form.slug_es || form.slug || '') : (form.slug_en || '')}</span>
               </div>
             </div>
           ) : (
@@ -592,8 +716,9 @@ function PostEditor({
                 <input className={inputCls} value={form.author} onChange={e => set('author', e.target.value)} placeholder="Nombre completo" />
               </div>
               <div>
-                <label className={labelCls}>Slug (URL)</label>
-                <input className={inputCls} value={form.slug} onChange={e => set('slug', slugify(e.target.value))} placeholder="mi-articulo" />
+                <label className={labelCls}>Slug español (URL)</label>
+                <input className={inputCls} value={form.slug_es || form.slug} onChange={e => { const value = slugify(e.target.value); set('slug_es', value); set('slug', value); }} placeholder="mi-articulo" />
+                <p className="text-xs text-navy/40 mt-1.5">URL: /blog/{form.slug_es || form.slug || 'mi-articulo'}</p>
               </div>
             </div>
 
@@ -622,6 +747,8 @@ function PostEditor({
     <option value="principio">PT — Principios TEXTUM</option>
     <option value="categoria">CM — Categorías Metodológicas</option>
     <option value="herramienta">HT — Herramientas TEXTUM</option>
+    <option value="eii">EII — Enfoque Investigativo Integral</option>
+    <option value="flux">FLUX — TEXTUM Flux®</option>
   </select>
   <p className="text-xs text-navy/40 mt-1.5">
     Si seleccionas un tipo de Colección, la pieza no aparecerá en el Blog.
@@ -629,9 +756,11 @@ function PostEditor({
 </div>
 
             <div>
-              <label className={labelCls}>Imagen de portada</label>
-              <p className="text-xs text-navy/40 mb-2">Formatos permitidos: .webp o .png optimizado · Peso máximo recomendado: 300 KB</p>
-              <CoverImagePicker value={form.cover_url} onChange={(url) => set('cover_url', url)} />
+              <label className={labelCls}>Portada española</label>
+              <p className="text-xs text-navy/40 mb-2">La portada se configura por idioma. Formatos permitidos: .webp o .png · máximo recomendado: 300 KB.</p>
+              <CoverImagePicker value={form.cover_url_es || form.cover_url} onChange={(url) => { set('cover_url_es', url); set('cover_url', url); }} />
+              <label className={`${labelCls} mt-4`}>Texto alternativo (ES)</label>
+              <input className={inputCls} value={form.cover_alt_es || form.cover_alt || ''} onChange={e => { set('cover_alt_es', e.target.value); set('cover_alt', e.target.value); }} placeholder="Descripción accesible de la portada" />
             </div>
 
             <div className="border border-navy/10 rounded-sm overflow-hidden">
@@ -733,26 +862,37 @@ function PostEditor({
                       </div>
                     )}
                     <div>
-                      <label className={labelCls}>Article Title (English translation)</label>
-                      <input className={inputCls} value={form.title_en} onChange={e => set('title_en', e.target.value)} placeholder='E.g. "How to structure the methodology of your thesis..."' />
+                      <label className={labelCls}>English slug (URL)</label>
+                      <input className={inputCls} value={form.slug_en || ''} onChange={e => set('slug_en', slugify(e.target.value))} placeholder="my-article" />
+                      <p className="text-xs text-navy/40 mt-1.5">URL: /blog/{form.slug_en || 'my-article'}?lang=en</p>
                     </div>
                     <div>
-  <label className={labelCls}>Abstract (English)</label>
-  <textarea className={inputCls} rows={3} value={form.excerpt_en} onChange={e => set('excerpt_en', e.target.value)}
-    placeholder="2-3 hook sentences for the blog card. No keywords here." />
-</div>
-<div>
-  <label className={labelCls}>SEO Keywords (EN)</label>
-  <input
-    className={inputCls}
-    value={form.keywords_en}
-    onChange={e => set('keywords_en', e.target.value)}
-    placeholder="E.g. academic mentoring, doctoral thesis, APA 7, scientific writing"
-  />
-  <p className="text-xs text-navy/40 mt-1.5 font-light">
-    Comma-separated. Used in the <code>&lt;meta name="keywords"&gt;</code> tag of the published article.
-  </p>
-</div>
+                      <label className={labelCls}>Portada inglesa</label>
+                      <CoverImagePicker value={form.cover_url_en || ''} onChange={(url) => set('cover_url_en', url)} />
+                      <label className={`${labelCls} mt-4`}>Alternative text (EN)</label>
+                      <input className={inputCls} value={form.cover_alt_en || ''} onChange={e => set('cover_alt_en', e.target.value)} placeholder="Accessible description of the cover" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Article Title (English translation)</label>
+                      <input className={inputCls} value={form.title_en} onChange={e => handleTitleEn(e.target.value)} placeholder='E.g. "How to structure the methodology of your thesis..."' />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Abstract (English)</label>
+                      <textarea className={inputCls} rows={3} value={form.excerpt_en} onChange={e => set('excerpt_en', e.target.value)}
+                        placeholder="2-3 hook sentences for the blog card. No keywords here." />
+                    </div>
+                    <div>
+                      <label className={labelCls}>SEO Keywords (EN)</label>
+                      <input
+                        className={inputCls}
+                        value={form.keywords_en}
+                        onChange={e => set('keywords_en', e.target.value)}
+                        placeholder="E.g. academic mentoring, doctoral thesis, APA 7, scientific writing"
+                      />
+                      <p className="text-xs text-navy/40 mt-1.5 font-light">
+                        Comma-separated. Used in the <code>&lt;meta name="keywords"&gt;</code> tag of the published article.
+                      </p>
+                    </div>
                     <div>
                       <label className={labelCls}>Content (EN)</label>
                       <RichTextEditor content={form.content_en} onChange={(html) => set('content_en', html)} placeholder="Write the article in English..." />
@@ -1216,23 +1356,89 @@ function LeadsPanel() {
   );
 }
 
+function formatAdminError(message: string) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes('mfa') || normalized.includes('aal2')) {
+    return 'La sesión necesita verificación MFA. Sal de la cuenta y vuelve a entrar con el código de tu aplicación autenticadora.';
+  }
+  if (normalized.includes('permission') || normalized.includes('permis') || normalized.includes('forbidden') || normalized.includes('403')) {
+    return 'La cuenta está autenticada, pero no tiene permisos de administrador en Supabase.';
+  }
+  return message;
+}
+
 // ─── Main admin panel ─────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [editing, setEditing] = useState<Partial<Post> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaSetupRequired, setMfaSetupRequired] = useState(false);
+  const [authMessage, setAuthMessage] = useState('');
+  const [actionError, setActionError] = useState('');
   const [showMfaSetup, setShowMfaSetup] = useState(false);
   const [distributingPost, setDistributingPost] = useState<Post | null>(null);
-  const [tab, setTab] = useState<'posts' | 'leads'>('posts');
+  const [tab, setTab] = useState<'posts' | 'leads' | 'prospecting'>('posts');
+
+  const resolveSession = async (candidate?: Session | null) => {
+    setAuthChecking(true);
+    setAuthMessage('');
+    const currentSession = candidate === undefined
+      ? (await supabase.auth.getSession()).data.session
+      : candidate;
+
+    if (!currentSession) {
+      setSession(null);
+      setMfaFactorId(null);
+      setMfaSetupRequired(false);
+      setAuthChecking(false);
+      return;
+    }
+
+    const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+    if (assuranceError || factorsError) {
+      setSession(null);
+      setAuthMessage('No se pudo comprobar la seguridad de la sesión. Vuelve a iniciar sesión.');
+      setAuthChecking(false);
+      return;
+    }
+
+    if (assurance?.currentLevel === 'aal2') {
+      setMfaFactorId(null);
+      setMfaSetupRequired(false);
+      setSession(currentSession);
+    } else {
+      const verifiedFactor = factors?.totp?.find((factor: { status: string }) => factor.status === 'verified');
+      setSession(null);
+      if (verifiedFactor) {
+        setMfaFactorId(verifiedFactor.id);
+        setMfaSetupRequired(false);
+      } else {
+        setMfaFactorId(null);
+        setMfaSetupRequired(true);
+      }
+    }
+    setAuthChecking(false);
+  };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    let active = true;
+    void resolveSession();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (active) void resolveSession(nextSession);
+    });
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchPosts = async () => {
-    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    if (error) setActionError(formatAdminError(error.message));
     setPosts(data ?? []);
     setLoading(false);
   };
@@ -1241,16 +1447,36 @@ export default function AdminPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este artículo permanentemente?')) return;
-    await supabase.from('posts').delete().eq('id', id);
+    const { error } = await supabase.from('posts').delete().eq('id', id);
+    if (error) {
+      setActionError(formatAdminError(error.message));
+      return;
+    }
     fetchPosts();
   };
 
   const togglePublished = async (post: Post) => {
-    await supabase.from('posts').update({ published: !post.published }).eq('id', post.id);
+    setActionError('');
+    const { error } = await supabase.from('posts').update({ published: !post.published }).eq('id', post.id);
+    if (error) {
+      setActionError(formatAdminError(error.message));
+      return;
+    }
     fetchPosts();
   };
 
-  if (!session) return <LoginForm onLogin={() => supabase.auth.getSession().then(({ data }) => setSession(data.session))} />;
+  if (authChecking) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <Loader2 className="animate-spin text-gold" size={30} aria-label="Comprobando sesión" />
+      </div>
+    );
+  }
+  if (mfaFactorId) return <MfaChallenge factorId={mfaFactorId} onVerified={resolveSession} />;
+  if (mfaSetupRequired) {
+    return <MfaSetup onClose={() => { void supabase.auth.signOut(); }} onEnabled={() => { void resolveSession(); }} />;
+  }
+  if (!session) return <LoginForm onLogin={() => { void resolveSession(); }} />;
 
   return (
     <div className="min-h-screen bg-cream">
@@ -1269,6 +1495,17 @@ export default function AdminPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-12">
+        {authMessage && (
+          <div role="alert" className="mb-6 rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {authMessage}
+          </div>
+        )}
+        {actionError && (
+          <div role="alert" className="mb-6 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {actionError}
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex items-center gap-1 mb-8 border-b border-navy/10">
           <button
@@ -1292,10 +1529,23 @@ export default function AdminPage() {
             <Users size={13} />
             Leads
           </button>
+          <button
+            onClick={() => setTab('prospecting')}
+            className={`flex items-center gap-2 px-5 py-3 text-xs tracking-widest uppercase transition-colors border-b-2 -mb-px ${
+              tab === 'prospecting'
+                ? 'border-gold text-navy font-medium'
+                : 'border-transparent text-navy/40 hover:text-navy'
+            }`}
+          >
+            <Target size={13} />
+            Prospección
+          </button>
         </div>
 
         {tab === 'leads' ? (
           <LeadsPanel />
+        ) : tab === 'prospecting' ? (
+          <AdminProspecting />
         ) : (
         <>
         <div className="flex items-center justify-between mb-10">

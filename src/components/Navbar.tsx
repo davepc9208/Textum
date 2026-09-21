@@ -16,6 +16,9 @@ export default function Navbar() {
   const [active, setActive]     = useState('');
   const location                = useLocation();
   const isHome                  = location.pathname === '/';
+  const isInterior              = !isHome;
+  const navTextClass             = isInterior ? 'text-navy/70 hover:text-navy' : 'text-white/80 hover:text-white';
+  const mobileMenuClass          = isInterior ? 'bg-cream/95 border-navy/10' : 'glass-navy border-gold/20';
 
   const anchorLinks: AnchorItem[] = [
     { href: '#inicio',    label: t.nav.inicio },
@@ -68,7 +71,7 @@ export default function Navbar() {
           <Link
             to={localizedPath('/blog', lang)}
             className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
-              location.pathname.startsWith('/blog') ? 'text-gold active' : 'text-white/80 hover:text-white'
+              location.pathname.startsWith('/blog') ? 'text-gold active' : navTextClass
             }`}
           >
             {item.label.toUpperCase()}
@@ -82,7 +85,7 @@ export default function Navbar() {
           <Link
             to={localizedPath('/colecciones', lang)}
             className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
-              location.pathname.startsWith('/colecciones') ? 'text-gold active' : 'text-white/80 hover:text-white'
+              location.pathname.startsWith('/colecciones') ? 'text-gold active' : navTextClass
             }`}
           >
             {item.label.toUpperCase()}
@@ -97,9 +100,9 @@ export default function Navbar() {
         <Link
           to={href}
           className={`nav-link text-[11px] tracking-widest font-light transition-colors duration-200 touch-manipulation ${
-            isHome && active === anchor.href.slice(1)
+              isHome && active === anchor.href.slice(1)
               ? 'text-gold active'
-              : 'text-white/80 hover:text-white'
+              : navTextClass
           }`}
         >
           {anchor.label.toUpperCase()}
@@ -112,7 +115,9 @@ export default function Navbar() {
     if ('type' in item && item.type === 'blog') {
       return (
         <Link key={`mobile-blog-${index}`} to={localizedPath('/blog', lang)} onClick={closeMenu}
-          className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation">
+          className={`block py-3 text-sm tracking-widest transition-colors touch-manipulation ${
+            isInterior ? 'text-navy/70 hover:text-navy active:text-gold' : 'text-white/80 hover:text-gold active:text-gold'
+          }`}>
           {item.label.toUpperCase()}
         </Link>
       );
@@ -121,7 +126,7 @@ export default function Navbar() {
       return (
         <Link key={`mobile-colecciones-${index}`} to={localizedPath('/colecciones', lang)} onClick={closeMenu}
           className={`block py-3 text-sm tracking-widest transition-colors touch-manipulation ${
-            location.pathname.startsWith('/colecciones') ? 'text-gold' : 'text-white/80 hover:text-gold active:text-gold'
+            location.pathname.startsWith('/colecciones') ? 'text-gold' : (isInterior ? 'text-navy/70 hover:text-navy active:text-gold' : 'text-white/80 hover:text-gold active:text-gold')
           }`}>
           {item.label.toUpperCase()}
         </Link>
@@ -132,7 +137,9 @@ export default function Navbar() {
       <Link key={`mobile-${anchor.href}`}
         to={anchorHref(anchor.href)}
         onClick={closeMenu}
-        className="block py-3 text-white/80 text-sm tracking-widest hover:text-gold active:text-gold transition-colors touch-manipulation">
+        className={`block py-3 text-sm tracking-widest transition-colors touch-manipulation ${
+          isInterior ? 'text-navy/70 hover:text-navy active:text-gold' : 'text-white/80 hover:text-gold active:text-gold'
+        }`}>
         {anchor.label.toUpperCase()}
       </Link>
     );
@@ -140,7 +147,9 @@ export default function Navbar() {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-      scrolled ? 'glass-navy py-3 shadow-[0_4px_30px_rgba(0,0,0,0.25)]' : 'bg-transparent py-5'
+      isHome
+        ? (scrolled ? 'glass-navy py-3 shadow-[0_4px_30px_rgba(0,0,0,0.25)]' : 'bg-transparent py-5')
+        : 'bg-cream/95 backdrop-blur-md py-3 shadow-[0_4px_30px_rgba(13,31,60,0.08)]'
     }`}>
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <Link to={localizedPath('/', lang)} className="flex items-center gap-3 group flex-shrink-0" onClick={closeMenu}>
@@ -149,7 +158,7 @@ export default function Navbar() {
               <text x="2" y="32" fontFamily="Cormorant Garamond, serif" fontSize="34" fontWeight="600" fill="#c9a84c">T</text>
             </svg>
           </div>
-          <span className="font-serif font-semibold text-xl tracking-[0.18em] text-white">TEXTUM</span>
+          <span className={`font-serif font-semibold text-xl tracking-[0.18em] ${isInterior ? 'text-navy' : 'text-white'}`}>TEXTUM</span>
         </Link>
 
         <ul className="hidden lg:flex items-center gap-6">
@@ -171,7 +180,7 @@ export default function Navbar() {
           <a href="https://wa.me/34614638406?text=Hola%2C%20me%20gustar%C3%ADa%20solicitar%20un%20diagn%C3%B3stico%20acad%C3%A9mico%20gratuito%20con%20TEXTUM."
             target="_blank" rel="noopener noreferrer"
             aria-label={lang === 'es' ? 'Contactar por WhatsApp' : 'Contact via WhatsApp'}
-            className="flex items-center justify-center w-9 h-9 rounded-sm border border-white/20 text-white/70 hover:border-[#25D366]/60 hover:text-[#25D366] transition-colors duration-200 touch-manipulation">
+            className={`flex items-center justify-center w-9 h-9 rounded-sm border ${isInterior ? 'border-navy/15 text-navy/65' : 'border-white/20 text-white/70'} hover:border-[#25D366]/60 hover:text-[#25D366] transition-colors duration-200 touch-manipulation`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
               <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.533 5.847L.054 23.446a.75.75 0 0 0 .916.916l5.628-1.484A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 0 1-4.953-1.355l-.355-.21-3.685.97.985-3.6-.23-.37A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
@@ -184,16 +193,16 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <button onClick={() => setOpen(!open)} className="lg:hidden text-white p-2 touch-manipulation"
+        <button onClick={() => setOpen(!open)} className={`lg:hidden p-2 touch-manipulation ${isInterior ? 'text-navy' : 'text-white'}`}
           aria-label={open ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={open} aria-controls="navbar-mobile-menu">
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
       <div id="navbar-mobile-menu" className={`lg:hidden overflow-hidden transition-all duration-400 ${open ? 'max-h-[52rem] opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="glass-navy border-t border-gold/20 px-6 py-5 flex flex-col gap-1">
+        <div className={`${mobileMenuClass} border-t px-6 py-5 flex flex-col gap-1`}>
           {navItems.map((item, index) => renderMobileNavItem(item, index))}
-          <div className="h-px bg-white/10 my-2" />
+          <div className={`h-px my-2 ${isInterior ? 'bg-navy/10' : 'bg-white/10'}`} />
           <button onClick={() => { setLang(nextLang); closeMenu(); }}
             className="relative flex items-center px-1 py-1 rounded-full border border-gold/30 text-xs tracking-[0.1em] w-fit touch-manipulation"
             aria-label={langToggleLabel}>

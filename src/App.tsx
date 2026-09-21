@@ -43,6 +43,7 @@ import BajaPage from './pages/BajaPage';
 import PrivacidadPage from './pages/PrivacidadPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AuthorityPage from './pages/AuthorityPage';
+import PilotPage from './pages/PilotPage';
 
 const BlogPage           = lazy(() => import('./pages/BlogPage'));
 const PostPage           = lazy(() => import('./pages/PostPage'));
@@ -165,6 +166,7 @@ export default function App() {
       <Route path="/baja" element={<BajaPage />} />
       <Route path="/privacidad" element={<PrivacidadPage />} />
       <Route path="/casos" element={<AuthorityPage />} />
+      <Route path="/piloto-doctorado" element={<PilotPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
     <AssistantWidget />

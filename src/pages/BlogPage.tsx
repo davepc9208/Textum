@@ -9,6 +9,7 @@ import Footer from '../components/Footer';
 import BackToTop from '../components/BackToTop';
 import { PageError, PageSkeleton } from '../components/AsyncState';
 import { localizedPath } from '../lib/locale';
+import { postCover, postCoverAlt, localizedPostPath } from '../lib/postLocalization';
 
 // Categorías definidas aquí como fuente única de verdad para BlogPage.
 // BlogPreview.tsx tiene su propia copia localizada — si cambias el copy,
@@ -234,16 +235,16 @@ export default function BlogPage() {
             {/* Featured article — full width */}
             {featured && (
               <Link
-                to={localizedPath(`/blog/${featured.slug}`, lang)}
+                to={localizedPath(localizedPostPath(featured, lang), lang)}
                 className="group block mb-10 bg-white rounded-sm shadow-sm border border-navy/8 hover:shadow-xl hover:border-gold/30 transition-all duration-300 overflow-hidden"
               >
                 <div className="flex flex-col md:flex-row">
-                  {featured.cover_url && (
+                  {postCover(featured, lang) && (
                     <div className="relative md:w-1/2 aspect-[16/10] md:aspect-auto md:min-h-[320px] overflow-hidden flex-shrink-0">
                       {/* Featured: eager load ya que es el primer elemento visible */}
                       <img
-                        src={featured.cover_url}
-                        alt={featured.cover_alt ?? title(featured)}
+                        src={postCover(featured, lang)}
+                        alt={postCoverAlt(featured, lang, title(featured))}
                         loading="eager"
                         decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -293,15 +294,15 @@ export default function BlogPage() {
                 {rest.map((post) => (
                   <Link
                     key={post.id}
-                    to={localizedPath(`/blog/${post.slug}`, lang)}
+                    to={localizedPath(localizedPostPath(post, lang), lang)}
                     className="group bg-white rounded-sm shadow-sm border border-navy/8 hover:shadow-lg hover:border-gold/30 transition-all duration-300 overflow-hidden flex flex-col"
                   >
-                    {post.cover_url && (
+                    {postCover(post, lang) && (
                       <div className="relative aspect-[3/2] overflow-hidden">
                         {/* Grid cards: lazy load */}
                         <img
-                          src={post.cover_url}
-                          alt={post.cover_alt ?? title(post)}
+                          src={postCover(post, lang)}
+                          alt={postCoverAlt(post, lang, title(post))}
                           loading="lazy"
                           decoding="async"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

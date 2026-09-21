@@ -18,6 +18,8 @@ export async function getPosts(): Promise<SeoPost[]> {
     .from("posts")
     .select(`
       slug,
+      slug_es,
+      slug_en,
       title_es,
       title_en,
       excerpt_es,
@@ -27,7 +29,10 @@ export async function getPosts(): Promise<SeoPost[]> {
       author,
       created_at,
       cover_url,
+      cover_url_es,
+      cover_url_en,
       category,
+      collection_type,
       reading_time
     `)
     .eq("published", true)

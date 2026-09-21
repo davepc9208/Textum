@@ -11,15 +11,18 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BackToTop from '../components/BackToTop';
 import { localizedPath } from '../lib/locale';
+import { postCover, postCoverAlt, localizedPostPath } from '../lib/postLocalization';
 import { PageError, PageSkeleton } from '../components/AsyncState';
 
-type CollectionType = 'principio' | 'categoria' | 'herramienta';
+type CollectionType = 'principio' | 'categoria' | 'herramienta' | 'eii' | 'flux';
 
 // Tipos reales según PRESENTACIÓN_DE_LA_COLECCIÓN.docx
 const META = {
-  principio:   { es: { label: 'Principios TEXTUM',        code: 'PT', tag: 'Fundamentos metodológicos'   }, en: { label: 'TEXTUM Principles',          code: 'PT', tag: 'Methodological foundations' } },
-  categoria:   { es: { label: 'Categorías Metodológicas', code: 'CM', tag: 'Componentes estructurales'   }, en: { label: 'Methodological Categories',   code: 'CM', tag: 'Structural components'      } },
-  herramienta: { es: { label: 'Herramientas TEXTUM',      code: 'HT', tag: 'Instrumentos de evaluación'  }, en: { label: 'TEXTUM Tools',               code: 'HT', tag: 'Evaluation instruments'     } },
+  principio:   { es: { label: 'Principios TEXTUM',        code: 'PT', tag: 'Fundamentos metodológicos'   }, en: { label: 'TEXTUM Principles',          code: 'TP', tag: 'Methodological foundations' } },
+  categoria:   { es: { label: 'Categorías Metodológicas', code: 'CM', tag: 'Componentes estructurales'   }, en: { label: 'Methodological Categories',   code: 'MC', tag: 'Structural components'      } },
+  herramienta: { es: { label: 'Herramientas TEXTUM',      code: 'HT', tag: 'Instrumentos de evaluación'  }, en: { label: 'TEXTUM Tools',               code: 'TT', tag: 'Evaluation instruments'     } },
+  eii:         { es: { label: 'Enfoque Investigativo Integral', code: 'EII', tag: 'Totalidad dinámica'         }, en: { label: 'Integral Research Approach',  code: 'IRA', tag: 'Dynamic whole'              } },
+  flux:        { es: { label: 'TEXTUM Flux®',                  code: 'FLUX', tag: 'Movimiento metodológico'       }, en: { label: 'TEXTUM Flux®',                  code: 'FLUX', tag: 'Methodological movement'       } },
 };
 
 export default function ColeccionListPage() {
@@ -166,7 +169,7 @@ export default function ColeccionListPage() {
             {posts.map((post, i) => (
               <Link
                 key={post.id}
-                to={localizedPath(`/colecciones/${collectionType}/${post.slug}`, lang)}
+                to={localizedPath(localizedPostPath(post, lang, `/colecciones/${collectionType}`), lang)}
                 className="group flex flex-col md:flex-row gap-6 bg-white border border-navy/8 rounded-sm p-6 md:p-8 hover:border-gold/30 hover:shadow-lg transition-all duration-300"
               >
                 {/* Número de pieza */}
@@ -179,10 +182,10 @@ export default function ColeccionListPage() {
 
                 {/* Contenido */}
                 <div className="flex-1 min-w-0">
-                  {post.cover_url && (
+                  {postCover(post, lang) && (
                     <img
-                      src={post.cover_url}
-                      alt={post.cover_alt ?? title(post)}
+                      src={postCover(post, lang)}
+                      alt={postCoverAlt(post, lang, title(post))}
                       loading="lazy"
                       decoding="async"
                       className="w-full aspect-[3/2] object-cover rounded-sm mb-5"

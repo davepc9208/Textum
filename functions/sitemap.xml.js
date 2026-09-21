@@ -17,9 +17,16 @@ function localizedUrl(path, lang) {
   return url.toString();
 }
 
-function urlEntry(path, lastmod, priority, changefreq) {  const es = localizedUrl(path, 'es');
-  const en = localizedUrl(path, 'en');
-  return `  <url>\n    <loc>${escapeXml(es)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n    <xhtml:link rel="alternate" hreflang="es" href="${escapeXml(es)}" />\n    <xhtml:link rel="alternate" hreflang="en" href="${escapeXml(en)}" />\n    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(es)}" />\n  </url>`;
+function slugFor(post, lang) {
+  if (lang === 'en') return post.slug_en || post.slug_es || post.slug;
+  return post.slug_es || post.slug;
+}
+
+function urlEntry(esPath, enPath, lastmod, priority, changefreq, lang = 'es') {
+  const es = localizedUrl(esPath, 'es');
+  const en = localizedUrl(enPath, 'en');
+  const loc = lang === 'en' ? en : es;
+  return `  <url>\n    <loc>${escapeXml(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n    <xhtml:link rel="alternate" hreflang="es" href="${escapeXml(es)}" />\n    <xhtml:link rel="alternate" hreflang="en" href="${escapeXml(en)}" />\n    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(es)}" />\n  </url>`;
 }
 
 export async function onRequest(context) {
@@ -31,7 +38,7 @@ export async function onRequest(context) {
   }
 
   try {
-    const response = await fetch(`${supabaseUrl}/rest/v1/posts?select=slug,collection_type,created_at&published=eq.true&order=created_at.desc`, {
+    const response = await fetch(`${supabaseUrl}/rest/v1/posts?select=slug,slug_es,slug_en,collection_type,created_at&published=eq.true&order=created_at.desc`, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
     });
     if (!response.ok) return new Response('Sitemap temporarily unavailable', { status: 503, headers: { 'Content-Type': 'text/plain' } });
@@ -45,15 +52,26 @@ export async function onRequest(context) {
       ['/colecciones/principio', '0.8', 'weekly'],
       ['/colecciones/categoria', '0.8', 'weekly'],
       ['/colecciones/herramienta', '0.8', 'weekly'],
+      ['/colecciones/eii', '0.8', 'weekly'],
+      ['/colecciones/flux', '0.8', 'weekly'],
       ['/privacidad', '0.3', 'yearly'],
       ['/casos', '0.6', 'monthly'],
     ];
-    const entries = staticPaths.map(([path, priority, frequency]) => urlEntry(path, today, priority, frequency));
+    const entries = staticPaths.flatMap(([path, priority, frequency]) => [
+      urlEntry(path, path, today, priority, frequency, 'es'),
+      urlEntry(path, path, today, priority, frequency, 'en'),
+    ]);
+
     for (const post of posts || []) {
-      const path = post.collection_type
-        ? `/colecciones/${post.collection_type}/${post.slug}`
-        : `/blog/${post.slug}`;
-      entries.push(urlEntry(path, String(post.created_at || today).slice(0, 10), post.collection_type ? '0.8' : '0.7', 'monthly'));
+      const prefix = post.collection_type
+        ? `/colecciones/${post.collection_type}`
+        : '/blog';
+      const esPath = `${prefix}/${slugFor(post, 'es')}`;
+      const enPath = `${prefix}/${slugFor(post, 'en')}`;
+      const lastmod = String(post.created_at || today).slice(0, 10);
+      const priority = post.collection_type ? '0.8' : '0.7';
+      entries.push(urlEntry(esPath, enPath, lastmod, priority, 'monthly', 'es'));
+      entries.push(urlEntry(esPath, enPath, lastmod, priority, 'monthly', 'en'));
     }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${entries.join('\n')}\n</urlset>`;

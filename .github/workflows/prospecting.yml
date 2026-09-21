@@ -1,0 +1,28 @@
+name: Institutional outreach
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 9 * * 1-5'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: institutional-outreach
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger approved outreach queue
+        run: |
+          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+            -X POST 'https://www.mentoriatextum.com/api/prospecting-run' \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "HTTP $code"
+          cat /tmp/out.json || true
+          echo
+          test "$code" = "200" || test "$code" = "409"

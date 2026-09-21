@@ -3,8 +3,8 @@
 // Mismo render que PostPage pero con breadcrumb de colección y sin ShareCard
 
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Calendar, Clock, ArrowLeft, X, Download } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
 import { ssrColeccion, dropSsrContent } from '../lib/ssrData';
 import { useLang } from '../i18n/LangContext';
@@ -17,7 +17,9 @@ import WhatsAppCTA from '../components/WhatsAppCTA';
 import BackToTop from '../components/BackToTop';
 import { NotFoundContent } from './NotFoundPage';
 import { localizedPath, localizedUrl } from '../lib/locale';
+import { postCover, postCoverAlt, postSlug, slugFilter } from '../lib/postLocalization';
 import { PageError, PageSkeleton } from '../components/AsyncState';
+import ArticleCover, { ImageLightbox } from '../components/ArticleCover';
 
 
 const SITE_URL = 'https://www.mentoriatextum.com';
@@ -26,27 +28,13 @@ const TYPE_LABELS: Record<string, { es: string; en: string }> = {
   principio:   { es: 'Principios TEXTUM',        en: 'TEXTUM Principles'         },
   categoria:   { es: 'Categorías Metodológicas', en: 'Methodological Categories' },
   herramienta: { es: 'Herramientas TEXTUM',      en: 'TEXTUM Tools'              },
+  eii:         { es: 'Enfoque Investigativo Integral', en: 'Integral Research Approach' },
+  flux:        { es: 'TEXTUM Flux®',                  en: 'TEXTUM Flux®'                  },
 };
-
-function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', h);
-    document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', h); document.body.style.overflow = ''; };
-  }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-50 bg-navy/95 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out" onClick={onClose}>
-      <button onClick={onClose} className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors" aria-label="Cerrar">
-        <X size={18} />
-      </button>
-      <img src={src} alt={alt} className="max-w-full max-h-[90vh] object-contain rounded-sm shadow-2xl cursor-default" onClick={e => e.stopPropagation()} />
-    </div>
-  );
-}
 
 export default function ColeccionPiecePage() {
   const { tipo, slug } = useParams<{ tipo: string; slug: string }>();
+  const navigate = useNavigate();
   const { lang, t } = useLang();
   const [post, setPost] = useState<Post | null>(() => ssrColeccion(tipo, slug));
   const [loading, setLoading] = useState(() => !ssrColeccion(tipo, slug));
@@ -68,9 +56,25 @@ export default function ColeccionPiecePage() {
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
-    el.querySelectorAll('img').forEach(img => { img.style.cursor = 'zoom-in'; });
+
+    el.querySelectorAll('img').forEach(img => {
+      img.style.cursor = 'zoom-in';
+      img.setAttribute('draggable', 'false');
+    });
+
+    // Solo lectura: bloquear copiar, cortar y menú contextual
+    const block = (e: Event) => e.preventDefault();
+    el.addEventListener('copy', block);
+    el.addEventListener('cut', block);
+    el.addEventListener('contextmenu', block);
     el.addEventListener('click', openLightbox);
-    return () => el.removeEventListener('click', openLightbox);
+
+    return () => {
+      el.removeEventListener('copy', block);
+      el.removeEventListener('cut', block);
+      el.removeEventListener('contextmenu', block);
+      el.removeEventListener('click', openLightbox);
+    };
   }, [post, openLightbox]);
 
   useEffect(() => {
@@ -78,23 +82,35 @@ export default function ColeccionPiecePage() {
     if (reloadKey === 0 && ssrColeccion(tipo, slug)) return;
     setLoading(true);
     setLoadError(false);
-    Promise.resolve(supabase.from('posts').select('*').eq('slug', slug).eq('collection_type', tipo).eq('published', true).single())
+    Promise.resolve(supabase.from('posts').select('*').or(`slug.eq.${slugFilter(slug)},slug_es.eq.${slugFilter(slug)},slug_en.eq.${slugFilter(slug)}`).eq('collection_type', tipo).eq('published', true).single())
       .then(({ data, error }) => { setPost(data); setLoadError(Boolean(error)); setLoading(false); })
       .catch(() => { setPost(null); setLoadError(true); setLoading(false); });
-  }, [slug, tipo, reloadKey]);
+  }, [lang, slug, tipo, reloadKey]);
 
   const postTitle   = post ? (lang === 'es' ? post.title_es   : post.title_en)   : '';
   const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
   const content     = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
-  const canonicalUrl = post ? localizedUrl(`/colecciones/${tipo}/${post.slug}`, lang) : undefined;
+  const localizedSlug = post ? postSlug(post, lang) : slug ?? '';
+  const localizedCover = post ? postCover(post, lang) : '';
+  const localizedCoverAlt = post ? postCoverAlt(post, lang, postTitle) : postTitle;
+  useEffect(() => {
+    if (!post || !tipo || !slug || slug === localizedSlug) return;
+    navigate(localizedPath(`/colecciones/${tipo}/${localizedSlug}`, lang), { replace: true });
+  }, [lang, localizedSlug, navigate, post, slug, tipo]);
+
+  const canonicalUrl = post ? localizedUrl(`/colecciones/${tipo}/${localizedSlug}`, lang) : undefined;
   const typeLabel = tipo ? (TYPE_LABELS[tipo]?.[lang] ?? '') : '';
 
   useSEO(post ? {
     title: `${postTitle} | ${typeLabel} — TEXTUM`,
     description: postExcerpt.slice(0, 155),
-    canonical: `/colecciones/${tipo}/${post.slug}`,
-    ogImage: post.cover_url,
-    ogImageAlt: post.cover_alt ?? postTitle,
+    canonical: `/colecciones/${tipo}/${localizedSlug}`,
+    alternatePaths: {
+      es: `/colecciones/${tipo}/${postSlug(post, 'es')}`,
+      en: `/colecciones/${tipo}/${postSlug(post, 'en')}`,
+    },
+    ogImage: localizedCover,
+    ogImageAlt: localizedCoverAlt,
     ogType: 'article',
     articleMeta: { publishedTime: post.created_at, author: post.author },
     lang,
@@ -107,11 +123,11 @@ export default function ColeccionPiecePage() {
       '@type': 'Article',
       headline: postTitle,
       description: postExcerpt.slice(0, 155),
-      image: post.cover_url,
+      image: localizedCover,
       datePublished: post.created_at,
       author: { '@type': 'Person', name: post.author },
       publisher: { '@type': 'Organization', name: 'TEXTUM — Mentoría Académica', logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo-512.png` } },
-      mainEntityOfPage: { '@type': 'WebPage', '@id': localizedUrl(`/colecciones/${tipo}/${post.slug}`, lang) },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': localizedUrl(`/colecciones/${tipo}/${localizedSlug}`, lang) },
     }, 'schema-coleccion-piece');
     injectSchema({
       '@context': 'https://schema.org',
@@ -119,11 +135,11 @@ export default function ColeccionPiecePage() {
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: lang === 'es' ? 'Colecciones' : 'Collections', item: localizedUrl('/colecciones', lang) },
         { '@type': 'ListItem', position: 2, name: typeLabel,     item: localizedUrl(`/colecciones/${tipo}`, lang) },
-        { '@type': 'ListItem', position: 3, name: postTitle,     item: localizedUrl(`/colecciones/${tipo}/${post.slug}`, lang) },
+        { '@type': 'ListItem', position: 3, name: postTitle,     item: localizedUrl(`/colecciones/${tipo}/${localizedSlug}`, lang) },
       ],
     }, 'schema-coleccion-breadcrumb');
     return () => { removeSchema('schema-coleccion-piece'); removeSchema('schema-coleccion-breadcrumb'); };
-  }, [post, lang, postTitle, postExcerpt, tipo, typeLabel]);
+  }, [post, lang, postTitle, postExcerpt, tipo, typeLabel, localizedSlug, localizedCover]);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -145,57 +161,53 @@ export default function ColeccionPiecePage() {
         <NotFoundContent />
       ) : (
         <>
-          <div className="pt-16 md:pt-20">
-            {post.cover_url && (
-              <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] overflow-hidden bg-navy">
-                <img
-                  src={post.cover_url}
-                  alt={post.cover_alt ?? postTitle}
-                  loading="eager"
-                  fetchPriority="high"
-                  className="absolute inset-0 w-full h-full object-contain p-3 sm:p-6"
-                />
+          <div className="pt-24 md:pt-28">
+            <div className="max-w-6xl mx-auto px-6 py-10 md:py-14">
+              <div className={`grid gap-10 lg:gap-14 items-center ${localizedCover ? 'lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]' : ''}`}>
+                {localizedCover && <ArticleCover src={localizedCover} alt={localizedCoverAlt} />}
+
+                <div className="max-w-3xl">
+                  {/* Breadcrumb */}
+                  <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-navy/35 mb-7">
+                    <Link to={localizedPath('/colecciones', lang)} className="hover:text-gold transition-colors">
+                      {lang === 'es' ? 'Colecciones' : 'Collections'}
+                    </Link>
+                    <span aria-hidden="true">/</span>
+                    <Link to={localizedPath(`/colecciones/${tipo}`, lang)} className="hover:text-gold transition-colors">
+                      {typeLabel}
+                    </Link>
+                    <span aria-hidden="true">/</span>
+                    <span className="text-navy/50 truncate max-w-[200px]">{postTitle}</span>
+                  </nav>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
+                    <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
+                      <span className="flex items-center gap-1.5"><Calendar size={13} aria-hidden="true" />
+                        {new Date(post.created_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </span>
+                      <span className="flex items-center gap-1.5"><Clock size={13} aria-hidden="true" />{post.reading_time} {t.blog.minRead}</span>
+                    </div>
+                    <ShareButtons title={postTitle} url={canonicalUrl} />
+                  </div>
+
+                  <p className="text-xs tracking-[0.2em] text-gold uppercase mb-4">{post.author}</p>
+                  <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-8">
+                    {postTitle}
+                  </h1>
+
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-px bg-gradient-to-r from-gold to-transparent" />
+                    <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true">
+                      <rect x="4" y="0" width="6" height="6" transform="rotate(45 4 4)" fill="#c9a84c" />
+                    </svg>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="max-w-3xl mx-auto px-6 py-16">
-            {/* Breadcrumb */}
-            <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-navy/35 mb-10">
-              <Link to={localizedPath('/colecciones', lang)} className="hover:text-gold transition-colors">
-                {lang === 'es' ? 'Colecciones' : 'Collections'}
-              </Link>
-              <span aria-hidden="true">/</span>
-              <Link to={localizedPath(`/colecciones/${tipo}`, lang)} className="hover:text-gold transition-colors">
-                {typeLabel}
-              </Link>
-              <span aria-hidden="true">/</span>
-              <span className="text-navy/50 truncate max-w-[200px]">{postTitle}</span>
-            </nav>
-
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-              <div className="flex flex-wrap items-center gap-4 text-navy/50 text-sm">
-                <span className="flex items-center gap-1.5"><Calendar size={13} aria-hidden="true" />
-                  {new Date(post.created_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
-                </span>
-                <span className="flex items-center gap-1.5"><Clock size={13} aria-hidden="true" />{post.reading_time} {t.blog.minRead}</span>
-                <span className="text-gold font-medium">{post.author}</span>
-              </div>
-              <ShareButtons title={postTitle} url={canonicalUrl} />
-            </div>
-
-            <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-8">
-              {postTitle}
-            </h1>
-
-            <div className="flex items-center gap-4 mb-10">
-              <div className="w-16 h-px bg-gradient-to-r from-gold to-transparent" />
-              <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true">
-                <rect x="4" y="0" width="6" height="6" transform="rotate(45 4 4)" fill="#c9a84c" />
-              </svg>
-            </div>
-
-            {/* SEGURIDAD: sanitizeHtml previene XSS del contenido de Supabase */}
+          <div className="max-w-3xl mx-auto px-6 pb-16">
+            {/* Solo lectura: sin selección de texto, copiar ni menú contextual */}
             <div
   ref={contentRef}
   className="prose prose-lg max-w-none
@@ -205,45 +217,30 @@ export default function ColeccionPiecePage() {
     prose-strong:text-navy
     prose-blockquote:border-l-gold prose-blockquote:text-navy/60 prose-blockquote:font-serif prose-blockquote:italic
     prose-li:text-navy/70
-    prose-img:rounded-sm prose-img:shadow-md"
+    prose-img:rounded-sm prose-img:shadow-md
+    select-none"
+  style={{
+    WebkitUserSelect: 'none',
+    MozUserSelect: 'none',
+    msUserSelect: 'none',
+    userSelect: 'none',
+  }}
+  onCopy={(e) => e.preventDefault()}
+  onCut={(e) => e.preventDefault()}
+  onContextMenu={(e) => e.preventDefault()}
   dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
 />
 
-            {lightbox && <Lightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
+            {lightbox && <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
 
-            {/* CTA Descarga PDF profesional */}
-<div className="mt-14 p-7 bg-navy/[0.03] border border-navy/10 rounded-2xl">
-  <p className="mt-10 text-xs text-navy/40 text-center font-light">
-            {lang === 'es'
-              ? 'Este documento es de solo lectura en la web. Para citarlo o usarlo offline, descarga la versión PDF profesional.'
-              : 'This document is read-only on the web. To cite it or use it offline, download the professional PDF version.'}
-          </p>
-          <h3 className="font-serif text-lg text-navy mb-2">
-            {lang === 'es' ? 'Versión PDF profesional' : 'Professional PDF version'}
-          </h3>
-  <p className="text-sm text-navy/65 mb-5 leading-relaxed">
-    {lang === 'es'
-      ? 'Formato listo para citar, imprimir y usar offline (incluye QR y referencia APA).'
-      : 'Ready-to-cite format for printing and offline use (includes QR and APA reference).'}
-  </p>
-  <Link
-    to={localizedPath(`/colecciones/${tipo}/${slug}/descargar`, lang)}
-    className="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-cream text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
-  >
-    <Download size={15} />
-    {lang === 'es' ? 'Descargar PDF' : 'Download PDF'}
-  </Link>
-</div>
-
-            {/* CTA WhatsApp — al final de cada pieza de Colección */}
+            {/* Flux no muestra descarga hasta que exista un PDF configurado. */}            {/* CTA WhatsApp — al final de cada pieza de Colección */}
+ */
             <WhatsAppCTA />
 
-            <div className="mt-10 pt-8 border-t border-navy/10">
-              <Link to={localizedPath(`/colecciones/${tipo}`, lang)} className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200">
-                <ArrowLeft size={14} aria-hidden="true" />
-                {lang === 'es' ? `Volver a ${typeLabel}` : `Back to ${typeLabel}`}
-              </Link>
-            </div>
+            <Link to={localizedPath(`/colecciones/${tipo}`, lang)}>
+              <ArrowLeft size={14} aria-hidden="true" />
+              {lang === 'es' ? `Volver a ${typeLabel}` : `Back to ${typeLabel}`}
+            </Link>
           </div>
         </>
       )}

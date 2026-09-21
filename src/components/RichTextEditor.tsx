@@ -31,7 +31,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import {
   Bold, Italic, Heading1, Heading2, Heading3, Heading4,
   List, ListOrdered, Quote, Link as LinkIcon, Image as ImageIcon,
-  Undo, Redo, Loader2, Check, X, Table as TableIcon,
+  Undo, Redo, Loader2, Check, X, Table as TableIcon, FileText,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Underline as UnderlineIcon, Highlighter, Code,
   Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
@@ -67,12 +67,18 @@ async function uploadImage(file: File): Promise<{ url: string | null; error: str
 
 
 
-/** Convierte texto plano en párrafos HTML */
+/** Convierte texto plano en párrafos HTML y neutraliza etiquetas que algunos PDF copian literalmente. */
 function plainToParagraphs(plain: string): string {
-  const lines = plain.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split(/\n+/);
-  const parts = lines.map((l) => l.trim()).filter(Boolean);
+  const normalized = plain
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?(?:p|div|section|article|h[1-6]|li|tr|blockquote)[^>]*>/gi, '\n')
+    .replace(/<\/?(?:span|strong|b|em|i|u|a|ul|ol|table|thead|tbody|td|th)[^>]*>/gi, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
+  const parts = normalized.split(/\n+/).map((line) => line.trim()).filter(Boolean);
   if (parts.length === 0) return '<p></p>';
-  return parts.map((l) => `<p>${escapeHtml(l)}</p>`).join('');
+  return parts.map((line) => `<p>${escapeHtml(line)}</p>`).join('');
 }
 
 function escapeHtml(s: string): string {
@@ -89,45 +95,71 @@ function escapeHtml(s: string): string {
  * que hace que el pegado "no se vea" o se descarte entero.
  */
 function cleanPastedHtml(html: string): string {
-  if (!html) return '';
-  let out = html;
-  const body = out.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  if (body) out = body[1];
+  if (!html || typeof DOMParser === 'undefined') return '';
 
-  out = out
-    .replace(/<!--\[if[\s\S]*?endif\]-->/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<\/?(html|head|meta|link|body|xml)[^>]*>/gi, '')
-    .replace(/<\/?o:[^>]*>/gi, '')
-    .replace(/<\/?w:[^>]*>/gi, '')
-    .replace(/<\/?m:[^>]*>/gi, '')
-    .replace(/<\/?v:[^>]*>/gi, '')
-    .replace(/\s*mso-[a-z-]+:[^;"]+;?/gi, '')
-    .replace(/\s*class="[^"]*Mso[^"]*"/gi, '')
-    .replace(/\s*class='[^']*Mso[^']*'/gi, '')
-    // Quitar TODOS los estilos inline (colores de Word = texto invisible)
-    .replace(/\s*style="[^"]*"/gi, '')
-    .replace(/\s*style='[^']*'/gi, '')
-    // Quitar color/face en font legacy
-    .replace(/<\/?font[^>]*>/gi, '')
-    .replace(/<div(\s[^>]*)?>/gi, '<p>')
-    .replace(/<\/div>/gi, '</p>')
-    // spans vacíos o solo con formato → mantener contenido
-    .replace(/<span[^>]*>/gi, '')
-    .replace(/<\/span>/gi, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/(<p>\s*<\/p>\s*)+/gi, '<p></p>');
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const root = doc.body;
+  root.querySelectorAll('script,style,meta,link,iframe,object,embed,form,input,button').forEach((node) => node.remove());
 
-  // Normalizar etiquetas de formato que TipTap sí entiende
-  out = out
-    .replace(/<b(\s[^>]*)?>/gi, '<strong>')
-    .replace(/<\/b>/gi, '</strong>')
-    .replace(/<i(\s[^>]*)?>/gi, '<em>')
-    .replace(/<\/i>/gi, '</em>');
+  // Word suele envolver cada fragmento con spans: convertimos sus marcas
+  // visuales a etiquetas semánticas para no perder negritas parciales.
+  root.querySelectorAll('span').forEach((span) => {
+    const style = span.getAttribute('style') || '';
+    const tags: string[] = [];
+    if (/font-weight\s*:\s*(?:bold|[6-9]00)|mso-bidi-font-weight\s*:\s*bold/i.test(style)) tags.push('strong');
+    if (/font-style\s*:\s*italic|mso-bidi-font-style\s*:\s*italic/i.test(style)) tags.push('em');
+    if (/text-decoration(?:-line)?\s*:[^;]*(?:underline)/i.test(style)) tags.push('u');
+    if (/vertical-align\s*:\s*super/i.test(style)) tags.push('sup');
+    if (/vertical-align\s*:\s*sub/i.test(style)) tags.push('sub');
 
-  const textOnly = out.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-  return textOnly ? out.trim() : '';
+    if (tags.length > 0) {
+      let content: Node = doc.createDocumentFragment();
+      while (span.firstChild) content.appendChild(span.firstChild);
+      for (const tag of tags.reverse()) {
+        const wrapper = doc.createElement(tag);
+        wrapper.appendChild(content);
+        content = wrapper;
+      }
+      span.replaceWith(content);
+    } else {
+      while (span.firstChild) span.parentNode?.insertBefore(span.firstChild, span);
+      span.remove();
+    }
+  });
+
+  root.querySelectorAll('b').forEach((node) => {
+    const strong = doc.createElement('strong');
+    strong.innerHTML = node.innerHTML;
+    node.replaceWith(strong);
+  });
+  root.querySelectorAll('i').forEach((node) => {
+    const em = doc.createElement('em');
+    em.innerHTML = node.innerHTML;
+    node.replaceWith(em);
+  });
+
+  // Elimina únicamente atributos técnicos/de seguridad. Se conserva style
+  // para que Tiptap pueda leer color, familia, alineación y otros marks.
+  root.querySelectorAll('*').forEach((element) => {
+    Array.from(element.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      if (name.startsWith('on') || name.startsWith('mso-') || name === 'xmlns' || name === 'class') {
+        element.removeAttribute(attribute.name);
+      }
+    });
+    if (element.tagName === 'A') {
+      const href = element.getAttribute('href') || '';
+      if (!/^(?:https?:|mailto:|tel:|\/|#)/i.test(href)) element.removeAttribute('href');
+      element.setAttribute('target', '_blank');
+      element.setAttribute('rel', 'noopener noreferrer');
+    }
+    if (element.tagName === 'IMG') {
+      const src = element.getAttribute('src') || '';
+      if (!/^(?:https?:|data:image\/|blob:)/i.test(src)) element.remove();
+    }
+  });
+
+  return root.innerHTML.trim();
 }
 
 /** Decide HTML final a insertar: limpio si conserva el texto; si no, plano */
@@ -348,10 +380,13 @@ export default function RichTextEditor({
   onUploadError,
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const docxInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [importingDocx, setImportingDocx] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showImageUrlInput, setShowImageUrlInput] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const pasteAsPlainRef = useRef(false);
   const lastEmitted = useRef<string | null>(null);
   const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
 
@@ -467,32 +502,35 @@ export default function RichTextEditor({
           // Subíndice/Superíndice
           'prose-sub:align-sub prose-sup:align-super',
       },
-      // Pegado controlado: Word/Docs a menudo falla con el parser por defecto
-            handlePaste: (_view, event) => {
+      handleKeyDown: (_view, event) => {
+        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'v') {
+          pasteAsPlainRef.current = true;
+        }
+        return false;
+      },
+      handlePaste: (_view, event) => {
         const cd = event.clipboardData;
         if (!cd) return false;
 
         const htmlRaw = cd.getData('text/html') ?? '';
         const plain = cd.getData('text/plain') ?? '';
+        const pasteAsPlain = pasteAsPlainRef.current;
+        pasteAsPlainRef.current = false;
+        const plainLooksLikeHtml = /<\/?(?:p|div|section|article|h[1-6]|li|br|table|tr|td|th)\b/i.test(plain);
 
-        // Imágenes puras
-        const items = cd.items;
+        // Imágenes puras del portapapeles se siguen subiendo al servidor.
         const imageFiles: File[] = [];
-        if (items) {
-          for (let i = 0; i < items.length; i++) {
-            if (items[i].type.startsWith('image/')) {
-              const file = items[i].getAsFile();
-              if (file) imageFiles.push(file);
-            }
+        for (let i = 0; i < (cd.items?.length ?? 0); i++) {
+          if (cd.items[i].type.startsWith('image/')) {
+            const file = cd.items[i].getAsFile();
+            if (file) imageFiles.push(file);
           }
         }
-        const hasText =
-          plain.trim().length > 0 ||
-          htmlRaw.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim().length > 0;
+        const hasText = plain.trim().length > 0 || htmlRaw.replace(/<[^>]+>/g, '').trim().length > 0;
 
         if (imageFiles.length > 0 && !hasText) {
           event.preventDefault();
-          (async () => {
+          void (async () => {
             const ed = editorRef.current;
             for (const file of imageFiles) {
               const { url, error } = await uploadImage(file);
@@ -506,30 +544,13 @@ export default function RichTextEditor({
           return true;
         }
 
-        // Word / Docs / HTML con formato (+ imágenes del portapapeles si hay)
-        if (htmlRaw.length > 10 || plain.trim().length > 0) {
+        if (pasteAsPlain || htmlRaw.trim().length > 10 || plainLooksLikeHtml || plain.trim()) {
           event.preventDefault();
-          const toInsert = htmlForPaste(htmlRaw, plain);
-          const ed = editorRef.current;
-          if (ed && toInsert) {
-            ed.chain().focus().insertContent(toInsert).run();
-          } else if (ed && plain.trim()) {
-            ed.chain().focus().insertContent(plainToParagraphs(plain)).run();
-          }
-          // Imágenes embebidas en el pegado de Word (archivos del clipboard)
-          if (imageFiles.length > 0) {
-            (async () => {
-              for (const file of imageFiles) {
-                const { url, error } = await uploadImage(file);
-                if (error) {
-                  onUploadError?.(`Error al pegar imagen: ${error}`);
-                  continue;
-                }
-                if (url && editorRef.current) {
-                  editorRef.current.chain().focus().setImage({ src: url }).run();
-                }
-              }
-            })();
+          const contentToInsert = pasteAsPlain || !htmlRaw.trim()
+            ? plainToParagraphs(plain)
+            : htmlForPaste(htmlRaw, plain);
+          if (contentToInsert) {
+            editorRef.current?.chain().focus().insertContent(contentToInsert).run();
           }
           return true;
         }
@@ -558,6 +579,10 @@ export default function RichTextEditor({
     fileInputRef.current?.click();
   }, []);
 
+  const handleDocxPick = useCallback(() => {
+    docxInputRef.current?.click();
+  }, []);
+
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !editor) return;
@@ -570,6 +595,44 @@ export default function RichTextEditor({
       editor.chain().focus().setImage({ src: url }).run();
     }
     e.target.value = '';
+  }, [editor, onUploadError]);
+
+  const handleDocxChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !editor) return;
+
+    setImportingDocx(true);
+    try {
+      const mammothModule = await import('mammoth');
+      const mammoth = mammothModule.default ?? mammothModule;
+      const result = await mammoth.convertToHtml(
+        { arrayBuffer: await file.arrayBuffer() },
+        {
+          includeDefaultStyleMap: true,
+          ignoreEmptyParagraphs: false,
+          convertImage: mammoth.images.dataUri,
+          styleMap: [
+            "p[style-name='Title'] => h1:fresh",
+            "p[style-name='Subtitle'] => h2:fresh",
+            "p[style-name='Heading 1'] => h2:fresh",
+            "p[style-name='Heading 2'] => h3:fresh",
+            "p[style-name='Heading 3'] => h4:fresh",
+          ],
+        },
+      );
+      const convertedHtml = cleanPastedHtml(result.value);
+      if (!convertedHtml) throw new Error('El documento no contiene contenido editable.');
+      editor.chain().focus().insertContent(convertedHtml).run();
+      const warnings = result.messages.filter((message) => message.type === 'warning');
+      if (warnings.length > 0) {
+        onUploadError?.(`Word importado con ${warnings.length} aviso${warnings.length === 1 ? '' : 's'} de conversión. Revisa el resultado.`);
+      }
+    } catch (error) {
+      onUploadError?.(`No se pudo importar el documento Word: ${error instanceof Error ? error.message : 'error desconocido'}`);
+    } finally {
+      setImportingDocx(false);
+    }
   }, [editor, onUploadError]);
 
   const handleLinkButtonClick = useCallback(() => {
@@ -873,6 +936,14 @@ export default function RichTextEditor({
           }
         </ToolbarButton>
 
+        <ToolbarButton
+          title="Importar documento Word (.docx)"
+          onClick={handleDocxPick}
+          disabled={importingDocx}
+        >
+          {importingDocx ? <Loader2 size={15} className="animate-spin" /> : <FileText size={15} />}
+        </ToolbarButton>
+
         <ToolbarSeparator />
 
         {/* ── Undo/Redo ── */}
@@ -891,12 +962,19 @@ export default function RichTextEditor({
           <Redo size={15} />
         </ToolbarButton>
 
-        <input
+      <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
           className="hidden"
           onChange={handleFileChange}
+        />
+        <input
+          ref={docxInputRef}
+          type="file"
+          accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          className="hidden"
+          onChange={handleDocxChange}
         />
       </div>
 
@@ -929,6 +1007,9 @@ export default function RichTextEditor({
 
       {/* ── Content ── */}
       <EditorContent editor={editor} />
+      <p className="px-4 pb-3 text-[11px] text-navy/40">
+        El pegado conserva el formato disponible (negritas, cursivas, títulos, listas y tablas). <button type="button" onClick={handleDocxPick} className="text-gold hover:underline">Importa un .docx</button> para una conversión más fiel de Word. Usa <kbd className="rounded border border-navy/15 bg-navy/5 px-1 py-0.5 font-mono text-[10px]">Ctrl/Cmd + Shift + V</kbd> para pegar sin formato.
+      </p>
     </div>
   );
 }

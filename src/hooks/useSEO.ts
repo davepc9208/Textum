@@ -6,12 +6,13 @@
 //         se acumulen al navegar entre artículos.
 
 import { useEffect } from 'react';
-import { canonicalVariants, SITE_URL } from '../lib/locale';
+import { canonicalVariants, localizedUrl, SITE_URL } from '../lib/locale';
 
 interface SEOProps {
   title: string;
   description: string;
   canonical?: string;
+  alternatePaths?: { es: string; en: string };
   ogImage?: string;
   ogImageAlt?: string;
   ogType?: 'website' | 'article';
@@ -33,6 +34,7 @@ export function useSEO({
   title,
   description,
   canonical,
+  alternatePaths,
   ogImage,
   ogImageAlt,
   ogType = 'website',
@@ -100,7 +102,13 @@ export function useSEO({
     };
 
     const canonicalPath = canonical || window.location.pathname;
-    const variants = canonicalVariants(canonicalPath);
+    const variants = alternatePaths
+      ? {
+          es: localizedUrl(alternatePaths.es, 'es'),
+          en: localizedUrl(alternatePaths.en, 'en'),
+          xDefault: localizedUrl(alternatePaths.es, 'es'),
+        }
+      : canonicalVariants(canonicalPath);
     const canonicalUrl = lang === 'en' ? variants.en : variants.es;
     const image    = ogImage    || DEFAULT_IMAGE;
     const imageAlt = ogImageAlt || DEFAULT_IMAGE_ALT;
@@ -189,7 +197,7 @@ export function useSEO({
         .querySelectorAll('meta[property^="article:"]')
         .forEach(el => el.remove());
     };
-  }, [title, description, canonical, ogImage, ogImageAlt, ogType, lang, noindex, articleMeta, keywords]);
+  }, [title, description, canonical, alternatePaths, ogImage, ogImageAlt, ogType, lang, noindex, articleMeta, keywords]);
 }
 
 // ── JSON-LD helpers ────────────────────────────────────────────────────────

@@ -36,6 +36,37 @@ function mockSupabase(result) {
   return () => { globalThis.fetch = originalFetch; };
 }
 
+test('blog SSR uses independent English slug and cover when they are configured', async () => {
+  const restore = mockSupabase([{
+    ...post,
+    collection_type: null,
+    slug: 'articulo-es',
+    slug_es: 'articulo-es',
+    slug_en: 'english-article',
+    cover_url: 'https://cdn.example/es-cover.png',
+    cover_url_es: 'https://cdn.example/es-cover.png',
+    cover_url_en: 'https://cdn.example/en-cover.png',
+    cover_alt_es: 'Portada en español',
+    cover_alt_en: 'English cover',
+  }]);
+  try {
+    const response = await blogPost({
+      request: new Request(`${origin}/blog/english-article?lang=en`),
+      env,
+      params: { slug: 'english-article' },
+    });
+    const html = await response.text();
+    assert.equal(response.status, 200);
+    assert.ok(html.includes('canonical" href="https://www.mentoriatextum.com/blog/english-article?lang=en'), 'canonical EN');
+    assert.ok(html.includes('hreflang="es" href="https://www.mentoriatextum.com/blog/articulo-es"'), 'hreflang ES');
+    assert.ok(html.includes('hreflang="en" href="https://www.mentoriatextum.com/blog/english-article?lang=en"'), 'hreflang EN');
+    assert.ok(html.includes('og:image" content="https://cdn.example/en-cover.png"'), 'OG image EN');
+    assert.ok(html.includes('English cover'), 'alt EN');
+  } finally {
+    restore();
+  }
+});
+
 test('blog SSR uses the requested English canonical and all hreflang variants', async () => {
   const restore = mockSupabase([{ ...post, collection_type: null }]);
   try {
@@ -51,6 +82,35 @@ test('blog SSR uses the requested English canonical and all hreflang variants', 
     assert.match(html, /hreflang="es" href="https:\/\/www\.mentoriatextum\.com\/blog\/test-principle"/);
     assert.match(html, /hreflang="en" href="https:\/\/www\.mentoriatextum\.com\/blog\/test-principle\?lang=en"/);
     assert.match(html, /hreflang="x-default"/);
+  } finally {
+    restore();
+  }
+});
+
+test('blog SSR ignores Accept-Language: only ?lang decides the served language', async () => {
+  const restore = mockSupabase([
+    { ...post, collection_type: null, title_en: 'English title', content_en: '<p>English</p>' },
+  ]);
+  try {
+    const spanish = await blogPost({
+      request: new Request(`${origin}/blog/test-principle`, { headers: { 'Accept-Language': 'en-US,en;q=0.9' } }),
+      env,
+      params: { slug: 'test-principle' },
+    });
+    const spanishHtml = await spanish.text();
+    assert.equal(spanish.status, 200);
+    assert.match(spanishHtml, /<html lang="es">/);
+    assert.match(spanishHtml, /Principio de prueba/);
+    assert.doesNotMatch(spanishHtml, /English title/);
+
+    const english = await blogPost({
+      request: new Request(`${origin}/blog/test-principle?lang=en`),
+      env,
+      params: { slug: 'test-principle' },
+    });
+    const englishHtml = await english.text();
+    assert.match(englishHtml, /<html lang="en">/);
+    assert.match(englishHtml, /English title/);
   } finally {
     restore();
   }
@@ -104,14 +164,10 @@ test('SSR splices head + article + data island into the real SPA shell', async (
     const html = await response.text();
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('X-SSR'), 'shell');
-    // El bundle real de la SPA sigue presente
     assert.match(html, /assets\/index-abc123\.js/);
-    // La home <title> ha sido sustituida por la del artículo
     assert.doesNotMatch(html, /<title>Home<\/title>/);
     assert.match(html, /Principio de prueba/);
-    // El heading oculto de la home se elimina en páginas de artículo
     assert.doesNotMatch(html, /ssr-home-h1/);
-    // Contenido del artículo inyectado + data island para React
     assert.match(html, /<div id="ssr-content"><style/);
     assert.match(html, /<script id="__SSR_DATA__" type="application\/json">/);
     assert.match(html, /"type":"post"/);
@@ -120,7 +176,65 @@ test('SSR splices head + article + data island into the real SPA shell', async (
   }
 });
 
-test('dynamic sitemap has one canonical loc per resource and excludes contacto', async () => {
+test('collection SSR accepts the eii type with its own labels and canonicals', async () => {
+  const restore = mockSupabase([{ ...post, slug: 'eii-01', collection_type: 'eii', title_es: 'El Enfoque Investigativo Integral', title_en: 'The Integral Research Approach' }]);
+  try {
+    const spanish = await collectionPost({
+      request: new Request(`${origin}/colecciones/eii/eii-01`),
+      env,
+      params: { tipo: 'eii', slug: 'eii-01' },
+    });
+    const spanishHtml = await spanish.text();
+    assert.equal(spanish.status, 200);
+    assert.match(spanishHtml, /<html lang="es">/);
+    assert.match(spanishHtml, /<h1>El Enfoque Investigativo Integral<\/h1>/);
+    assert.match(spanishHtml, /Enfoque Investigativo Integral — TEXTUM<\/title>/);
+    assert.match(spanishHtml, /rel="canonical" href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii\/eii-01"/);
+    assert.match(spanishHtml, /hreflang="es" href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii\/eii-01"/);
+    assert.match(spanishHtml, /hreflang="en" href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii\/eii-01\?lang=en"/);
+    assert.match(spanishHtml, /href="https:\/\/www\.mentoriatextum\.com\/colecciones\/eii"/);
+
+    const english = await collectionPost({
+      request: new Request(`${origin}/colecciones/eii/eii-01?lang=en`),
+      env,
+      params: { tipo: 'eii', slug: 'eii-01' },
+    });
+    const englishHtml = await english.text();
+    assert.match(englishHtml, /<html lang="en">/);
+    assert.match(englishHtml, /Integral Research Approach — TEXTUM<\/title>/);
+  } finally {
+    restore();
+  }
+});
+
+test('collection SSR accepts the Flux type with its localized brand label', async () => {
+  const restore = mockSupabase([{ ...post, slug: 'flux-01', collection_type: 'flux', title_es: 'TEXTUM Flux®', title_en: 'TEXTUM Flux®' }]);
+  try {
+    const response = await collectionPost({
+      request: new Request(`${origin}/colecciones/flux/flux-01?lang=en`),
+      env,
+      params: { tipo: 'flux', slug: 'flux-01' },
+    });
+    const html = await response.text();
+    assert.equal(response.status, 200);
+    assert.match(html, /TEXTUM Flux® — TEXTUM/);
+    assert.ok(html.includes('href="https://www.mentoriatextum.com/colecciones/flux?lang=en"'));
+  } finally {
+    restore();
+  }
+});
+
+test('collection SSR rejects unknown collection types', async () => {
+  const response = await collectionPost({
+    request: new Request(`${origin}/colecciones/otro/xx`),
+    env,
+    params: { tipo: 'otro', slug: 'xx' },
+  });
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow');
+});
+
+test('dynamic sitemap publishes one URL per locale with correct hreflang pairs', async () => {
   const restore = mockSupabase([
     { slug: 'pt-01', collection_type: 'principio', created_at: '2026-01-01T00:00:00.000Z' },
     { slug: 'blog-01', collection_type: null, created_at: '2026-01-02T00:00:00.000Z' },
@@ -131,7 +245,8 @@ test('dynamic sitemap has one canonical loc per resource and excludes contacto',
     assert.equal(response.status, 200);
     assert.match(xml, /xmlns:xhtml/);
     assert.doesNotMatch(xml, /contacto/);
-    assert.equal((xml.match(/<loc>/g) || []).length, 10);
+    assert.match(xml, /<loc>https:\/\/www\.mentoriatextum\.com\/colecciones\/eii<\/loc>/);
+    assert.equal((xml.match(/<loc>/g) || []).length, 24);
     assert.match(xml, /hreflang="en" href="https:\/\/www\.mentoriatextum\.com\/blog\/blog-01\?lang=en"/);
   } finally {
     restore();

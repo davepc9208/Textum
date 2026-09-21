@@ -611,7 +611,7 @@ Una mentoría no consiste únicamente en recibir correcciones. Durante el proces
 
 TEXTUM desarrolla una colección editorial orientada a fortalecer la formación metodológica de investigadores.
 
-Las colecciones se organizan en tres líneas:
+Las colecciones se organizan en cuatro líneas:
 
 ### Principios TEXTUM (PT)
 
@@ -624,6 +624,10 @@ Analizan los componentes estructurales de una investigación científica. Incluy
 ### Herramientas TEXTUM (HT)
 
 Recursos prácticos para apoyar el diseño, revisión y evaluación de investigaciones. Incluyen matrices, esquemas, instrumentos metodológicos y guías de revisión.
+
+### Enfoque Investigativo Integral (EII)
+
+Concepción diferenciada de la investigación científica que la comprende como una totalidad dinámica: integral, articulada y recursiva. Proporciona una arquitectura conceptual y relacional con dimensiones (integralidad, articulación, recursividad), principios (interdependencia funcional, correspondencia metodológica, recursividad) y categorías (configuración investigativa, pertinencia metodológica, reconfiguración investigativa), con la coherencia metodológica como criterio transversal.
 
 **Acceso:** https://www.mentoriatextum.com/colecciones
 

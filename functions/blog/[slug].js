@@ -26,16 +26,15 @@ function localizedUrl(path, lang) {
   return url.toString();
 }
 
-function detectLang(request, post) {
+// Idioma determinista: solo ?lang=en (o ?lang=es) cambia el idioma servido.
+// El Accept-Language se ignora porque hace que la MISMA URL sirva contenido
+// distinto según el navegador — Googlebot (Accept-Language: *) puede recibir
+// inglés sin ?lang=en y contradecir el hreflang/canonical declarado.
+// La SPA ya resuelve igual (getLocaleFromUrl → ?lang=).
+function detectLang(request) {
   const url = new URL(request.url);
   const langParam = url.searchParams.get('lang');
   if (langParam === 'en') return 'en';
-  if (langParam === 'es') return 'es';
-
-  const acceptLang = (request.headers.get('accept-language') || '').toLowerCase();
-  if (acceptLang.includes('en') && !acceptLang.startsWith('es')) {
-    return (post.title_en && post.content_en) ? 'en' : 'es';
-  }
   return 'es';
 }
 
@@ -55,8 +54,10 @@ function notFoundResponse(request) {
   });
 }
 
-async function fetchPost(supabaseUrl, supabaseKey, slug) {
-  const url = `${supabaseUrl}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&published=eq.true&collection_type=is.null&select=*&limit=1`;
+async function fetchPost(supabaseUrl, supabaseKey, slug, lang) {
+  const field = lang === 'en' ? 'slug_en' : 'slug_es';
+  const escapedSlug = encodeURIComponent(slug);
+  const url = `${supabaseUrl}/rest/v1/posts?or=%28${field}.eq.${escapedSlug},slug.eq.${escapedSlug}%29&published=eq.true&collection_type=is.null&select=*&limit=1`;
   const cache = typeof caches !== 'undefined' ? caches.default : null;
   const cacheKey = new Request(url, { method: 'GET' });
 
@@ -89,17 +90,35 @@ async function fetchPost(supabaseUrl, supabaseKey, slug) {
   return data && data.length > 0 ? data[0] : null;
 }
 
-function buildHead(post, lang, slug) {
+function localizedSlug(post, lang, requestedSlug = '') {
+  if (lang === 'en') return post.slug_en || requestedSlug || post.slug_es || post.slug;
+  return post.slug_es || requestedSlug || post.slug;
+}
+
+function localizedCover(post, lang) {
+  if (lang === 'en') return post.cover_url_en || post.cover_url_es || post.cover_url;
+  return post.cover_url_es || post.cover_url;
+}
+
+function localizedAlt(post, lang, title) {
+  if (lang === 'en') return post.cover_alt_en || post.cover_alt_es || post.cover_alt || title;
+  return post.cover_alt_es || post.cover_alt || title;
+}
+
+function buildHead(post, lang, requestedSlug) {
   const title = lang === 'en' ? (post.title_en || post.title_es) : post.title_es;
   const excerpt = lang === 'en' ? (post.excerpt_en || post.excerpt_es) : post.excerpt_es;
   const content = lang === 'en' ? (post.content_en || post.content_es) : post.content_es;
   const keywords = lang === 'en' ? (post.keywords_en || post.keywords_es || '') : (post.keywords_es || '');
 
-  const canonicalUrl = localizedUrl(`/blog/${slug}`, lang);
-  const esUrl = localizedUrl(`/blog/${slug}`, 'es');
-  const enUrl = localizedUrl(`/blog/${slug}`, 'en');
-  const ogImage = post.cover_url || DEFAULT_OG_IMAGE;
-  const ogImageAlt = post.cover_alt || title;
+  const esSlug = localizedSlug(post, 'es', requestedSlug);
+  const enSlug = localizedSlug(post, 'en', requestedSlug);
+  const currentSlug = localizedSlug(post, lang, requestedSlug);
+  const canonicalUrl = localizedUrl(`/blog/${currentSlug}`, lang);
+  const esUrl = localizedUrl(`/blog/${esSlug}`, 'es');
+  const enUrl = localizedUrl(`/blog/${enSlug}`, 'en');
+  const ogImage = localizedCover(post, lang) || DEFAULT_OG_IMAGE;
+  const ogImageAlt = localizedAlt(post, lang, title);
   const author = post.author || SITE_NAME;
   const metaDescription = truncate(stripHtml(excerpt || content), 155);
   const readingTime = post.reading_time || 1;
@@ -166,7 +185,7 @@ function buildHead(post, lang, slug) {
 
 const SSR_STYLE = '<style>.ssr-article{font-family:Georgia,"Times New Roman",serif;max-width:800px;margin:0 auto;padding:24px;color:#0d1f3c;line-height:1.7}.ssr-article nav{font-size:14px;margin-bottom:16px;color:#666}.ssr-article nav a{color:#c9a84c;text-decoration:none}.ssr-article h1{font-size:2rem;font-weight:400;line-height:1.2;margin:.5rem 0 1rem}.ssr-article .ssr-meta{font-size:.9rem;color:#666;margin-bottom:1.5rem}.ssr-article img{max-width:100%;height:auto;border-radius:4px;margin:1rem 0}.ssr-article h2{font-size:1.5rem;margin-top:2rem}.ssr-article h3{font-size:1.25rem;margin-top:1.5rem}.ssr-article p{margin-bottom:1.1rem}.ssr-article ul,.ssr-article ol{margin-bottom:1.1rem;padding-left:1.5rem}.ssr-article blockquote{border-left:3px solid #c9a84c;padding-left:1rem;color:#555;font-style:italic}.ssr-article a{color:#b08b1e}.ssr-article .ssr-cta{display:inline-block;margin-top:2rem;background:#c9a84c;color:#0d1f3c;padding:12px 24px;border-radius:4px;font-weight:bold;text-decoration:none}</style>';
 
-function buildBody(post, lang, slug) {
+function buildBody(post, lang) {
   const title = lang === 'en' ? (post.title_en || post.title_es) : post.title_es;
   const content = lang === 'en' ? (post.content_en || post.content_es) : post.content_es;
   const author = post.author || SITE_NAME;
@@ -193,7 +212,7 @@ function buildBody(post, lang, slug) {
     <time itemprop="datePublished" datetime="${escapeHtml(post.created_at)}">${publishedDate}</time> &middot;
     ${readingTime} ${readLabel}
   </p>
-  ${post.cover_url ? `<img src="${escapeHtml(post.cover_url)}" alt="${escapeHtml(post.cover_alt || title)}" width="1200" height="630" itemprop="image" />` : ''}
+  ${localizedCover(post, lang) ? `<img src="${escapeHtml(localizedCover(post, lang))}" alt="${escapeHtml(localizedAlt(post, lang, title))}" width="1200" height="630" itemprop="image" />` : ''}
   <div itemprop="articleBody">${body}</div>
   <a class="ssr-cta" href="${localizedUrl('/#contacto', lang)}">${ctaLabel}</a>
   <p style="margin-top:2rem"><a href="${localizedUrl('/blog', lang)}">${backLabel}</a></p>
@@ -218,7 +237,8 @@ export async function onRequest(context) {
 
   let post;
   try {
-    post = await fetchPost(supabaseUrl, supabaseKey, slug);
+    const lang = detectLang(request);
+    post = await fetchPost(supabaseUrl, supabaseKey, slug, lang);
   } catch (error) {
     console.error('[SSR] Error fetching post:', error);
     if (typeof context.next === 'function') return context.next();
@@ -227,7 +247,7 @@ export async function onRequest(context) {
 
   if (!post) return notFoundResponse(request);
 
-  const lang = detectLang(request, post);
+  const lang = detectLang(request);
 
   return renderSsrPage({
     request,
@@ -235,7 +255,7 @@ export async function onRequest(context) {
     context,
     lang,
     headHtml: buildHead(post, lang, slug),
-    bodyHtml: buildBody(post, lang, slug),
+    bodyHtml: buildBody(post, lang),
     data: { type: 'post', post },
   });
 }

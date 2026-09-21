@@ -4,6 +4,8 @@
 // pinten el artículo sin volver a pedirlo a Supabase en la primera carga.
 
 import type { Post } from './supabase';
+import type { Locale } from './locale';
+import { postSlug } from './postLocalization';
 
 type SsrIsland =
   | { type: 'post'; post: Post }
@@ -19,7 +21,7 @@ function read(): SsrIsland | null {
     const raw = el?.textContent?.trim();
     if (raw) {
       const value = JSON.parse(raw) as SsrIsland;
-      if (value && value.post && typeof value.post.slug === 'string') parsed = value;
+      if (value && value.post && (typeof value.post.slug === 'string' || typeof value.post.slug_es === 'string')) parsed = value;
     }
   } catch {
     parsed = null;
@@ -27,19 +29,27 @@ function read(): SsrIsland | null {
   return parsed;
 }
 
+function matchesSlug(post: Post, slug: string, lang: Locale): boolean {
+  return postSlug(post, lang) === slug || post.slug === slug || post.slug_es === slug || post.slug_en === slug;
+}
+
 /** Artículo de blog pre-renderizado para este slug, o null. */
 export function ssrPost(slug: string | undefined): Post | null {
   const data = read();
-  if (data?.type === 'post' && slug && data.post.slug === slug) return data.post;
+  if (data?.type === 'post' && slug && (matchesSlug(data.post, slug, 'es') || matchesSlug(data.post, slug, 'en'))) return data.post;
   return null;
 }
 
 /** Pieza de colección pre-renderizada para este tipo+slug, o null. */
 export function ssrColeccion(tipo: string | undefined, slug: string | undefined): Post | null {
+  if (dataMatchesCollection(tipo, slug)) return dataMatchesCollection(tipo, slug);
+  return null;
+}
+
+function dataMatchesCollection(tipo: string | undefined, slug: string | undefined): Post | null {
   const data = read();
-  if (data?.type === 'coleccion' && slug && tipo && data.post.slug === slug && data.tipo === tipo) {
-    return data.post;
-  }
+  if (data?.type === 'coleccion' && slug && tipo && data.tipo === tipo
+    && (matchesSlug(data.post, slug, 'es') || matchesSlug(data.post, slug, 'en'))) return data.post;
   return null;
 }
 

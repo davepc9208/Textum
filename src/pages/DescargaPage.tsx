@@ -33,6 +33,11 @@ const RESOURCES: Record<string, { title_es: string; title_en: string; type: stri
     title_en: 'HT-02 · 20 questions to check MTR coherence',
     type: 'herramienta',
   },
+  'eii-01': {
+    title_es: 'EII-01 · El Enfoque Investigativo Integral: una concepción integral, articulada y recursiva de la investigación científica',
+    title_en: 'EII-01 · The Integral Research Approach: an integral, articulated and recursive conception of scientific research',
+    type: 'eii',
+  },
 };
 
 export default function DescargaPage() {
