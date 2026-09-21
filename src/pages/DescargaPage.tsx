@@ -38,6 +38,11 @@ const RESOURCES: Record<string, { title_es: string; title_en: string; type: stri
     title_en: 'EII-01 · The Integral Research Approach: an integral, articulated and recursive conception of scientific research',
     type: 'eii',
   },
+  'flux-01': {
+    title_es: 'FLUX-01 · TEXTUM Flux®: una metodología dinámica para investigar, articular y transformar',
+    title_en: 'FLUX-01 · TEXTUM Flux®: a dynamic methodology to investigate, connect and transform',
+    type: 'flux',
+  },
 };
 
 export default function DescargaPage() {
