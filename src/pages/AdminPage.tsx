@@ -1,10 +1,11 @@
 // AdminPage.tsx
 import { useState, useEffect, useRef } from 'react';
 import { supabase, Post } from '../lib/supabase';
-import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, ShieldCheck, Users, Download, Search } from 'lucide-react';
+import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, ShieldCheck, Users, Download, Search, Target } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import RichTextEditor from '../components/RichTextEditor';
 import AdminDistribute from '../components/AdminDistribute';
+import AdminProspecting from '../components/AdminProspecting';
 import { optimizeImage } from '../lib/imageOptimization';
 import { sanitizeHtml } from '../lib/sanitize';
 
@@ -747,6 +748,7 @@ function PostEditor({
     <option value="categoria">CM — Categorías Metodológicas</option>
     <option value="herramienta">HT — Herramientas TEXTUM</option>
     <option value="eii">EII — Enfoque Investigativo Integral</option>
+    <option value="flux">FLUX — TEXTUM Flux®</option>
   </select>
   <p className="text-xs text-navy/40 mt-1.5">
     Si seleccionas un tipo de Colección, la pieza no aparecerá en el Blog.
@@ -1356,6 +1358,12 @@ function LeadsPanel() {
 
 function formatAdminError(message: string) {
   const normalized = message.toLowerCase();
+  if (normalized.includes('posts_collection_type_check') || normalized.includes('check constraint')) {
+    return 'Supabase todavía no admite la colección Flux. Ejecuta supabase_flux_migration.sql en el SQL Editor y vuelve a guardar.';
+  }
+  if (normalized.includes('row-level security') || normalized.includes('rls')) {
+    return 'Supabase está bloqueando el guardado por RLS. Comprueba que hayas ejecutado la migración de permisos y que la sesión tenga MFA verificado.';
+  }
   if (normalized.includes('mfa') || normalized.includes('aal2')) {
     return 'La sesión necesita verificación MFA. Sal de la cuenta y vuelve a entrar con el código de tu aplicación autenticadora.';
   }
@@ -1378,7 +1386,7 @@ export default function AdminPage() {
   const [actionError, setActionError] = useState('');
   const [showMfaSetup, setShowMfaSetup] = useState(false);
   const [distributingPost, setDistributingPost] = useState<Post | null>(null);
-  const [tab, setTab] = useState<'posts' | 'leads'>('posts');
+  const [tab, setTab] = useState<'posts' | 'leads' | 'prospecting'>('posts');
 
   const resolveSession = async (candidate?: Session | null) => {
     setAuthChecking(true);
@@ -1527,10 +1535,23 @@ export default function AdminPage() {
             <Users size={13} />
             Leads
           </button>
+          <button
+            onClick={() => setTab('prospecting')}
+            className={`flex items-center gap-2 px-5 py-3 text-xs tracking-widest uppercase transition-colors border-b-2 -mb-px ${
+              tab === 'prospecting'
+                ? 'border-gold text-navy font-medium'
+                : 'border-transparent text-navy/40 hover:text-navy'
+            }`}
+          >
+            <Target size={13} />
+            Prospección
+          </button>
         </div>
 
         {tab === 'leads' ? (
           <LeadsPanel />
+        ) : tab === 'prospecting' ? (
+          <AdminProspecting />
         ) : (
         <>
         <div className="flex items-center justify-between mb-10">

@@ -29,6 +29,7 @@ const TYPE_LABELS: Record<string, { es: string; en: string }> = {
   categoria:   { es: 'Categorías Metodológicas', en: 'Methodological Categories' },
   herramienta: { es: 'Herramientas TEXTUM',      en: 'TEXTUM Tools'              },
   eii:         { es: 'Enfoque Investigativo Integral', en: 'Integral Research Approach' },
+  flux:        { es: 'TEXTUM Flux®',                  en: 'TEXTUM Flux®'                  },
 };
 
 export default function ColeccionPiecePage() {
@@ -258,12 +259,10 @@ export default function ColeccionPiecePage() {
             {/* CTA WhatsApp — al final de cada pieza de Colección */}
             <WhatsAppCTA />
 
-            <div className="mt-10 pt-8 border-t border-navy/10">
-              <Link to={localizedPath(`/colecciones/${tipo}`, lang)} className="inline-flex items-center gap-2 text-gold text-sm hover:gap-3 transition-all duration-200">
-                <ArrowLeft size={14} aria-hidden="true" />
-                {lang === 'es' ? `Volver a ${typeLabel}` : `Back to ${typeLabel}`}
-              </Link>
-            </div>
+            <Link to={localizedPath(`/colecciones/${tipo}`, lang)}>
+              <ArrowLeft size={14} aria-hidden="true" />
+              {lang === 'es' ? `Volver a ${typeLabel}` : `Back to ${typeLabel}`}
+            </Link>
           </div>
         </>
       )}

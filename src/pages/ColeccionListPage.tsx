@@ -14,7 +14,7 @@ import { localizedPath } from '../lib/locale';
 import { postCover, postCoverAlt, localizedPostPath } from '../lib/postLocalization';
 import { PageError, PageSkeleton } from '../components/AsyncState';
 
-type CollectionType = 'principio' | 'categoria' | 'herramienta' | 'eii';
+type CollectionType = 'principio' | 'categoria' | 'herramienta' | 'eii' | 'flux';
 
 // Tipos reales según PRESENTACIÓN_DE_LA_COLECCIÓN.docx
 const META = {
@@ -22,6 +22,7 @@ const META = {
   categoria:   { es: { label: 'Categorías Metodológicas', code: 'CM', tag: 'Componentes estructurales'   }, en: { label: 'Methodological Categories',   code: 'MC', tag: 'Structural components'      } },
   herramienta: { es: { label: 'Herramientas TEXTUM',      code: 'HT', tag: 'Instrumentos de evaluación'  }, en: { label: 'TEXTUM Tools',               code: 'TT', tag: 'Evaluation instruments'     } },
   eii:         { es: { label: 'Enfoque Investigativo Integral', code: 'EII', tag: 'Totalidad dinámica'         }, en: { label: 'Integral Research Approach',  code: 'IRA', tag: 'Dynamic whole'              } },
+  flux:        { es: { label: 'TEXTUM Flux®',                  code: 'FLUX', tag: 'Movimiento metodológico'       }, en: { label: 'TEXTUM Flux®',                  code: 'FLUX', tag: 'Methodological movement'       } },
 };
 
 export default function ColeccionListPage() {

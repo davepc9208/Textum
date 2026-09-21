@@ -88,3 +88,30 @@ conecta Listmonk a la misma base.
 - Dar de alta Google Search Console para el dominio.
 - Definir `CRON_SECRET` en Cloudflare y en GitHub.
 - Merge a `main` para que el cron de nurture empiece a correr.
+
+## 6. Prospección institucional (MVP outbound)
+
+El panel Admin incluye la pestaña **Prospección** para trabajar con contactos profesionales investigados y no solo con leads que ya llegaron a la web.
+
+### Flujo recomendado
+
+1. Investiga contactos de programas doctorales en directorios públicos o usa una lista autorizada.
+2. Prepara un CSV con `nombre,email,institucion,programa doctoral,cargo,pais,fuente url,base de contacto`.
+3. Importa el CSV en Admin → Prospección.
+4. Revisa cada registro y activa **Listo para campaña** solo cuando la fuente y la base de contacto estén documentadas.
+5. Crea la campaña **Piloto institucional — Doctorado**.
+6. Incorpora los prospectos aprobados y revisa la secuencia de tres mensajes.
+7. Activa la campaña únicamente después de verificar el remitente y el subdominio.
+
+### Variables adicionales de Cloudflare Pages
+
+| Variable | Para qué |
+|---|---|
+| `OUTREACH_ENABLED` | Debe ser `false` o estar ausente hasta terminar la configuración. Cambiar a `true` solo después de revisar la campaña. |
+| `OUTREACH_FROM_EMAIL` | Remitente del subdominio independiente, por ejemplo `hola@outreach.mentoriatextum.com`. |
+| `OUTREACH_RESEND_API_KEY` | API key del proveedor habilitado para ese remitente. Si no existe, se usa `RESEND_API_KEY`. |
+| `OUTREACH_WEBHOOK_SECRET` | Protege el endpoint que pausa campañas al recibir respuestas, rebotes o bajas. |
+
+Configura SPF, DKIM y DMARC en el subdominio antes de activar los envíos. El límite inicial del panel es de 10–20 contactos diarios. El runner respeta bajas, respuestas, rebotes y prospectos no aprobados.
+
+La lista debe limitarse a contactos profesionales obtenidos de fuentes públicas o autorizadas. No se implementa scraping indiscriminado de perfiles personales ni calentamiento artificial.

@@ -207,6 +207,17 @@ test('collection SSR accepts the eii type with its own labels and canonicals', a
   }
 });
 
+test('collection SSR accepts the Flux type with its localized brand label', async () => {
+  const restore = mockSupabase([{ ...post, slug: 'flux-01', collection_type: 'flux', title_es: 'TEXTUM Flux®', title_en: 'TEXTUM Flux®' }]);
+  try {
+    const response = await collectionPost({ request: new Request(`${origin}/colecciones/flux/flux-01?lang=en`), env, params: { tipo: 'flux', slug: 'flux-01' } });
+    const html = await response.text();
+    assert.equal(response.status, 200);
+    assert.match(html, /TEXTUM Flux® — TEXTUM/);
+    assert.ok(html.includes('href="https://www.mentoriatextum.com/colecciones/flux?lang=en"'));
+  } finally { restore(); }
+});
+
 test('collection SSR rejects unknown collection types', async () => {
   const response = await collectionPost({
     request: new Request(`${origin}/colecciones/otro/xx`),
@@ -229,7 +240,7 @@ test('dynamic sitemap publishes one URL per locale with correct hreflang pairs',
     assert.match(xml, /xmlns:xhtml/);
     assert.doesNotMatch(xml, /contacto/);
     assert.match(xml, /<loc>https:\/\/www\.mentoriatextum\.com\/colecciones\/eii<\/loc>/);
-    assert.equal((xml.match(/<loc>/g) || []).length, 22);
+    assert.equal((xml.match(/<loc>/g) || []).length, 24);
     assert.match(xml, /hreflang="en" href="https:\/\/www\.mentoriatextum\.com\/blog\/blog-01\?lang=en"/);
   } finally {
     restore();

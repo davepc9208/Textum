@@ -80,9 +80,14 @@ export async function onRequestPost(context) {
       .select('id')
       .eq('email', email)
       .limit(1);
+    const { data: existingProspects, error: prospectFindError } = await supabase
+      .from('prospects')
+      .select('id')
+      .eq('email', email)
+      .limit(1);
 
-    if (findError) {
-      console.error('unsubscribe find error:', findError);
+    if (findError || prospectFindError) {
+      console.error('unsubscribe find error:', findError, prospectFindError);
       return new Response(
         JSON.stringify({
           error: 'No se pudo consultar la base de datos. Contacta con contacto@mentoriatextum.com',
@@ -91,7 +96,7 @@ export async function onRequestPost(context) {
       );
     }
 
-    if (!existing || existing.length === 0) {
+    if ((!existing || existing.length === 0) && (!existingProspects || existingProspects.length === 0)) {
       return new Response(
         JSON.stringify({
           success: true,
@@ -102,14 +107,21 @@ export async function onRequestPost(context) {
       );
     }
 
-    const { error } = await supabase
-      .from('leads')
-      .update({ unsubscribed_at: now })
-      .eq('email', email)
-      .is('unsubscribed_at', null);
+    const { error } = existing?.length
+      ? await supabase
+        .from('leads')
+        .update({ unsubscribed_at: now })
+        .eq('email', email)
+        .is('unsubscribed_at', null)
+      : { error: null };
 
-    if (error) {
-      console.error('unsubscribe update error:', error);
+    const { error: prospectError } = await supabase
+      .from('prospects')
+      .update({ do_not_contact: true, status: 'baja', updated_at: now })
+      .eq('email', email);
+
+    if (error && prospectError) {
+      console.error('unsubscribe update error:', error, prospectError);
       return new Response(
         JSON.stringify({
           error: 'No se pudo registrar la baja. Contacta con contacto@mentoriatextum.com',

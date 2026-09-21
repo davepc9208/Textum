@@ -42,6 +42,13 @@ const COLLECTIONS = {
       desc: 'Concepción integral, articulada y recursiva de la investigación científica: una arquitectura conceptual y relacional para comprender cómo se configura, se articula y puede reconfigurarse el proceso investigador.',
       stripOpacity: 1.0,
     },
+    {
+      type: 'flux',
+      code: 'FLUX',
+      label: 'TEXTUM Flux®',
+      desc: 'Artículos y herramientas para comprender la investigación como un proceso vivo de transformación, conexión y movimiento metodológico.',
+      stripOpacity: 1.0,
+    },
   ],
   en: [
     {
@@ -70,6 +77,13 @@ const COLLECTIONS = {
       code: 'IRA',
       label: 'Integral Research Approach',
       desc: 'An integral, articulated and recursive conception of scientific research: a conceptual and relational architecture for understanding how the research process is configured, articulated and may be reconfigured.',
+      stripOpacity: 1.0,
+    },
+    {
+      type: 'flux',
+      code: 'FLUX',
+      label: 'TEXTUM Flux®',
+      desc: 'Articles and tools for understanding research as a living process of transformation, connection and methodological movement.',
       stripOpacity: 1.0,
     },
   ],

@@ -71,11 +71,12 @@ const APP_ROUTES = [
   /^\/$/,
   /^\/blog(?:\/[^/]+)?$/,
   /^\/colecciones$/,
-  /^\/colecciones\/(?:principio|categoria|herramienta|eii)(?:\/[^/]+(?:\/descargar)?)?$/,
+  /^\/colecciones\/(?:principio|categoria|herramienta|eii|flux)(?:\/[^/]+(?:\/descargar)?)?$/,
   /^\/textum-redaccion-2026$/,
   /^\/baja$/,
   /^\/privacidad$/,
   /^\/casos$/,
+  /^\/piloto-doctorado$/,
 ];
 
 function isAppRoute(pathname) {
@@ -85,7 +86,7 @@ function isAppRoute(pathname) {
 function isNoIndexAppRoute(pathname) {
   return pathname === '/baja'
     || pathname === '/textum-redaccion-2026'
-    || /^\/colecciones\/(?:principio|categoria|herramienta|eii)\/[^/]+\/descargar$/.test(pathname);
+    || /^\/colecciones\/(?:principio|categoria|herramienta|eii|flux)\/[^/]+\/descargar$/.test(pathname);
 }
 
 function notFoundHtml(lang) {

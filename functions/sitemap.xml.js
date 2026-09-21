@@ -53,6 +53,7 @@ export async function onRequest(context) {
       ['/colecciones/categoria', '0.8', 'weekly'],
       ['/colecciones/herramienta', '0.8', 'weekly'],
       ['/colecciones/eii', '0.8', 'weekly'],
+      ['/colecciones/flux', '0.8', 'weekly'],
       ['/privacidad', '0.3', 'yearly'],
       ['/casos', '0.6', 'monthly'],
     ];

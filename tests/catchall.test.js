@@ -76,6 +76,15 @@ test('noindex routes are not canonical-rewritten and keep X-Robots-Tag', async (
   assert.match(html, /<link rel="canonical" href="https:\/\/www\.mentoriatextum\.com\/" \/>/);
 });
 
+test('the Flux collection routes are recognized app routes', async () => {
+  for (const pathname of ['/colecciones/flux', '/colecciones/flux/flux-01']) {
+    const res = await onRequest(makeContext(pathname));
+    const html = await res.text();
+    assert.equal(res.status, 200, pathname);
+    assert.match(html, new RegExp(`<link rel="canonical" href="${origin.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}${pathname}" />`), pathname);
+  }
+});
+
 test('the eii collection routes are recognized app routes', async () => {
   for (const pathname of ['/colecciones/eii', '/colecciones/eii/eii-01']) {
     const res = await onRequest(makeContext(pathname));

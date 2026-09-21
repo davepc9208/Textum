@@ -13,6 +13,7 @@ const ALLOWED_RESOURCES = new Set([
   'herramienta:ht-01',
   'herramienta:ht-02',
   'eii:eii-01',
+  // Flux se habilitará cuando exista un PDF publicado para el recurso.
 ]);
 
 function isOptionalText(value, max) {

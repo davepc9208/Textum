@@ -7,12 +7,13 @@ import { renderSsrPage } from '../../_shared/ssr-shell.js';
 
 const SITE_URL = 'https://www.mentoriatextum.com';
 const SITE_NAME = 'TEXTUM — Mentoría Académica Internacional';
-const TYPES = new Set(['principio', 'categoria', 'herramienta', 'eii']);
+const TYPES = new Set(['principio', 'categoria', 'herramienta', 'eii', 'flux']);
 
 function typeLabel(type, lang) {
   if (type === 'principio') return lang === 'en' ? 'TEXTUM Principles' : 'Principios TEXTUM';
   if (type === 'categoria') return lang === 'en' ? 'Methodological Categories' : 'Categorías Metodológicas';
   if (type === 'eii') return lang === 'en' ? 'Integral Research Approach' : 'Enfoque Investigativo Integral';
+  if (type === 'flux') return 'TEXTUM Flux®';
   return lang === 'en' ? 'TEXTUM Tools' : 'Herramientas TEXTUM';
 }
 
