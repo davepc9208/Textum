@@ -4,7 +4,7 @@
 
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Calendar, Clock, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, Download } from 'lucide-react';
 import { supabase, Post } from '../lib/supabase';
 import { ssrColeccion, dropSsrContent } from '../lib/ssrData';
 import { useLang } from '../i18n/LangContext';
@@ -234,7 +234,30 @@ export default function ColeccionPiecePage() {
             {lightbox && <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
 
             {/* Flux no muestra descarga hasta que exista un PDF configurado. */}            {/* CTA WhatsApp — al final de cada pieza de Colección */}
- */
+            {/* CTA Descarga PDF profesional */}
+<div className="mt-14 p-7 bg-navy/[0.03] border border-navy/10 rounded-2xl">
+  <p className="mt-10 text-xs text-navy/40 text-center font-light">
+            {lang === 'es'
+              ? 'Este documento es de solo lectura en la web. Para citarlo o usarlo offline, descarga la versión PDF profesional.'
+              : 'This document is read-only on the web. To cite it or use it offline, download the professional PDF version.'}
+          </p>
+          <h3 className="font-serif text-lg text-navy mb-2">
+            {lang === 'es' ? 'Versión PDF profesional' : 'Professional PDF version'}
+          </h3>
+  <p className="text-sm text-navy/65 mb-5 leading-relaxed">
+    {lang === 'es'
+      ? 'Formato listo para citar, imprimir y usar offline (incluye QR y referencia APA).'
+      : 'Ready-to-cite format for printing and offline use (includes QR and APA reference).'}
+  </p>    <Link
+    to={localizedPath(`/colecciones/${tipo}/${localizedSlug}/descargar`, lang)}
+    className="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-cream text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
+  >
+    <Download size={15} />
+    {lang === 'es' ? 'Descargar PDF' : 'Download PDF'}
+  </Link>
+</div>
+
+            {/* CTA WhatsApp — al final de cada pieza de Colección */}
             <WhatsAppCTA />
 
             <Link to={localizedPath(`/colecciones/${tipo}`, lang)}>

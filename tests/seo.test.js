@@ -210,18 +210,12 @@ test('collection SSR accepts the eii type with its own labels and canonicals', a
 test('collection SSR accepts the Flux type with its localized brand label', async () => {
   const restore = mockSupabase([{ ...post, slug: 'flux-01', collection_type: 'flux', title_es: 'TEXTUM Flux®', title_en: 'TEXTUM Flux®' }]);
   try {
-    const response = await collectionPost({
-      request: new Request(`${origin}/colecciones/flux/flux-01?lang=en`),
-      env,
-      params: { tipo: 'flux', slug: 'flux-01' },
-    });
+    const response = await collectionPost({ request: new Request(`${origin}/colecciones/flux/flux-01?lang=en`), env, params: { tipo: 'flux', slug: 'flux-01' } });
     const html = await response.text();
     assert.equal(response.status, 200);
     assert.match(html, /TEXTUM Flux® — TEXTUM/);
     assert.ok(html.includes('href="https://www.mentoriatextum.com/colecciones/flux?lang=en"'));
-  } finally {
-    restore();
-  }
+  } finally { restore(); }
 });
 
 test('collection SSR rejects unknown collection types', async () => {
