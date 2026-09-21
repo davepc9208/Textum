@@ -233,6 +233,7 @@ export default function ColeccionPiecePage() {
 
             {lightbox && <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
 
+            {/* Flux no muestra descarga hasta que exista un PDF configurado. */}            {/* CTA WhatsApp — al final de cada pieza de Colección */}
             {/* CTA Descarga PDF profesional */}
 <div className="mt-14 p-7 bg-navy/[0.03] border border-navy/10 rounded-2xl">
   <p className="mt-10 text-xs text-navy/40 text-center font-light">
