@@ -89,6 +89,21 @@ function isNoIndexAppRoute(pathname) {
     || /^\/colecciones\/(?:principio|categoria|herramienta|eii|flux)\/[^/]+\/descargar$/.test(pathname);
 }
 
+// Archivos de conocimiento para LLMs (llms.txt, faq.md...): útiles para
+// modelos de lenguaje, no para el índice web. Google los rastrea igualmente
+// (robots.txt los permite) y los reporta como "Rastreada: actualmente sin
+// indexar" en GSC; esta cabecera lo declara explícitamente.
+const KNOWLEDGE_FILES = new Set([
+  '/llms.txt',
+  '/llms-full.md',
+  '/faq.md',
+  '/services.md',
+  '/about.md',
+  '/methodology.md',
+  '/ai-policy.md',
+  '/schema.jsonld',
+]);
+
 function notFoundHtml(lang) {
   const isEn = lang === 'en';
   const title = isEn ? 'This page does not exist' : 'Esta pagina no existe';
@@ -148,9 +163,15 @@ export async function onRequest(context) {
   const lastSegment = url.pathname.split('/').pop() || '';
   const hasFileExtension = /\.[a-zA-Z0-9]{1,8}$/.test(lastSegment);
   if (hasFileExtension) {
-    return typeof context.next === 'function'
+    const response = typeof context.next === 'function'
       ? await context.next()
       : await env.ASSETS.fetch(request);
+    if (KNOWLEDGE_FILES.has(url.pathname)) {
+      const headers = new Headers(response.headers);
+      headers.set('X-Robots-Tag', 'noindex, nofollow');
+      return new Response(response.body, { status: response.status, headers });
+    }
+    return response;
   }
 
   const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'es';

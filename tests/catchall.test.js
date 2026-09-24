@@ -118,6 +118,23 @@ test('unknown path with extension passes through to assets', async () => {
   assert.equal(res.status, 200);
 });
 
+test('knowledge files (faq.md, llms.txt) are served with noindex', async () => {
+  for (const pathname of ['/faq.md', '/llms.txt', '/services.md', '/schema.jsonld']) {
+    const context = makeContext(pathname);
+    context.next = async () => new Response('knowledge', { headers: { 'Content-Type': 'text/plain' } });
+    const res = await onRequest(context);
+    assert.equal(res.status, 200, pathname);
+    assert.equal(res.headers.get('X-Robots-Tag'), 'noindex, nofollow', pathname);
+  }
+});
+
+test('regular assets keep their original headers (no noindex)', async () => {
+  const context = makeContext('/assets/index-abc123.js');
+  context.next = async () => new Response('console.log(1)', { headers: { 'Content-Type': 'application/javascript' } });
+  const res = await onRequest(context);
+  assert.equal(res.headers.get('X-Robots-Tag'), null);
+});
+
 test('POST requests are passed through', async () => {
   const context = makeContext('/api/contact', { method: 'POST' });
   let called = false;

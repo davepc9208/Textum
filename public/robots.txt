@@ -1,4 +1,4 @@
-﻿User-agent: *
+User-agent: *
 Allow: /
 Disallow: /textum-redaccion-2026
 Disallow: /textum-redaccion-2026/

@@ -13,6 +13,32 @@
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
 
+# Archivos de conocimiento para LLMs: útiles para modelos de lenguaje,
+# no para el índice web de Google. Evita "Rastreada: actualmente sin indexar".
+/faq.md
+  X-Robots-Tag: noindex, nofollow
+
+/llms.txt
+  X-Robots-Tag: noindex, nofollow
+
+/llms-full.md
+  X-Robots-Tag: noindex, nofollow
+
+/services.md
+  X-Robots-Tag: noindex, nofollow
+
+/about.md
+  X-Robots-Tag: noindex, nofollow
+
+/methodology.md
+  X-Robots-Tag: noindex, nofollow
+
+/ai-policy.md
+  X-Robots-Tag: noindex, nofollow
+
+/schema.jsonld
+  X-Robots-Tag: noindex, nofollow
+
 /api/*
   Access-Control-Allow-Methods: POST, OPTIONS
   X-Content-Type-Options: nosniff
