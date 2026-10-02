@@ -20,7 +20,9 @@ async function openHome(page: Page) {
 async function mockPost(page: Page) {
   await page.route(supabasePosts, async route => {
     const url = new URL(route.request().url());
-    const isArticleRequest = url.searchParams.has('slug');
+    // Supabase builds this lookup with PostgREST's `or` query parameter;
+    // the article slug is therefore not exposed as a standalone `slug` param.
+    const isArticleRequest = url.searchParams.has('or') || url.searchParams.has('slug');
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

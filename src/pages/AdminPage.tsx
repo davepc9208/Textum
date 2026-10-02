@@ -1358,6 +1358,12 @@ function LeadsPanel() {
 
 function formatAdminError(message: string) {
   const normalized = message.toLowerCase();
+  if (normalized.includes('posts_collection_type_check') || normalized.includes('check constraint')) {
+    return 'Supabase todavía no admite la colección Flux. Ejecuta supabase_flux_migration.sql en el SQL Editor y vuelve a guardar.';
+  }
+  if (normalized.includes('row-level security') || normalized.includes('rls')) {
+    return 'Supabase está bloqueando el guardado por RLS. Comprueba que hayas ejecutado la migración de permisos y que la sesión tenga MFA verificado.';
+  }
   if (normalized.includes('mfa') || normalized.includes('aal2')) {
     return 'La sesión necesita verificación MFA. Sal de la cuenta y vuelve a entrar con el código de tu aplicación autenticadora.';
   }
