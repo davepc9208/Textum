@@ -29,6 +29,17 @@ const DEFAULT_STEPS = [
 
 type EventCounts = Record<string, number>;
 
+const SEARCH_RESULT_KEY = 'textum-prospecting-search-v1';
+
+function loadStoredSearch(): SearchResult | null {
+  try {
+    const raw = localStorage.getItem(SEARCH_RESULT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SearchResult;
+    return parsed && Array.isArray(parsed.candidates) ? parsed : null;
+  } catch { return null; }
+}
+
 type SearchCandidate = {
   name: string;
   email: string;
@@ -86,7 +97,7 @@ export default function AdminProspecting() {
   const [searchRegion, setSearchRegion] = useState<'todas' | 'espana' | 'latam'>('espana');
   const [searchTopic, setSearchTopic] = useState<'todas' | 'educacion' | 'ciencias' | 'salud' | 'ingenieria'>('educacion');
   const [searchLimit, setSearchLimit] = useState(15);
-  const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult | null>(() => loadStoredSearch());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [searching, setSearching] = useState(false);
 
@@ -113,6 +124,15 @@ export default function AdminProspecting() {
   };
 
   useEffect(() => { void refresh(); }, []);
+
+  // Los resultados de búsqueda persisten entre pestañas y recargas hasta que
+  // se importan o se descartan.
+  useEffect(() => {
+    try {
+      if (searchResults) localStorage.setItem(SEARCH_RESULT_KEY, JSON.stringify(searchResults));
+      else localStorage.removeItem(SEARCH_RESULT_KEY);
+    } catch { /* almacenamiento no disponible: sin persistencia */ }
+  }, [searchResults]);
 
   const filtered = useMemo(() => prospects.filter((prospect) => {
     if (status && prospect.status !== status) return false;
@@ -172,6 +192,8 @@ export default function AdminProspecting() {
     setBusy(false);
   };
 
+  const existingEmails = useMemo(() => new Set(prospects.map(item => item.email.toLowerCase())), [prospects]);
+
   const runSearch = async () => {
     setSearching(true); setError(''); setMessage('');
     try {
@@ -185,8 +207,8 @@ export default function AdminProspecting() {
       if (!response.ok) throw new Error((data as { error?: string } | null)?.error || 'La búsqueda falló. Inténtalo de nuevo.');
       const result = data as SearchResult;
       setSearchResults(result);
-      setSelected(new Set());
-      setMessage(`${result.candidates.length} contactos potenciales encontrados. Revisa la fuente de cada uno antes de importar.`);
+      setSelected(new Set(result.candidates.map(c => c.email).filter(email => !existingEmails.has(email))));
+      setMessage(`${result.candidates.length} contactos potenciales encontrados y guardados. Revisa la fuente de cada uno: los seleccionados quedan esperando tu importación.`);
     } catch (err) { setError(err instanceof Error ? err.message : 'La búsqueda falló.'); }
     finally { setSearching(false); }
   };
@@ -197,6 +219,12 @@ export default function AdminProspecting() {
       if (next.has(email)) next.delete(email); else next.add(email);
       return next;
     });
+  };
+
+  const discardResults = () => {
+    setSearchResults(null);
+    setSelected(new Set());
+    setMessage('Resultados descartados.');
   };
 
   const importSelected = async () => {
@@ -226,8 +254,7 @@ export default function AdminProspecting() {
     if (insertError) {
       setError(insertError.message);
     } else {
-      setMessage(`${rows.length} contactos guardados como 'Nuevo'. Revisa cada uno antes de aprobar.`);
-      setSearchResults(null);
+      setMessage(`${rows.length} contactos guardados como 'Nuevo'. Quédate con el resto si quieres: siguen en 'Buscar contactos'.`);
       setSelected(new Set());
       await refresh();
     }
@@ -318,10 +345,11 @@ export default function AdminProspecting() {
           ) : (
             <div className="bg-white border border-navy/10 rounded-sm overflow-hidden">
               <div className="p-4 border-b border-navy/10 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-navy/60">{selected.size} de {searchResults.candidates.length} seleccionados</p>
+                <p className="text-xs text-navy/60">{selected.size} de {searchResults.candidates.length} seleccionados · los ya importados aparecen marcados abajo</p>
                 <div className="flex gap-2">
-                  <button onClick={() => setSelected(new Set(searchResults.candidates.map(candidate => candidate.email)))} className="px-3 py-1.5 border border-navy/15 rounded-sm text-xs text-navy/70 hover:border-gold/50">Seleccionar todos</button>
+                  <button onClick={() => setSelected(new Set(searchResults.candidates.filter(c => !existingEmails.has(c.email)).map(c => c.email)))} className="px-3 py-1.5 border border-navy/15 rounded-sm text-xs text-navy/70 hover:border-gold/50">Seleccionar pendientes</button>
                   <button onClick={() => void importSelected()} disabled={!selected.size || busy} className="btn-primary px-4 py-1.5 text-xs tracking-widest rounded-sm disabled:opacity-50">IMPORTAR SELECCIONADOS</button>
+                  <button onClick={discardResults} disabled={busy} className="px-3 py-1.5 border border-red-200 text-red-500 rounded-sm text-xs hover:bg-red-50">DESCARTAR RESULTADOS</button>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -330,24 +358,27 @@ export default function AdminProspecting() {
                     <th className="px-4 py-3" />
                     <th className="px-4 py-3">Contacto</th>
                     <th className="px-4 py-3">Institución</th>
-                    <th className="px-4 py-3">Fuente</th>
+                    <th className="px-4 py-3">Fuente / estado</th>
                   </tr></thead>
                   <tbody>
-                    {searchResults.candidates.map(candidate => (
-                      <tr key={candidate.email} className="border-t border-navy/5">
-                        <td className="px-4 py-3"><input type="checkbox" checked={selected.has(candidate.email)} onChange={() => toggleCandidate(candidate.email)} /></td>
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-navy">{candidate.name}</p>
-                          <span className="block text-xs text-navy/55">{candidate.email}</span>
-                          <p className="text-[10px] text-navy/40 mt-1">{candidate.role || ''}</p>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-navy/65">{candidate.institution || '—'}<span className="block text-navy/35">{candidate.tags.join(' · ')}</span></td>
+                    {searchResults.candidates.map(candidate => {
+                      const already = existingEmails.has(candidate.email);
+                      return (
+                        <tr key={candidate.email} className={`border-t border-navy/5 ${already ? 'opacity-60' : ''}`}>
+                          <td className="px-4 py-3"><input type="checkbox" checked={selected.has(candidate.email)} disabled={already} onChange={() => toggleCandidate(candidate.email)} /></td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-navy">{candidate.name}{already && <span className="ml-2 text-[10px] uppercase tracking-widest text-emerald-600">ya en prospectos</span>}</p>
+                            <span className="block text-xs text-navy/55">{candidate.email}</span>
+                            <p className="text-[10px] text-navy/40 mt-1">{candidate.role || ''}</p>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-navy/65">{candidate.institution || '—'}<span className="block text-navy/35">{candidate.tags.join(' · ')}</span></td>
                         <td className="px-4 py-3 text-xs">
                           {candidate.source_url && <a href={candidate.source_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-navy/55 hover:text-gold"><ExternalLink size={11} /> {new URL(candidate.source_url).hostname}</a>}
                           <span className="block text-[10px] text-navy/35 mt-1 max-w-xs truncate">{candidate.contact_basis || ''}</span>
                         </td>
-                      </tr>
-                    ))}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
