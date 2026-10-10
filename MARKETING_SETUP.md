@@ -115,3 +115,70 @@ El panel Admin incluye la pestaña **Prospección** para trabajar con contactos 
 Configura SPF, DKIM y DMARC en el subdominio antes de activar los envíos. El límite inicial del panel es de 10–20 contactos diarios. El runner respeta bajas, respuestas, rebotes y prospectos no aprobados.
 
 La lista debe limitarse a contactos profesionales obtenidos de fuentes públicas o autorizadas. No se implementa scraping indiscriminado de perfiles personales ni calentamiento artificial.
+
+### 6.1. Búsqueda de contactos dentro del panel (nuevo)
+
+Admin → Prospección → pestaña **Buscar contactos**. Llamas a la Function
+`/api/prospecting-search`, que:
+
+1. Consulta Serper.dev con 3–4 queries dirigidas (coordinador de doctorado,
+   escuela de doctorado, escuela de posgrado/unidad de investigación) filtradas
+   por región (España / LATAM) y disciplina.
+2. Visita hasta 12 páginas institucionales de los resultados, con timeout corto
+   por página.
+3. Extrae como máximo 4 correos por página: prioriza `mailto:`, acepta formatos
+   ofuscados (`usuario (at) universidad.es`) y descarta gmail/hotmail,
+   `noreply@`, `webmaster@` y archivos estáticos.
+4. Devuelve candidatos con `source_url` y `contact_basis` ("Correo publicado en
+   <URL>"). **No escribe nada en la base de datos.**
+
+Requisitos para que funcione:
+
+- `SERPER_API_KEY` en Cloudflare Pages (la misma que ya usa el asistente; si
+  existe, esta Function no necesita nada nuevo).
+- Revisión manual obligatoria: los candidatos importados quedan como `Nuevo`
+  (`approved=false`). Solo se envían los que tú marques como **Listo para
+  campaña**.
+
+Notas éticas y técnicas:
+- Solo se procesan páginas públicas indexadas por el buscador, hasta 12 por
+  búsqueda, y con un límite de 8 búsquedas por IP cada 10 minutos.
+- No se visitan perfiles personales ni redes sociales; se filtran.linkedin,
+  Facebook, ResearchGate, aggregadores de empleo.
+- Cada prospecto guarda su URL de origen; si una universidad pide retirar el
+  contacto, basta con desactivarlo en el panel.
+
+### 6.2. Checklist «de lista a campaña» (activar el envío real)
+
+Cuando tengas prospectos revisados y aprobados, sigue este orden exacto:
+
+1. **Subdominio de envío**: crea `outreach.mentoriatextum.com` en Resend,
+   verifica el dominio y añade en Cloudflare DNS los registros SPF, DKIM y
+   DMARC que Resend indica.
+
+2. **Variables de Cloudflare Pages** (Settings → Environment variables):
+
+   | Variable | Valor |
+   |---|---|
+   | `OUTREACH_ENABLED` | `true` solo cuando los pasos 1 y 3 estén listos |
+   | `OUTREACH_FROM_EMAIL` | `hola@outreach.mentoriatextum.com` |
+   | `OUTREACH_RESEND_API_KEY` | API key del subdominio (si no, se usa `RESEND_API_KEY`) |
+   | `OUTREACH_WEBHOOK_SECRET` | string aleatorio para `prospecting-reply` |
+   | `SERPER_API_KEY` | ya la tienes si el asistente funciona |
+
+3. **Prueba del webhook de respuestas**: ejecuta un POST a
+   `/api/prospecting-reply` con el secreto correcto y comprueba que el prospecto
+   cambia de estado; esto valida el circuito completo de respuesta/rebote.
+
+4. **Primer envío pequeño**: crea la campaña «Piloto institucional — Doctorado»
+   en el panel, incorpora 5–15 aprobados (nada más) y activa la campaña.
+   Dispara `prospecting-run` desde GitHub Actions (workflow "Institutional
+   outreach" → Run workflow) o espera al cron de L–V 09:00 UTC.
+
+5. **Escala gradual**: solo cuando los primeros envíos no generen rebotes
+   (revisa la pestaña Métricas), sube el límite diario hacia 15–20. Mantén la
+   revisión manual como filtro permanente antes de aprobar nuevos lotes.
+
+6. **Privacidad**: respeta cualquier petición de baja inmediata («No contactar»
+   en el panel) y conserva `source_url` como evidencia del origen público del
+   contacto.

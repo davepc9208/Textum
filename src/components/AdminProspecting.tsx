@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BarChart3, Check, Download, FileUp, Loader2, Pause, Play, Plus, RefreshCw, Search, Send, Users, X } from 'lucide-react';
+import { BarChart3, Check, Download, ExternalLink, FileUp, Globe, Loader2, Pause, Play, Plus, RefreshCw, Search, Send, Users, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { parseProspectsCsv, PROSPECT_STATUSES, type OutreachCampaign, type Prospect, type ProspectStatus } from '../lib/prospecting';
 
@@ -29,8 +29,45 @@ const DEFAULT_STEPS = [
 
 type EventCounts = Record<string, number>;
 
+type SearchCandidate = {
+  name: string;
+  email: string;
+  institution: string | null;
+  department: string | null;
+  programme: string | null;
+  role: string | null;
+  country: string | null;
+  language: 'es' | 'en';
+  source_url: string | null;
+  contact_basis: string | null;
+  tags: string[];
+};
+
+type SearchResult = {
+  ok: boolean;
+  region: string;
+  topic: string;
+  queries: Array<{ query: string; found: number; kept: number }>;
+  pages_visited: number;
+  candidates: SearchCandidate[];
+};
+
+const REGION_OPTIONS = [
+  ['todas', 'Todas las regiones'],
+  ['espana', 'España'],
+  ['latam', 'Latinoamérica'],
+] as const;
+
+const TOPIC_OPTIONS = [
+  ['todas', 'Todas las disciplinas'],
+  ['educacion', 'Educación / Pedagogía'],
+  ['ciencias', 'Ciencias básicas'],
+  ['salud', 'Salud / Enfermería'],
+  ['ingenieria', 'Ingeniería / Tecnología'],
+] as const;;
+
 export default function AdminProspecting() {
-  const [view, setView] = useState<'prospects' | 'campaigns' | 'metrics'>('prospects');
+  const [view, setView] = useState<'prospects' | 'search' | 'campaigns' | 'metrics'>('prospects');
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([]);
   const [events, setEvents] = useState<EventCounts>({});
@@ -46,6 +83,16 @@ export default function AdminProspecting() {
   const [dailyLimit, setDailyLimit] = useState(15);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [searchRegion, setSearchRegion] = useState<'todas' | 'espana' | 'latam'>('espana');
+  const [searchTopic, setSearchTopic] = useState<'todas' | 'educacion' | 'ciencias' | 'salud' | 'ingenieria'>('educacion');
+  const [searchLimit, setSearchLimit] = useState(15);
+  const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [searching, setSearching] = useState(false);
+
+  const isMissingTable = (message: string | null | undefined) =>
+    Boolean(message && (/does not exist|schema cache|Could not find the table/i.test(message)));
+
   const refresh = async () => {
     setLoading(true);
     setError('');
@@ -55,8 +102,8 @@ export default function AdminProspecting() {
       supabase.from('outreach_events').select('event_type').limit(5000),
     ]);
     if (prospectResult.error) setError(prospectResult.error.message);
-    if (campaignResult.error && !campaignResult.error.message.includes('does not exist')) setError(campaignResult.error.message);
-    if (eventResult.error && !eventResult.error.message.includes('does not exist')) setError(eventResult.error.message);
+    if (campaignResult.error && !isMissingTable(campaignResult.error.message)) setError(campaignResult.error.message);
+    if (eventResult.error && !isMissingTable(eventResult.error.message)) setError(eventResult.error.message);
     setProspects((prospectResult.data as Prospect[]) || []);
     setCampaigns((campaignResult.data as OutreachCampaign[]) || []);
     const counts: EventCounts = {};
@@ -125,6 +172,68 @@ export default function AdminProspecting() {
     setBusy(false);
   };
 
+  const runSearch = async () => {
+    setSearching(true); setError(''); setMessage('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/prospecting-search', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token || ''}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ region: searchRegion, topic: searchTopic, limit: searchLimit }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error((data as { error?: string } | null)?.error || 'La búsqueda falló. Inténtalo de nuevo.');
+      const result = data as SearchResult;
+      setSearchResults(result);
+      setSelected(new Set());
+      setMessage(`${result.candidates.length} contactos potenciales encontrados. Revisa la fuente de cada uno antes de importar.`);
+    } catch (err) { setError(err instanceof Error ? err.message : 'La búsqueda falló.'); }
+    finally { setSearching(false); }
+  };
+
+  const toggleCandidate = (email: string) => {
+    setSelected(current => {
+      const next = new Set(current);
+      if (next.has(email)) next.delete(email); else next.add(email);
+      return next;
+    });
+  };
+
+  const importSelected = async () => {
+    if (!searchResults || !selected.size) return;
+    const rows = searchResults.candidates
+      .filter(candidate => selected.has(candidate.email))
+      .map(candidate => ({
+        name: candidate.name || 'Contacto institucional',
+        email: candidate.email,
+        institution: candidate.institution,
+        department: candidate.department,
+        programme: candidate.programme,
+        role: candidate.role,
+        country: candidate.country,
+        language: candidate.language,
+        source_url: candidate.source_url,
+        contact_basis: candidate.contact_basis,
+        tags: candidate.tags,
+        status: 'nuevo' as ProspectStatus,
+        approved: false,
+        do_not_contact: false,
+        notes: 'Candidato autodescubierto; revisar antes de aprobar.',
+        last_contact_at: null,
+      }));
+    setBusy(true); setError('');
+    const { error: insertError } = await supabase.from('prospects').upsert(rows, { onConflict: 'email', ignoreDuplicates: true });
+    if (insertError) {
+      setError(insertError.message);
+    } else {
+      setMessage(`${rows.length} contactos guardados como 'Nuevo'. Revisa cada uno antes de aprobar.`);
+      setSearchResults(null);
+      setSelected(new Set());
+      await refresh();
+    }
+    setBusy(false);
+  };
+
   const exportCsv = () => {
     const header = ['nombre','email','institucion','departamento','programa','cargo','pais','idioma','fuente','base','estado','aprobado','no_contactar'];
     const rows = filtered.map(item => [item.name, item.email, item.institution, item.department, item.programme, item.role, item.country, item.language, item.source_url, item.contact_basis, item.status, item.approved ? 'si' : 'no', item.do_not_contact ? 'si' : 'no'].map(value => JSON.stringify(value || '')).join(','));
@@ -160,7 +269,7 @@ export default function AdminProspecting() {
       </div>
 
       <div className="flex items-center gap-1 border-b border-navy/10">
-        {([['prospects', 'Prospectos'], ['campaigns', 'Campañas'], ['metrics', 'Métricas']] as const).map(([key, label]) => <button key={key} onClick={() => setView(key)} className={`px-5 py-3 text-xs tracking-widest uppercase border-b-2 -mb-px ${view === key ? 'border-gold text-navy' : 'border-transparent text-navy/40'}`}>{label}</button>)}
+        {([['prospects', 'Prospectos'], ['search', 'Buscar contactos'], ['campaigns', 'Campañas'], ['metrics', 'Métricas']] as const).map(([key, label]) => <button key={key} onClick={() => setView(key)} className={`px-5 py-3 text-xs tracking-widest uppercase border-b-2 -mb-px ${view === key ? 'border-gold text-navy' : 'border-transparent text-navy/40'}`}>{label}</button>)}
         <button onClick={() => void refresh()} className="ml-auto p-2 text-navy/40 hover:text-navy" aria-label="Actualizar"><RefreshCw size={15} /></button>
       </div>
 
@@ -168,6 +277,82 @@ export default function AdminProspecting() {
         <div className="bg-white border border-navy/10 rounded-sm overflow-hidden">
           <div className="p-4 flex flex-col sm:flex-row gap-3 border-b border-navy/10"><div className="relative flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy/30" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar persona, universidad o email…" className="w-full border border-navy/15 rounded-sm pl-9 pr-3 py-2 text-sm" /></div><select value={status} onChange={e => setStatus(e.target.value)} className="border border-navy/15 rounded-sm px-3 py-2 text-sm"><option value="">Todos los estados</option>{PROSPECT_STATUSES.map(item => <option key={item} value={item}>{STATUS_LABELS[item]}</option>)}</select></div>
           {filtered.length === 0 ? <div className="p-16 text-center text-navy/40">Importa un CSV con contactos profesionales cualificados para empezar.</div> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-navy/[0.03] text-left text-[10px] tracking-widest uppercase text-navy/45"><th className="px-4 py-3">Contacto</th><th className="px-4 py-3">Institución</th><th className="px-4 py-3">País / cargo</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3">Aprobación</th></tr></thead><tbody>{filtered.map(item => <tr key={item.id} className="border-t border-navy/5"><td className="px-4 py-3"><p className="font-medium text-navy">{item.name}</p><a className="text-xs text-navy/55 hover:text-gold" href={`mailto:${item.email}`}>{item.email}</a></td><td className="px-4 py-3 text-xs text-navy/65">{item.institution || '—'}<span className="block text-navy/35">{item.programme || item.department || ''}</span></td><td className="px-4 py-3 text-xs text-navy/60">{item.country || '—'}<span className="block text-navy/35">{item.role || ''}</span></td><td className="px-4 py-3"><select value={item.status} onChange={e => void updateProspect(item.id, { status: e.target.value as ProspectStatus })} className="text-[10px] uppercase tracking-widest border border-navy/15 rounded-full px-2 py-1"><option value={item.status}>{STATUS_LABELS[item.status]}</option>{PROSPECT_STATUSES.filter(option => option !== item.status).map(option => <option key={option} value={option}>{STATUS_LABELS[option]}</option>)}</select></td><td className="px-4 py-3"><label className="flex items-center gap-2 text-xs text-navy/60"><input type="checkbox" checked={item.approved} onChange={e => void updateProspect(item.id, { approved: e.target.checked, status: e.target.checked ? 'aprobado' : 'investigado' })} /> {item.approved ? 'Listo para campaña' : 'Revisar'}</label><label className="flex items-center gap-2 mt-2 text-[11px] text-red-500"><input type="checkbox" checked={item.do_not_contact} onChange={e => void updateProspect(item.id, { do_not_contact: e.target.checked, status: e.target.checked ? 'baja' : 'nuevo' })} /> No contactar</label></td></tr>)}</tbody></table></div>}
+        </div>
+      ) : view === 'search' ? (
+        <div className="space-y-4">
+          <div className="bg-white border border-navy/10 rounded-sm p-5 space-y-4">
+            <div>
+              <p className="font-serif text-xl text-navy">Buscar contactos institucionales</p>
+              <p className="text-xs text-navy/50 mt-1">Busca páginas públicas de doctorado y posgrado, extrae solo correos institucionales publicados y revísalos aquí. Nada se guarda hasta que importes los seleccionados.</p>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[10px] tracking-widest uppercase text-navy/45 mb-1">Región</label>
+                <select value={searchRegion} onChange={e => setSearchRegion(e.target.value as typeof searchRegion)} className="w-full border border-navy/15 rounded-sm px-3 py-2 text-sm">
+                  {REGION_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-widest uppercase text-navy/45 mb-1">Disciplina</label>
+                <select value={searchTopic} onChange={e => setSearchTopic(e.target.value as typeof searchTopic)} className="w-full border border-navy/15 rounded-sm px-3 py-2 text-sm">
+                  {TOPIC_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-widest uppercase text-navy/45 mb-1">Límite</label>
+                <input type="number" min={5} max={40} value={searchLimit} onChange={e => setSearchLimit(Number(e.target.value))} className="w-full border border-navy/15 rounded-sm px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button onClick={() => void runSearch()} disabled={searching} className="btn-primary flex items-center gap-2 px-4 py-2.5 text-xs tracking-widest rounded-sm disabled:opacity-50">
+                {searching ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />} {searching ? 'BUSCANDO…' : 'BUSCAR CONTACTOS'}
+              </button>
+              {searchResults && !searching && <p className="text-xs text-navy/50">{searchResults.candidates.length} candidatos · {searchResults.pages_visited} páginas revisadas</p>}
+            </div>
+          </div>
+
+          {searching && <div className="flex justify-center py-10"><Loader2 className="animate-spin text-gold" /></div>}
+
+          {searchResults && (searchResults.candidates.length === 0 ? (
+            <div className="bg-white border border-dashed border-navy/15 rounded-sm p-12 text-center text-navy/40">No se encontraron correos institucionales publicados en las páginas revisadas. Ajusta la región o la disciplina e inténtalo de nuevo.</div>
+          ) : (
+            <div className="bg-white border border-navy/10 rounded-sm overflow-hidden">
+              <div className="p-4 border-b border-navy/10 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-navy/60">{selected.size} de {searchResults.candidates.length} seleccionados</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setSelected(new Set(searchResults.candidates.map(candidate => candidate.email)))} className="px-3 py-1.5 border border-navy/15 rounded-sm text-xs text-navy/70 hover:border-gold/50">Seleccionar todos</button>
+                  <button onClick={() => void importSelected()} disabled={!selected.size || busy} className="btn-primary px-4 py-1.5 text-xs tracking-widest rounded-sm disabled:opacity-50">IMPORTAR SELECCIONADOS</button>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="bg-navy/[0.03] text-left text-[10px] tracking-widest uppercase text-navy/45">
+                    <th className="px-4 py-3" />
+                    <th className="px-4 py-3">Contacto</th>
+                    <th className="px-4 py-3">Institución</th>
+                    <th className="px-4 py-3">Fuente</th>
+                  </tr></thead>
+                  <tbody>
+                    {searchResults.candidates.map(candidate => (
+                      <tr key={candidate.email} className="border-t border-navy/5">
+                        <td className="px-4 py-3"><input type="checkbox" checked={selected.has(candidate.email)} onChange={() => toggleCandidate(candidate.email)} /></td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-navy">{candidate.name}</p>
+                          <span className="block text-xs text-navy/55">{candidate.email}</span>
+                          <p className="text-[10px] text-navy/40 mt-1">{candidate.role || ''}</p>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-navy/65">{candidate.institution || '—'}<span className="block text-navy/35">{candidate.tags.join(' · ')}</span></td>
+                        <td className="px-4 py-3 text-xs">
+                          {candidate.source_url && <a href={candidate.source_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-navy/55 hover:text-gold"><ExternalLink size={11} /> {new URL(candidate.source_url).hostname}</a>}
+                          <span className="block text-[10px] text-navy/35 mt-1 max-w-xs truncate">{candidate.contact_basis || ''}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
         </div>
       ) : view === 'campaigns' ? (
         <div className="space-y-4">
