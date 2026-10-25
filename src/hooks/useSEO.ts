@@ -11,6 +11,7 @@ import { canonicalVariants, localizedUrl, SITE_URL } from '../lib/locale';
 interface SEOProps {
   title: string;
   description: string;
+  keywords?: string;
   canonical?: string;
   alternatePaths?: { es: string; en: string };
   ogImage?: string;
@@ -24,7 +25,6 @@ interface SEOProps {
   };
   lang?: 'es' | 'en';
   noindex?: boolean;
-  keywords?: string;
 }
 
 const DEFAULT_IMAGE = `${SITE_URL}/og-default.png`;
@@ -117,6 +117,7 @@ export function useSEO({
     setMeta('name', 'description', description);
     setMeta('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow');
     if (keywords) setMeta('name', 'keywords', keywords);
+    else document.querySelector('meta[name="keywords"]')?.remove();
 
     // ── Canonical ──────────────────────────────────────────────────
     setLink('canonical', canonicalUrl);

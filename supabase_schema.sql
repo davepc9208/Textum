@@ -10,6 +10,12 @@ create table if not exists public.posts (
   slug_en      text,
   title_es     text not null default '',
   title_en     text not null default '',
+  subtitle_es  text,
+  subtitle_en  text,
+  seo_title_es text,
+  seo_title_en text,
+  meta_description_es text,
+  meta_description_en text,
   excerpt_es   text not null default '',
   excerpt_en   text not null default '',
   content_es   text not null default '',
@@ -34,6 +40,12 @@ create table if not exists public.posts (
 -- Columnas añadidas después del CREATE inicial (idempotente para BD ya existentes)
 alter table public.posts add column if not exists keywords_es     text not null default '';
 alter table public.posts add column if not exists keywords_en     text not null default '';
+alter table public.posts add column if not exists subtitle_es text;
+alter table public.posts add column if not exists subtitle_en text;
+alter table public.posts add column if not exists seo_title_es text;
+alter table public.posts add column if not exists seo_title_en text;
+alter table public.posts add column if not exists meta_description_es text;
+alter table public.posts add column if not exists meta_description_en text;
 alter table public.posts add column if not exists collection_type text;
 alter table public.posts add column if not exists slug_es          text;
 alter table public.posts add column if not exists slug_en          text;

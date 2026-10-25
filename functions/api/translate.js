@@ -1,5 +1,6 @@
 // functions/api/translate.js
 import { callGroqWithFallback } from '../_shared/groq.js';
+import { normalizeKeywords } from '../_shared/editorial.js';
 import { corsHeaders, fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
 // Cloudflare Pages Function — traduce artículo ES → EN usando Groq
 //
@@ -152,7 +153,7 @@ export async function onRequest(context) {
     return json({ error: "GROQ_API_KEY no configurada en Cloudflare Pages → Settings → Environment Variables." }, 500, request, env);
   }
 
-  const { title_es, excerpt_es, content_es, keywords_es } = body;
+  const { title_es, subtitle_es, seo_title_es, excerpt_es, content_es, keywords_es, meta_description_es } = body;
 
   if (!title_es || !content_es) {
     return json({
@@ -164,15 +165,24 @@ export async function onRequest(context) {
   try {
     // Secuencial: una llamada a Groq cada vez para no chocar con su rate limit.
     const title_en = await callGroq(apiKey, SYSTEM_TEXT, `Traduce este título académico al inglés:\n\n${title_es}`);
+    const subtitle_en = subtitle_es
+      ? await callGroq(apiKey, SYSTEM_TEXT, `Traduce este subtítulo académico al inglés:\n\n${subtitle_es}`)
+      : "";
+    const seo_title_en = seo_title_es
+      ? await callGroq(apiKey, SYSTEM_TEXT, `Traduce este título SEO al inglés:\n\n${seo_title_es}`)
+      : "";
+    const meta_description_en = meta_description_es
+      ? await callGroq(apiKey, SYSTEM_TEXT, `Traduce esta meta descripción al inglés, manteniendo un máximo aproximado de 160 caracteres:\n\n${meta_description_es}`)
+      : "";
     const excerpt_en = excerpt_es
       ? await callGroq(apiKey, SYSTEM_TEXT, `Traduce este resumen académico al inglés:\n\n${excerpt_es}`)
       : "";
     const content_en = await translateHtmlContent(apiKey, content_es);
     const keywords_en = keywords_es
-      ? await callGroq(apiKey, SYSTEM_TEXT, `Traduce estas palabras clave al inglés (mantén el formato de lista separada por comas):\n\n${keywords_es}`)
+      ? normalizeKeywords(await callGroq(apiKey, SYSTEM_TEXT, `Traduce estas palabras clave al inglés (mantén el formato de lista separada por comas):\n\n${normalizeKeywords(keywords_es)}`))
       : "";
 
-    return json({ success: true, title_en, excerpt_en, content_en, keywords_en }, 200, request, env);
+    return json({ success: true, title_en, subtitle_en, seo_title_en, meta_description_en, excerpt_en, content_en, keywords_en }, 200, request, env);
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

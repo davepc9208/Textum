@@ -107,6 +107,10 @@ function localizedAlt(post, lang, title) {
 
 function buildHead(post, lang, requestedSlug) {
   const title = lang === 'en' ? (post.title_en || post.title_es) : post.title_es;
+  const subtitle = lang === 'en' ? (post.subtitle_en || post.subtitle_es) : post.subtitle_es;
+  const seoTitle = lang === 'en'
+    ? (post.seo_title_en || post.seo_title_es || title)
+    : (post.seo_title_es || title);
   const excerpt = lang === 'en' ? (post.excerpt_en || post.excerpt_es) : post.excerpt_es;
   const content = lang === 'en' ? (post.content_en || post.content_es) : post.content_es;
   const keywords = lang === 'en' ? (post.keywords_en || post.keywords_es || '') : (post.keywords_es || '');
@@ -120,13 +124,17 @@ function buildHead(post, lang, requestedSlug) {
   const ogImage = localizedCover(post, lang) || DEFAULT_OG_IMAGE;
   const ogImageAlt = localizedAlt(post, lang, title);
   const author = post.author || SITE_NAME;
-  const metaDescription = truncate(stripHtml(excerpt || content), 155);
+  const configuredDescription = lang === 'en'
+    ? (post.meta_description_en || post.meta_description_es)
+    : post.meta_description_es;
+  const metaDescription = truncate(stripHtml(configuredDescription || excerpt || content), 155);
   const readingTime = post.reading_time || 1;
 
   const articleSchema = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: title,
+    alternativeHeadline: subtitle || undefined,
     description: metaDescription,
     image: ogImage,
     datePublished: post.created_at,
@@ -153,7 +161,7 @@ function buildHead(post, lang, requestedSlug) {
   });
 
   return `
-  <title>${escapeHtml(title)} — ${SITE_NAME}</title>
+  <title>${escapeHtml(seoTitle)} — ${SITE_NAME}</title>
   <meta name="description" content="${escapeHtml(metaDescription)}" />
   <meta name="robots" content="index, follow" />
   <meta name="author" content="${escapeHtml(author)}" />
@@ -163,7 +171,7 @@ function buildHead(post, lang, requestedSlug) {
   <link rel="alternate" hreflang="en" href="${enUrl}" />
   <link rel="alternate" hreflang="x-default" href="${esUrl}" />
   <meta property="og:type" content="article" />
-  <meta property="og:title" content="${escapeHtml(title)}" />
+  <meta property="og:title" content="${escapeHtml(seoTitle)}" />
   <meta property="og:description" content="${escapeHtml(metaDescription)}" />
   <meta property="og:url" content="${canonicalUrl}" />
   <meta property="og:image" content="${escapeHtml(ogImage)}" />
@@ -175,7 +183,7 @@ function buildHead(post, lang, requestedSlug) {
   <meta property="article:published_time" content="${escapeHtml(post.created_at)}" />
   <meta property="article:author" content="${escapeHtml(author)}" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${escapeHtml(title)}" />
+  <meta name="twitter:title" content="${escapeHtml(seoTitle)}" />
   <meta name="twitter:description" content="${escapeHtml(metaDescription)}" />
   <meta name="twitter:image" content="${escapeHtml(ogImage)}" />
   <meta name="twitter:image:alt" content="${escapeHtml(ogImageAlt)}" />
@@ -187,6 +195,7 @@ const SSR_STYLE = '<style>.ssr-article{font-family:Georgia,"Times New Roman",ser
 
 function buildBody(post, lang) {
   const title = lang === 'en' ? (post.title_en || post.title_es) : post.title_es;
+  const subtitle = lang === 'en' ? (post.subtitle_en || post.subtitle_es) : post.subtitle_es;
   const content = lang === 'en' ? (post.content_en || post.content_es) : post.content_es;
   const author = post.author || SITE_NAME;
   const publishedDate = formatDate(post.created_at);
@@ -207,6 +216,7 @@ function buildBody(post, lang) {
     <span>${escapeHtml(title)}</span>
   </nav>
   <h1 itemprop="headline">${escapeHtml(title)}</h1>
+  ${subtitle ? `<p class="ssr-subtitle">${escapeHtml(subtitle)}</p>` : ''}
   <p class="ssr-meta">
     <span itemprop="author">${escapeHtml(author)}</span> &middot;
     <time itemprop="datePublished" datetime="${escapeHtml(post.created_at)}">${publishedDate}</time> &middot;

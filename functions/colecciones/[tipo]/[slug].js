@@ -88,6 +88,9 @@ function localizedAlt(post, lang, title) {
 
 function buildHead(post, type, lang, requestedSlug) {
   const title = lang === 'en' ? (post.title_en || post.title_es) : post.title_es;
+  const seoTitle = lang === 'en'
+    ? (post.seo_title_en || post.seo_title_es || title)
+    : (post.seo_title_es || title);
   const excerpt = lang === 'en' ? (post.excerpt_en || post.excerpt_es) : post.excerpt_es;
   const content = lang === 'en' ? (post.content_en || post.content_es) : post.content_es;
   const esSlug = localizedSlug(post, 'es', requestedSlug);
@@ -96,7 +99,10 @@ function buildHead(post, type, lang, requestedSlug) {
   const canonical = localizedUrl(path, lang);
   const esUrl = localizedUrl(`/colecciones/${type}/${esSlug}`, 'es');
   const enUrl = localizedUrl(`/colecciones/${type}/${enSlug}`, 'en');
-  const description = (stripHtml(excerpt || content) || title).slice(0, 155);
+  const configuredDescription = lang === 'en'
+    ? (post.meta_description_en || post.meta_description_es)
+    : post.meta_description_es;
+  const description = (stripHtml(configuredDescription || excerpt || content) || title).slice(0, 155);
   const image = localizedCover(post, lang) || `${SITE_URL}/og-default.png`;
   const author = post.author || SITE_NAME;
   const label = typeLabel(type, lang);
@@ -125,7 +131,7 @@ function buildHead(post, type, lang, requestedSlug) {
   });
 
   return `
-  <title>${escapeHtml(title)} | ${escapeHtml(label)} — TEXTUM</title>
+  <title>${escapeHtml(seoTitle)} | ${escapeHtml(label)} — TEXTUM</title>
   <meta name="description" content="${escapeHtml(description)}" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="${canonical}" />
@@ -133,7 +139,7 @@ function buildHead(post, type, lang, requestedSlug) {
   <link rel="alternate" hreflang="en" href="${enUrl}" />
   <link rel="alternate" hreflang="x-default" href="${esUrl}" />
   <meta property="og:type" content="article" />
-  <meta property="og:title" content="${escapeHtml(title)}" />
+  <meta property="og:title" content="${escapeHtml(seoTitle)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
   <meta property="og:url" content="${canonical}" />
   <meta property="og:image" content="${escapeHtml(image)}" />
@@ -142,7 +148,7 @@ function buildHead(post, type, lang, requestedSlug) {
   <meta property="article:published_time" content="${escapeHtml(post.created_at)}" />
   <meta property="article:author" content="${escapeHtml(author)}" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${escapeHtml(title)}" />
+  <meta name="twitter:title" content="${escapeHtml(seoTitle)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
   <meta name="twitter:image" content="${escapeHtml(image)}" />
   <script type="application/ld+json">${articleSchema}</script>
@@ -153,6 +159,7 @@ const SSR_STYLE = '<style>.ssr-article{font-family:Georgia,"Times New Roman",ser
 
 function buildBody(post, type, lang) {
   const title = lang === 'en' ? (post.title_en || post.title_es) : post.title_es;
+  const subtitle = lang === 'en' ? (post.subtitle_en || post.subtitle_es) : post.subtitle_es;
   const excerpt = lang === 'en' ? (post.excerpt_en || post.excerpt_es) : post.excerpt_es;
   const content = lang === 'en' ? (post.content_en || post.content_es) : post.content_es;
   const author = post.author || SITE_NAME;
@@ -167,6 +174,7 @@ function buildBody(post, type, lang) {
     <a href="${localizedUrl(`/colecciones/${type}`, lang)}">${escapeHtml(label)}</a>
   </nav>
   <h1>${escapeHtml(title)}</h1>
+  ${subtitle ? `<p class="ssr-subtitle">${escapeHtml(subtitle)}</p>` : ''}
   <p class="ssr-meta">${escapeHtml(author)}</p>
   ${localizedCover(post, lang) ? `<img src="${escapeHtml(localizedCover(post, lang))}" alt="${escapeHtml(localizedAlt(post, lang, title))}" width="1200" height="630" />` : ''}
   ${excerpt ? `<p><em>${escapeHtml(excerpt)}</em></p>` : ''}

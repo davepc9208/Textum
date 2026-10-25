@@ -89,7 +89,17 @@ export default function PostPage() {
   }, [lang, slug, reloadKey]);
 
   const postTitle   = post ? (lang === 'es' ? post.title_es   : post.title_en)   : '';
-  const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
+  const postSubtitle = post ? (lang === 'es' ? post.subtitle_es : post.subtitle_en) : '';
+  const seoTitle = post
+    ? (lang === 'es'
+      ? (post.seo_title_es || post.title_es)
+      : (post.seo_title_en || post.seo_title_es || post.title_en))
+    : '';
+  const metaDescription = post
+    ? (lang === 'es'
+      ? (post.meta_description_es || post.excerpt_es)
+      : (post.meta_description_en || post.meta_description_es || post.excerpt_en))
+    : '';
   const content     = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
   const localizedSlug = post ? postSlug(post, lang) : slug ?? '';
   const localizedCover = post ? postCover(post, lang) : '';
@@ -112,8 +122,8 @@ export default function PostPage() {
   const canonicalUrl = post ? localizedUrl(`/blog/${localizedSlug}`, lang) : undefined;
 
   useSEO(post ? {
-    title: `${postTitle} — TEXTUM Mentoría Académica`,
-    description: postExcerpt.slice(0, 155),
+    title: `${seoTitle} — TEXTUM Mentoría Académica`,
+    description: metaDescription.slice(0, 155),
     canonical: `/blog/${localizedSlug}`,
     alternatePaths: {
       es: `/blog/${postSlug(post, 'es')}`,
@@ -145,7 +155,8 @@ export default function PostPage() {
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: postTitle,
-      description: postExcerpt.slice(0, 155),
+      alternativeHeadline: postSubtitle || undefined,
+      description: metaDescription.slice(0, 155),
       image: localizedCover,
       datePublished: post.created_at,
       author: {
@@ -193,7 +204,7 @@ export default function PostPage() {
       removeSchema('schema-article');
       removeSchema('schema-breadcrumb');
     };
-  }, [post, lang, postTitle, postExcerpt, localizedSlug, localizedCover]);
+  }, [post, lang, postTitle, postSubtitle, metaDescription, localizedSlug, localizedCover]);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -222,6 +233,7 @@ export default function PostPage() {
                   src={localizedCover}
                   alt={localizedCoverAlt}
                   title={postTitle}
+                  subtitle={postSubtitle || undefined}
                   author={post.author}
                   date={new Date(post.created_at).toLocaleDateString(
                     lang === 'es' ? 'es-ES' : 'en-GB',
@@ -240,6 +252,7 @@ export default function PostPage() {
                     <span>{post.reading_time} {b.minRead}</span>
                   </div>
                   <h1 className="font-serif text-4xl font-light leading-tight text-navy sm:text-5xl">{postTitle}</h1>
+                  {postSubtitle && <p className="mt-4 text-lg leading-relaxed text-navy/65">{postSubtitle}</p>}
                 </div>
               )}
 

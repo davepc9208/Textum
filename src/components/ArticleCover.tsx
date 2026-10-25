@@ -8,6 +8,7 @@ type ArticleCoverProps = {
 
 type ArticleHeroProps = ArticleCoverProps & {
   title: string;
+  subtitle?: string;
   author: string;
   date: string;
   readingTime: string;
@@ -58,6 +59,7 @@ export function ArticleHero({
   src,
   alt,
   title,
+  subtitle,
   author,
   date,
   readingTime,
@@ -117,6 +119,7 @@ export function ArticleHero({
             <h1 className="max-w-4xl font-serif text-4xl font-light leading-[0.98] text-white sm:text-5xl lg:text-6xl">
               {title}
             </h1>
+            {subtitle && <p className="mt-4 max-w-3xl text-base leading-relaxed text-white/80 sm:text-lg">{subtitle}</p>}
             <div className="mt-6 flex items-center gap-3" aria-hidden="true">
               <div className="h-px w-16 bg-gold" />
               <svg width="8" height="8" viewBox="0 0 8 8" className="text-gold">

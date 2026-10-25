@@ -53,6 +53,12 @@ alter table public.posts add column if not exists cover_url_es text;
 alter table public.posts add column if not exists cover_url_en text;
 alter table public.posts add column if not exists cover_alt_es text;
 alter table public.posts add column if not exists cover_alt_en text;
+alter table public.posts add column if not exists subtitle_es text;
+alter table public.posts add column if not exists subtitle_en text;
+alter table public.posts add column if not exists seo_title_es text;
+alter table public.posts add column if not exists seo_title_en text;
+alter table public.posts add column if not exists meta_description_es text;
+alter table public.posts add column if not exists meta_description_en text;
 
 update public.posts set slug_es = coalesce(nullif(slug_es, ''), slug) where slug_es is null or slug_es = '';
 update public.posts set cover_url_es = coalesce(nullif(cover_url_es, ''), cover_url) where cover_url_es is null or cover_url_es = '';

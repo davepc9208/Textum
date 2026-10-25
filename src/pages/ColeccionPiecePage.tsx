@@ -88,7 +88,17 @@ export default function ColeccionPiecePage() {
   }, [lang, slug, tipo, reloadKey]);
 
   const postTitle   = post ? (lang === 'es' ? post.title_es   : post.title_en)   : '';
-  const postExcerpt = post ? (lang === 'es' ? post.excerpt_es : post.excerpt_en) : '';
+  const postSubtitle = post ? (lang === 'es' ? post.subtitle_es : post.subtitle_en) : '';
+  const seoTitle = post
+    ? (lang === 'es'
+      ? (post.seo_title_es || post.title_es)
+      : (post.seo_title_en || post.seo_title_es || post.title_en))
+    : '';
+  const metaDescription = post
+    ? (lang === 'es'
+      ? (post.meta_description_es || post.excerpt_es)
+      : (post.meta_description_en || post.meta_description_es || post.excerpt_en))
+    : '';
   const content     = post ? (lang === 'es' ? post.content_es : post.content_en) : '';
   const localizedSlug = post ? postSlug(post, lang) : slug ?? '';
   const localizedCover = post ? postCover(post, lang) : '';
@@ -102,8 +112,8 @@ export default function ColeccionPiecePage() {
   const typeLabel = tipo ? (TYPE_LABELS[tipo]?.[lang] ?? '') : '';
 
   useSEO(post ? {
-    title: `${postTitle} | ${typeLabel} — TEXTUM`,
-    description: postExcerpt.slice(0, 155),
+    title: `${seoTitle} | ${typeLabel} — TEXTUM`,
+    description: metaDescription.slice(0, 155),
     canonical: `/colecciones/${tipo}/${localizedSlug}`,
     alternatePaths: {
       es: `/colecciones/${tipo}/${postSlug(post, 'es')}`,
@@ -122,7 +132,8 @@ export default function ColeccionPiecePage() {
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: postTitle,
-      description: postExcerpt.slice(0, 155),
+      alternativeHeadline: postSubtitle || undefined,
+      description: metaDescription.slice(0, 155),
       image: localizedCover,
       datePublished: post.created_at,
       author: { '@type': 'Person', name: post.author },
@@ -139,7 +150,7 @@ export default function ColeccionPiecePage() {
       ],
     }, 'schema-coleccion-breadcrumb');
     return () => { removeSchema('schema-coleccion-piece'); removeSchema('schema-coleccion-breadcrumb'); };
-  }, [post, lang, postTitle, postExcerpt, tipo, typeLabel, localizedSlug, localizedCover]);
+  }, [post, lang, postTitle, postSubtitle, metaDescription, tipo, typeLabel, localizedSlug, localizedCover]);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -191,9 +202,10 @@ export default function ColeccionPiecePage() {
                   </div>
 
                   <p className="text-xs tracking-[0.2em] text-gold uppercase mb-4">{post.author}</p>
-                  <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-8">
+                  <h1 className="font-serif text-4xl md:text-5xl font-light text-navy leading-tight mb-4">
                     {postTitle}
                   </h1>
+                  {postSubtitle && <p className="mb-8 text-lg leading-relaxed text-navy/65">{postSubtitle}</p>}
 
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-px bg-gradient-to-r from-gold to-transparent" />

@@ -8,6 +8,7 @@ import AdminDistribute from '../components/AdminDistribute';
 import AdminProspecting from '../components/AdminProspecting';
 import { optimizeImage } from '../lib/imageOptimization';
 import { sanitizeHtml } from '../lib/sanitize';
+import { normalizeKeywords } from '../../functions/_shared/editorial';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function slugify(str: string) {
@@ -32,6 +33,12 @@ const EMPTY: Omit<Post, 'id' | 'created_at'> = {
   slug_en: '',
   title_es: '',
   title_en: '',
+  subtitle_es: '',
+  subtitle_en: '',
+  seo_title_es: '',
+  seo_title_en: '',
+  meta_description_es: '',
+  meta_description_en: '',
   excerpt_es: '',
   excerpt_en: '',
   keywords_es: '',
@@ -511,18 +518,24 @@ function PostEditor({
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          title_es:    form.title_es,
-          excerpt_es:  form.excerpt_es,
-          content_es:  form.content_es,
-          keywords_es: form.keywords_es,
-          }),
+          title_es: form.title_es,
+          subtitle_es: form.subtitle_es,
+          seo_title_es: form.seo_title_es,
+          meta_description_es: form.meta_description_es,
+          excerpt_es: form.excerpt_es,
+          content_es: form.content_es,
+          keywords_es: normalizeKeywords(form.keywords_es),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
       set('title_en',    data.title_en);
+      set('subtitle_en', data.subtitle_en ?? '');
+      set('seo_title_en', data.seo_title_en ?? '');
+      set('meta_description_en', data.meta_description_en ?? '');
       set('excerpt_en',  data.excerpt_en);
       set('content_en',  data.content_en);
-      set('keywords_en', data.keywords_en ?? '');
+      set('keywords_en', normalizeKeywords(data.keywords_en ?? ''));
       if (!form.slug_en && data.title_en) set('slug_en', slugify(data.title_en));
       setLastTranslated(new Date().toLocaleTimeString('es-ES'));
       // Cambiar a la pestaña EN para que el usuario revise
@@ -565,6 +578,8 @@ function PostEditor({
     const coverAltEs = form.cover_alt_es || form.cover_alt || '';
     const payload = {
       ...form,
+      keywords_es: normalizeKeywords(form.keywords_es),
+      keywords_en: normalizeKeywords(form.keywords_en),
       slug: slugEs,
       slug_es: slugEs,
       slug_en: slugEn,
@@ -573,6 +588,12 @@ function PostEditor({
       cover_alt: coverAltEs,
       cover_alt_es: coverAltEs,
       reading_time: readingTime(form.content_es + form.content_en),
+      subtitle_es: form.subtitle_es || null,
+      subtitle_en: form.subtitle_en || null,
+      seo_title_es: form.seo_title_es || null,
+      seo_title_en: form.seo_title_en || null,
+      meta_description_es: form.meta_description_es || null,
+      meta_description_en: form.meta_description_en || null,
     };
     let error;
     if (initial.id) {
@@ -768,6 +789,20 @@ function PostEditor({
                       <input className={inputCls} value={form.title_es} onChange={e => handleTitleEs(e.target.value)} placeholder='Ej: "Cómo estructurar la metodología de tu tesis..."' />
                     </div>
                     <div>
+                      <label className={labelCls}>Subtítulo del artículo (ES)</label>
+                      <input className={inputCls} value={form.subtitle_es ?? ''} onChange={e => set('subtitle_es', e.target.value)} placeholder="Una frase breve que amplía el título" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Título SEO (ES)</label>
+                      <input className={inputCls} value={form.seo_title_es ?? ''} onChange={e => set('seo_title_es', e.target.value)} placeholder={form.title_es || 'Título que aparecerá en Google'} />
+                      <p className="text-xs text-navy/40 mt-1.5">Opcional. Si se deja vacío, se utiliza el título del artículo.</p>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Meta descripción (ES)</label>
+                      <textarea className={inputCls} rows={2} maxLength={320} value={form.meta_description_es ?? ''} onChange={e => set('meta_description_es', e.target.value)} placeholder={form.excerpt_es || 'Resumen breve para Google y redes sociales'} />
+                      <p className="text-xs text-navy/40 mt-1.5">Opcional; recomendamos unas 150–160 letras. {form.meta_description_es?.length ?? 0}/320</p>
+                    </div>
+                    <div>
   <label className={labelCls}>Resumen ejecutivo (ES)</label>
   <textarea className={inputCls} rows={3} value={form.excerpt_es} onChange={e => set('excerpt_es', e.target.value)}
     placeholder="2-3 frases de gancho que aparecen en la tarjeta del blog. Sin palabras clave aquí." />
@@ -781,7 +816,7 @@ function PostEditor({
     placeholder="Ej: mentoría académica, tesis doctoral, APA 7, escritura científica"
   />
   <p className="text-xs text-navy/40 mt-1.5 font-light">
-    Separadas por comas. Se usan en la etiqueta <code>&lt;meta name="keywords"&gt;</code> del artículo publicado.
+    Puedes separarlas con comas o punto y coma; se guardarán normalizadas con comas.
   </p>
 </div>
                     <div>
@@ -865,6 +900,20 @@ function PostEditor({
                       <input className={inputCls} value={form.title_en} onChange={e => handleTitleEn(e.target.value)} placeholder='E.g. "How to structure the methodology of your thesis..."' />
                     </div>
                     <div>
+                      <label className={labelCls}>Article subtitle (EN)</label>
+                      <input className={inputCls} value={form.subtitle_en ?? ''} onChange={e => set('subtitle_en', e.target.value)} placeholder="A short phrase expanding the title" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>SEO title (EN)</label>
+                      <input className={inputCls} value={form.seo_title_en ?? ''} onChange={e => set('seo_title_en', e.target.value)} placeholder={form.title_en || 'Title shown in search results'} />
+                      <p className="text-xs text-navy/40 mt-1.5">Optional. Leave blank to use the article title.</p>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Meta description (EN)</label>
+                      <textarea className={inputCls} rows={2} maxLength={320} value={form.meta_description_en ?? ''} onChange={e => set('meta_description_en', e.target.value)} placeholder={form.excerpt_en || 'Short description for search and social previews'} />
+                      <p className="text-xs text-navy/40 mt-1.5">Optional; around 150–160 characters is a useful target. {form.meta_description_en?.length ?? 0}/320</p>
+                    </div>
+                    <div>
                       <label className={labelCls}>Abstract (English)</label>
                       <textarea className={inputCls} rows={3} value={form.excerpt_en} onChange={e => set('excerpt_en', e.target.value)}
                         placeholder="2-3 hook sentences for the blog card. No keywords here." />
@@ -878,7 +927,7 @@ function PostEditor({
                         placeholder="E.g. academic mentoring, doctoral thesis, APA 7, scientific writing"
                       />
                       <p className="text-xs text-navy/40 mt-1.5 font-light">
-                        Comma-separated. Used in the <code>&lt;meta name="keywords"&gt;</code> tag of the published article.
+                        Separate with commas or semicolons; they are normalized to commas when saved.
                       </p>
                     </div>
                     <div>

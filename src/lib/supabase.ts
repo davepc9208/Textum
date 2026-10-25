@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const POST_SUMMARY_FIELDS = [
-  'id', 'slug', 'slug_es', 'slug_en', 'title_es', 'title_en', 'excerpt_es', 'excerpt_en',
+  'id', 'slug', 'slug_es', 'slug_en', 'title_es', 'title_en', 'subtitle_es', 'subtitle_en', 'seo_title_es', 'seo_title_en', 'meta_description_es', 'meta_description_en', 'excerpt_es', 'excerpt_en',
   'author', 'cover_url', 'cover_url_es', 'cover_url_en', 'cover_alt', 'cover_alt_es', 'cover_alt_en',
   'published', 'created_at', 'reading_time', 'category', 'collection_type',
 ].join(',');
@@ -27,6 +27,12 @@ export type Post = {
   slug_en: string | null;
   title_es: string;
   title_en: string;
+  subtitle_es: string | null;
+  subtitle_en: string | null;
+  seo_title_es: string | null;
+  seo_title_en: string | null;
+  meta_description_es: string | null;
+  meta_description_en: string | null;
   excerpt_es: string;
   excerpt_en: string;
   content_es: string;

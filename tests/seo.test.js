@@ -16,6 +16,12 @@ const post = {
   collection_type: 'principio',
   title_es: 'Principio de prueba',
   title_en: 'Test principle',
+  subtitle_es: null,
+  subtitle_en: null,
+  seo_title_es: null,
+  seo_title_en: null,
+  meta_description_es: null,
+  meta_description_en: null,
   excerpt_es: 'Resumen en español.',
   excerpt_en: 'English summary.',
   content_es: '<p>Contenido <strong>seguro</strong>.</p>',
@@ -35,6 +41,46 @@ function mockSupabase(result) {
   });
   return () => { globalThis.fetch = originalFetch; };
 }
+
+test('blog SSR uses localized SEO titles/descriptions and renders the editorial subtitle', async () => {
+  const restore = mockSupabase([{
+    ...post,
+    collection_type: null,
+    title_es: 'Título visible',
+    title_en: 'Visible title',
+    subtitle_es: 'Subtítulo editorial',
+    subtitle_en: 'Editorial subtitle',
+    seo_title_es: 'Título optimizado ES',
+    seo_title_en: 'Optimized title EN',
+    meta_description_es: 'Descripción optimizada ES.',
+    meta_description_en: 'Optimized description EN.',
+  }]);
+  try {
+    const spanish = await blogPost({
+      request: new Request(`${origin}/blog/test-principle`),
+      env,
+      params: { slug: 'test-principle' },
+    });
+    const spanishHtml = await spanish.text();
+    assert.match(spanishHtml, /<title>Título optimizado ES — TEXTUM/);
+    assert.match(spanishHtml, /name="description" content="Descripción optimizada ES\."/);
+    assert.match(spanishHtml, /<h1 itemprop="headline">Título visible<\/h1>/);
+    assert.match(spanishHtml, /<p class="ssr-subtitle">Subtítulo editorial<\/p>/);
+    assert.match(spanishHtml, /"alternativeHeadline":"Subtítulo editorial"/);
+
+    const english = await blogPost({
+      request: new Request(`${origin}/blog/test-principle?lang=en`),
+      env,
+      params: { slug: 'test-principle' },
+    });
+    const englishHtml = await english.text();
+    assert.match(englishHtml, /<title>Optimized title EN — TEXTUM/);
+    assert.match(englishHtml, /name="description" content="Optimized description EN\."/);
+    assert.match(englishHtml, /<p class="ssr-subtitle">Editorial subtitle<\/p>/);
+  } finally {
+    restore();
+  }
+});
 
 test('blog SSR uses independent English slug and cover when they are configured', async () => {
   const restore = mockSupabase([{
@@ -171,6 +217,41 @@ test('SSR splices head + article + data island into the real SPA shell', async (
     assert.match(html, /<div id="ssr-content"><style/);
     assert.match(html, /<script id="__SSR_DATA__" type="application\/json">/);
     assert.match(html, /"type":"post"/);
+  } finally {
+    restore();
+  }
+});
+
+test('collection SSR uses SEO fields and displays the localized subtitle', async () => {
+  const restore = mockSupabase([{
+    ...post,
+    subtitle_es: 'Subtítulo de colección',
+    subtitle_en: 'Collection subtitle',
+    seo_title_es: 'SEO para colección ES',
+    seo_title_en: 'Collection SEO EN',
+    meta_description_es: 'Descripción de colección ES.',
+    meta_description_en: 'Collection description EN.',
+  }]);
+  try {
+    const spanish = await collectionPost({
+      request: new Request(`${origin}/colecciones/principio/pt-01`),
+      env,
+      params: { tipo: 'principio', slug: 'pt-01' },
+    });
+    const spanishHtml = await spanish.text();
+    assert.match(spanishHtml, /<title>SEO para colección ES \| Principios TEXTUM/);
+    assert.match(spanishHtml, /name="description" content="Descripción de colección ES\."/);
+    assert.match(spanishHtml, /<p class="ssr-subtitle">Subtítulo de colección<\/p>/);
+
+    const english = await collectionPost({
+      request: new Request(`${origin}/colecciones/principio/pt-01?lang=en`),
+      env,
+      params: { tipo: 'principio', slug: 'pt-01' },
+    });
+    const englishHtml = await english.text();
+    assert.match(englishHtml, /<title>Collection SEO EN \| TEXTUM Principles/);
+    assert.match(englishHtml, /name="description" content="Collection description EN\."/);
+    assert.match(englishHtml, /<p class="ssr-subtitle">Collection subtitle<\/p>/);
   } finally {
     restore();
   }
