@@ -1,6 +1,6 @@
 // functions/api/contact.js
 // Cloudflare Pages Function para el formulario de contacto.
-import { corsHeaders, enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
+import { corsHeaders, enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, RateLimitUnavailableError, validateText, verifyTurnstile } from '../_shared/security.js';
 import { attributionSummaryHtml } from '../_shared/attribution.js';
 
 const MAX_BODY_BYTES = 32 * 1024;
@@ -22,8 +22,14 @@ export async function onRequestPost(context) {
   if (Number(request.headers.get('Content-Length') || 0) > MAX_BODY_BYTES) {
     return jsonResponse({ error: 'La solicitud supera el tamaño permitido.' }, 413, request, env, requestId);
   }
-  if (!await enforceRateLimit(request, 'contact', 8, 600)) {
-    return jsonResponse({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, 429, request, env, requestId, { 'Retry-After': '600' });
+  try {
+    if (!await enforceRateLimit(request, 'contact', 8, 600, env)) {
+      return jsonResponse({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, 429, request, env, requestId, { 'Retry-After': '600' });
+    }
+  } catch (error) {
+    if (!(error instanceof RateLimitUnavailableError)) throw error;
+    log('error', 'contact.rate_limit_unavailable', { requestId });
+    return jsonResponse({ error: 'Servicio temporalmente no disponible. Inténtalo de nuevo más tarde.' }, 503, request, env, requestId, { 'Retry-After': '60' });
   }
 
   try {

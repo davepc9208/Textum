@@ -284,24 +284,12 @@ function CoverImagePicker({ value, onChange }: { value: string; onChange: (url: 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowed = ['image/webp', 'image/png'];
-    if (!allowed.includes(file.type)) {
-      setErr('Formato no permitido. Sube únicamente imágenes .webp o .png.');
-      e.target.value = '';
-      return;
-    }
-    if (file.size > 300 * 1024) {
-      setErr(`El archivo pesa ${(file.size / 1024).toFixed(0)} KB. El máximo recomendado es 300 KB. Comprímelo antes de subir.`);
-      e.target.value = '';
-      return;
-    }
-
     setUploading(true);
     setErr('');
     try {
+      const optimizedFile = await optimizeImage(file, { maxBytes: 2 * 1024 * 1024 });
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Tu sesión ha caducado. Inicia sesión de nuevo.');
-      const optimizedFile = await optimizeImage(file);
       const formData = new FormData();
       formData.append('file', optimizedFile, optimizedFile.name);
       const response = await fetch('/api/upload-image', {
@@ -322,7 +310,7 @@ function CoverImagePicker({ value, onChange }: { value: string; onChange: (url: 
 
   return (
     <div>
-      <input ref={fileInputRef} type="file" accept="image/webp,image/png" className="hidden" onChange={handleFile} />
+      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} />
       {value ? (
         <div className="relative group rounded-sm overflow-hidden border border-navy/15">
           <img src={value} alt="Portada" className="w-full h-44 object-cover" />
@@ -757,7 +745,7 @@ function PostEditor({
 
             <div>
               <label className={labelCls}>Portada española</label>
-              <p className="text-xs text-navy/40 mb-2">La portada se configura por idioma. Formatos permitidos: .webp o .png · máximo recomendado: 300 KB.</p>
+              <p className="text-xs text-navy/40 mb-2">La portada se configura por idioma. Sube JPG, PNG o WebP; se optimizará automáticamente antes de guardarse.</p>
               <CoverImagePicker value={form.cover_url_es || form.cover_url} onChange={(url) => { set('cover_url_es', url); set('cover_url', url); }} />
               <label className={`${labelCls} mt-4`}>Texto alternativo (ES)</label>
               <input className={inputCls} value={form.cover_alt_es || form.cover_alt || ''} onChange={e => { set('cover_alt_es', e.target.value); set('cover_alt', e.target.value); }} placeholder="Descripción accesible de la portada" />

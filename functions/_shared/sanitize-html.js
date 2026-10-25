@@ -43,6 +43,25 @@ const ALLOWED_ATTR = {
   th: new Set(['colspan', 'rowspan', 'scope']),
 };
 
+// HTML decodes character references inside URL attributes before navigation.
+// Decode them here too so encoded javascript:/data: schemes cannot bypass checks.
+function decodeHtmlAttribute(value) {
+  return value
+    .replace(/&colon;?/gi, ':')
+    .replace(/&tab;?/gi, '\t')
+    .replace(/&newline;?/gi, '\n')
+    .replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (_match, hex, decimal) => {
+      const codePoint = Number.parseInt(hex || decimal, hex ? 16 : 10);
+      if (!Number.isFinite(codePoint) || codePoint === 0 || codePoint > 0x10ffff || (codePoint >= 0xd800 && codePoint <= 0xdfff)) return '\uFFFD';
+      return String.fromCodePoint(codePoint);
+    });
+}
+
+function isSafeUrl(value) {
+  const normalized = decodeHtmlAttribute(String(value)).replace(/[\u0000-\u0020\u007f-\u009f]/g, '');
+  return !/^(?:javascript|vbscript|data):/i.test(normalized);
+}
+
 export function sanitizeArticleHtml(html) {
   let out = String(html || '');
 
@@ -66,15 +85,16 @@ export function sanitizeArticleHtml(html) {
     let m;
     while ((m = attrRe.exec(rawAttrs)) !== null) {
       const attr = m[1].toLowerCase();
-      const value = m[2] ?? m[3] ?? m[4] ?? '';
+      const rawValue = m[2] ?? m[3] ?? m[4] ?? '';
+      const value = rawValue;
       if (attr.startsWith('on')) continue;
       if (attr === 'class') {
         attrs.push(`class="${value.replace(/["<>]/g, '').slice(0, 200)}"`);
         continue;
       }
       if (!allowed || !allowed.has(attr)) continue;
-      if ((attr === 'href' || attr === 'src') && /^\s*(?:javascript|vbscript|data):/i.test(value)) continue;
-      attrs.push(`${attr}="${value.replace(/"/g, '&quot;')}"`);
+      if ((attr === 'href' || attr === 'src') && !isSafeUrl(rawValue)) continue;
+      attrs.push(`${attr}="${rawValue.replace(/"/g, '&quot;')}"`);
     }
     if (name === 'a' && !attrs.some((a) => a.startsWith('rel='))) attrs.push('rel="nofollow ugc"');
     return `<${name}${attrs.length ? ` ${attrs.join(' ')}` : ''}>`;

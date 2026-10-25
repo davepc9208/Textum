@@ -6,7 +6,7 @@
 // Recorre los leads con un paso de secuencia vencido, envía el email por Resend
 // y avanza el contador. Respeta baja (unsubscribed_at), pausa y consentimiento.
 import { createClient } from '@supabase/supabase-js';
-import { fetchWithRetry, getRequestId, log } from '../_shared/security.js';
+import { fetchWithRetry, getRequestId, log, makeUnsubscribeToken } from '../_shared/security.js';
 
 const BATCH = 40;
 const SITE_URL = 'https://www.mentoriatextum.com';
@@ -15,12 +15,6 @@ function escapeHtml(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-}
-
-async function makeUnsubToken(email, secret) {
-  const data = new TextEncoder().encode(String(email).toLowerCase().trim() + '|' + secret);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 24);
 }
 
 const CTA_ES = `<p style="margin:28px 0"><a href="${SITE_URL}/#contacto" style="background:#0f766e;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Solicitar diagnóstico gratuito</a></p>`;
@@ -123,7 +117,7 @@ export async function onRequestPost(context) {
     const lang = lead.lang === 'en' ? 'en' : 'es';
     const name = escapeHtml((lead.name || '').split(' ')[0] || (lang === 'en' ? 'there' : 'hola'));
     const email = String(lead.email).trim().toLowerCase();
-    const token = await makeUnsubToken(email, unsubSecret);
+    const token = await makeUnsubscribeToken(email, unsubSecret);
     const unsubscribeUrl = `${SITE_URL}/baja?email=${encodeURIComponent(email)}&token=${token}`;
 
     try {

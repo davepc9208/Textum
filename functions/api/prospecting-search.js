@@ -5,7 +5,7 @@
 // SOLO correos institucionales publicados (mailto u ofuscados). No escribe en
 // `prospects`: devuelve candidatos para revisión humana en el panel
 // (AdminProspecting → Buscar contactos).
-import { corsHeaders, enforceRateLimit, fetchWithRetry, getRequestId, log, requireAdmin } from '../_shared/security.js';
+import { corsHeaders, enforceRateLimit, fetchWithRetry, getRequestId, log, RateLimitUnavailableError, requireAdmin } from '../_shared/security.js';
 
 const MAX_QUERIES = 4;
 const MAX_SERP_RESULTS = 10;
@@ -276,8 +276,14 @@ export async function onRequestPost(context) {
   const auth = await requireAdmin(request, env);
   if (!auth.ok) return auth.response;
 
-  if (!(await enforceRateLimit(request, 'prospecting-search', 8, 600))) {
-    return json({ error: 'Demasiadas búsquedas. Espera unos minutos antes de repetir.' }, 429, request, env, requestId);
+  try {
+    if (!(await enforceRateLimit(request, 'prospecting-search', 8, 600, env))) {
+      return json({ error: 'Demasiadas búsquedas. Espera unos minutos antes de repetir.' }, 429, request, env, requestId);
+    }
+  } catch (error) {
+    if (!(error instanceof RateLimitUnavailableError)) throw error;
+    log('error', 'prospecting_search.rate_limit_unavailable', { requestId });
+    return json({ error: 'Servicio de búsqueda temporalmente no disponible.' }, 503, request, env, requestId);
   }
 
   let body;

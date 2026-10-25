@@ -66,6 +66,59 @@ function bearerToken(request) {
   return value.startsWith('Bearer ') ? value.slice(7).trim() : '';
 }
 
+const UNSUBSCRIBE_TOKEN_TTL_SEC = 90 * 24 * 60 * 60;
+
+function toBase64Url(bytes) {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function constantTimeEqual(left, right) {
+  if (typeof left !== 'string' || typeof right !== 'string') return false;
+  let difference = left.length ^ right.length;
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    difference |= (left.charCodeAt(index % (left.length || 1)) || 0) ^ (right.charCodeAt(index % (right.length || 1)) || 0);
+  }
+  return difference === 0;
+}
+
+export async function makeUnsubscribeToken(email, secret, now = Date.now(), ttlSec = UNSUBSCRIBE_TOKEN_TTL_SEC) {
+  const normalizedEmail = String(email).toLowerCase().trim();
+  const issuedAt = Math.floor(now / 1000);
+  const expiresAt = issuedAt + ttlSec;
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(String(secret)),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signature = new Uint8Array(await crypto.subtle.sign(
+    'HMAC',
+    key,
+    new TextEncoder().encode(`${normalizedEmail}|${issuedAt}|${expiresAt}`),
+  ));
+  return `${issuedAt}.${expiresAt}.${toBase64Url(signature)}`;
+}
+
+export async function verifyUnsubscribeToken(email, token, secret, now = Date.now()) {
+  const normalizedEmail = String(email).toLowerCase().trim();
+  const value = String(token || '');
+  const match = /^(\d{10})\.(\d{10})\.([A-Za-z0-9_-]{43})$/.exec(value);
+
+  if (match) {
+    const issuedAt = Number(match[1]);
+    const expiresAt = Number(match[2]);
+    const nowSec = Math.floor(now / 1000);
+    if (issuedAt > nowSec + 60 || expiresAt <= nowSec || expiresAt <= issuedAt || expiresAt - issuedAt > UNSUBSCRIBE_TOKEN_TTL_SEC) return false;
+    return constantTimeEqual(await makeUnsubscribeToken(normalizedEmail, secret, issuedAt * 1000, expiresAt - issuedAt), value);
+  }
+
+  return false;
+}
+
 export async function fetchWithRetry(input, init = {}, options = {}) {
   const {
     timeoutMs = 8000,
@@ -168,23 +221,66 @@ export function validateText(value, { min = 0, max = 10000 } = {}) {
   return typeof value === 'string' && value.trim().length >= min && value.length <= max;
 }
 
-export async function enforceRateLimit(request, namespace, max = 8, windowSec = 600) {
+export class RateLimitUnavailableError extends Error {
+  constructor() {
+    super('Rate limit storage is unavailable');
+    this.name = 'RateLimitUnavailableError';
+  }
+}
+
+async function rateLimitBucketKey(namespace, ip, secret) {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(String(secret)),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  const signature = new Uint8Array(await crypto.subtle.sign(
+    'HMAC', key, new TextEncoder().encode(`${namespace}|${ip}`),
+  ));
+  return [...signature].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+export async function enforceRateLimit(request, namespace, max = 8, windowSec = 600, env = {}) {
+  // Node-based tests opt into a local cache mock; real Workers always use the
+  // shared atomic database counter below.
+  if (env.__LOCAL_RATE_LIMIT_TEST_MODE === true) {
+    if (typeof caches === 'undefined' || !caches.default) return true;
+    try {
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const key = new Request(`https://textum.internal/rate/${namespace}/${ip}`);
+      const hit = await caches.default.match(key);
+      const count = hit ? Number.parseInt(await hit.text(), 10) || 0 : 0;
+      if (count >= max) return false;
+      await caches.default.put(key, new Response(String(count + 1), { headers: { 'Cache-Control': `max-age=${windowSec}` } }));
+      return true;
+    } catch {
+      throw new RateLimitUnavailableError();
+    }
+  }
+  if (typeof caches === 'undefined' || !caches.default) return true;
+
+  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) throw new RateLimitUnavailableError();
+
   try {
     // Solo CF-Connecting-IP: lo fija el edge de Cloudflare y no es falsificable.
     // X-Forwarded-For lo controla el cliente y permitiría un bucket nuevo por
-    // cada valor inventado.
+    // cada valor inventado. La BD persiste un HMAC, no almacena la IP original.
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-    if (typeof caches === 'undefined' || !caches.default) return true;
-    const key = new Request(`https://textum.internal/rate/${namespace}/${ip}`);
-    const hit = await caches.default.match(key);
-    const count = hit ? Number.parseInt(await hit.text(), 10) || 0 : 0;
-    if (count >= max) return false;
-    await caches.default.put(key, new Response(String(count + 1), {
-      headers: { 'Cache-Control': `max-age=${windowSec}` },
-    }));
-    return true;
+    const bucketKey = await rateLimitBucketKey(namespace, ip, serviceRoleKey);
+    const response = await fetchWithRetry(`${supabaseUrl}/rest/v1/rpc/consume_api_rate_limit`, {
+      method: 'POST',
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ p_bucket_key: bucketKey, p_max_count: max, p_window_seconds: windowSec }),
+    }, { retries: 0, timeoutMs: 3000 });
+    if (!response.ok) throw new Error(`Rate limit RPC returned ${response.status}`);
+    return (await response.json()) === true;
   } catch {
-    return true;
+    throw new RateLimitUnavailableError();
   }
 }
 

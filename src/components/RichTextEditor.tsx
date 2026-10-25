@@ -52,7 +52,12 @@ async function uploadImage(file: File): Promise<{ url: string | null; error: str
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return { url: null, error: 'Tu sesión ha caducado. Inicia sesión de nuevo.' };
 
-  const optimizedFile = await optimizeImage(file);
+  let optimizedFile: File;
+  try {
+    optimizedFile = await optimizeImage(file, { maxBytes: 2 * 1024 * 1024 });
+  } catch (error) {
+    return { url: null, error: error instanceof Error ? error.message : 'No se pudo procesar la imagen.' };
+  }
   const formData = new FormData();
   formData.append('file', optimizedFile, optimizedFile.name);
   const response = await fetch('/api/upload-image', {
@@ -962,10 +967,10 @@ export default function RichTextEditor({
           <Redo size={15} />
         </ToolbarButton>
 
-      <input
+        <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={handleFileChange}
         />

@@ -2,7 +2,7 @@
 // Se ejecuta manualmente o desde un cron con POST /api/prospecting-run.
 // Está desactivado hasta configurar OUTREACH_ENABLED=true explícitamente.
 import { createClient } from '@supabase/supabase-js';
-import { fetchWithRetry, getRequestId, log } from '../_shared/security.js';
+import { enforceRateLimit, fetchWithRetry, getRequestId, log, makeUnsubscribeToken, RateLimitUnavailableError } from '../_shared/security.js';
 
 const SITE_URL = 'https://www.mentoriatextum.com';
 const BATCH_LIMIT = 50;
@@ -49,6 +49,12 @@ export async function onRequestPost(context) {
   const secret = env.CRON_SECRET;
   const auth = request.headers.get('Authorization') || '';
   if (!secret || auth !== `Bearer ${secret}`) return json({ error: 'No autorizado.' }, 401, requestId);
+  try {
+    if (!await enforceRateLimit(request, 'prospecting-run', 3, 600, env)) return json({ error: 'Límite de ejecuciones alcanzado.' }, 429, requestId);
+  } catch (error) {
+    if (!(error instanceof RateLimitUnavailableError)) throw error;
+    return json({ error: 'Control de frecuencia no disponible.' }, 503, requestId);
+  }
   if (String(env.OUTREACH_ENABLED).toLowerCase() !== 'true') {
     return json({ error: 'Prospección desactivada. Configura OUTREACH_ENABLED=true cuando el dominio y proveedor estén verificados.' }, 409, requestId);
   }
@@ -58,6 +64,8 @@ export async function onRequestPost(context) {
   const resendKey = env.OUTREACH_RESEND_API_KEY || env.RESEND_API_KEY;
   const from = env.OUTREACH_FROM_EMAIL;
   if (!supabaseUrl || !serviceRoleKey || !resendKey || !from) return json({ error: 'Falta configuración de prospección.' }, 503, requestId);
+  const unsubscribeSecret = env.UNSUBSCRIBE_SECRET;
+  if (!unsubscribeSecret) return json({ error: 'Falta configurar UNSUBSCRIBE_SECRET.' }, 503, requestId);
 
   const db = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const now = new Date();
@@ -112,7 +120,8 @@ export async function onRequestPost(context) {
       if (stepError || !step) { failed += 1; continue; }
 
       const email = String(prospect.email).trim().toLowerCase();
-      const unsubscribeUrl = `${SITE_URL}/baja?email=${encodeURIComponent(email)}`;
+      const unsubscribeToken = await makeUnsubscribeToken(email, unsubscribeSecret);
+      const unsubscribeUrl = `${SITE_URL}/baja?email=${encodeURIComponent(email)}&token=${encodeURIComponent(unsubscribeToken)}`;
       const subject = interpolate(step.subject, prospect);
       const html = wrap(interpolate(step.body, prospect), unsubscribeUrl, campaign.name);
       try {

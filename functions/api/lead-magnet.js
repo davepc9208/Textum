@@ -1,6 +1,6 @@
 ﻿// functions/api/lead-magnet.js
 import { createClient } from '@supabase/supabase-js';
-import { corsHeaders, enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, validateText, verifyTurnstile } from '../_shared/security.js';
+import { corsHeaders, enforceRateLimit, fetchWithRetry, getRequestId, jsonResponse, log, makeUnsubscribeToken, RateLimitUnavailableError, validateText, verifyTurnstile } from '../_shared/security.js';
 import { attributionForInsert } from '../_shared/attribution.js';
 
 // Días hasta el primer email de la secuencia de nurture (el email de entrega
@@ -33,12 +33,6 @@ export async function onRequestOptions({ request, env }) {
   return new Response(null, { headers: corsHeaders(request, env) });
 }
 
-async function makeUnsubToken(email, secret) {
-  const data = new TextEncoder().encode(String(email).toLowerCase().trim() + '|' + secret);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 24);
-}
-
 export async function onRequestPost(context) {
   const { request, env } = context;
   const requestId = getRequestId(request);
@@ -47,8 +41,13 @@ export async function onRequestPost(context) {
     return jsonResponse({ error: 'La solicitud supera el tamaño permitido.' }, 413, request, env, requestId);
   }
 
-  if (!await enforceRateLimit(request, 'lead-magnet', 8, 600)) {
-    return jsonResponse({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, 429, request, env, requestId, { 'Retry-After': '600' });
+  try {
+    if (!await enforceRateLimit(request, 'lead-magnet', 8, 600, env)) {
+      return jsonResponse({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, 429, request, env, requestId, { 'Retry-After': '600' });
+    }
+  } catch (error) {
+    if (!(error instanceof RateLimitUnavailableError)) throw error;
+    return jsonResponse({ error: 'Servicio temporalmente no disponible. Inténtalo de nuevo más tarde.' }, 503, request, env, requestId, { 'Retry-After': '60' });
   }
 
   try {
@@ -183,7 +182,7 @@ export async function onRequestPost(context) {
 
     // 3. Token de baja + email
     const secret = env.UNSUBSCRIBE_SECRET || serviceRoleKey;
-    const unsubToken = await makeUnsubToken(cleanEmail, secret);
+    const unsubToken = await makeUnsubscribeToken(cleanEmail, secret);
     const unsubscribeUrl = `https://www.mentoriatextum.com/baja?email=${encodeURIComponent(cleanEmail)}&token=${unsubToken}`;
 
     const emailSent = await sendDownloadEmail({

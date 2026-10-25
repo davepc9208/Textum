@@ -35,7 +35,7 @@ function chatBody(messages, sessionId = 'test-session-1') {
 
 // IP alta en los tests de sesión para que el límite que se evalúa sea el de
 // conversación y no el de IP (que en producción es 12/10 min).
-const SESSION_TEST_ENV = { ASSISTANT_IP_CHAT_LIMIT: '100' };
+const SESSION_TEST_ENV = { ASSISTANT_IP_CHAT_LIMIT: '100', __LOCAL_RATE_LIMIT_TEST_MODE: true };
 
 test('assistant rejects a conversation that exceeds the per-session message limit with a friendly 429', async () => {
   const restoreCache = installFakeCache();
@@ -82,7 +82,7 @@ test('assistant asks for Turnstile from the 3rd turn when a secret is configured
       { role: 'assistant', content: 'entiendo' },
       { role: 'user', content: 'necesito ayuda con la metodología' },
     ];
-    const env = { ASSISTANT_IP_CHAT_LIMIT: '100', TURNSTILE_SECRET_KEY: 'secret' };
+    const env = { ASSISTANT_IP_CHAT_LIMIT: '100', TURNSTILE_SECRET_KEY: 'secret', __LOCAL_RATE_LIMIT_TEST_MODE: true };
     const blocked = await onRequestPost({ request: chatBody(convo, 'captcha-1'), env });
     assert.equal(blocked.status, 403);
     const data = await blocked.json();
@@ -95,7 +95,7 @@ test('assistant asks for Turnstile from the 3rd turn when a secret is configured
 test('assistant lets the first two turns through without Turnstile', async () => {
   const restoreCache = installFakeCache();
   try {
-    const env = { ASSISTANT_IP_CHAT_LIMIT: '100', TURNSTILE_SECRET_KEY: 'secret' };
+    const env = { ASSISTANT_IP_CHAT_LIMIT: '100', TURNSTILE_SECRET_KEY: 'secret', __LOCAL_RATE_LIMIT_TEST_MODE: true };
     const first = await onRequestPost({
       request: chatBody([
         { role: 'user', content: 'hola' },
@@ -128,7 +128,7 @@ test('assistant accepts the conversation once Turnstile verifies', async () => {
       { role: 'assistant', content: 'ok' },
       { role: 'user', content: 'cuarta pregunta más larga' },
     ];
-    const env = { ASSISTANT_IP_CHAT_LIMIT: '100', TURNSTILE_SECRET_KEY: 'secret' };
+    const env = { ASSISTANT_IP_CHAT_LIMIT: '100', TURNSTILE_SECRET_KEY: 'secret', __LOCAL_RATE_LIMIT_TEST_MODE: true };
     const request = new Request(`${origin}/api/assistant`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -147,10 +147,10 @@ test('assistant enforces the per-IP 10-minute window limit', async () => {
   try {
     // 12 mensajes por IP en 10 minutos (límite IP_CHAT_LIMIT).
     for (let i = 1; i <= 12; i += 1) {
-      const ok = await onRequestPost({ request: chatBody([{ role: 'user', content: `ip-${i}` }], `s-${i}`), env: {} });
+      const ok = await onRequestPost({ request: chatBody([{ role: 'user', content: `ip-${i}` }], `s-${i}`), env: { __LOCAL_RATE_LIMIT_TEST_MODE: true } });
       assert.equal(ok.status, 200, `request ${i} debería pasar`);
     }
-    const blocked = await onRequestPost({ request: chatBody([{ role: 'user', content: 'ip-13' }], 'otra-sesion'), env: {} });
+    const blocked = await onRequestPost({ request: chatBody([{ role: 'user', content: 'ip-13' }], 'otra-sesion'), env: { __LOCAL_RATE_LIMIT_TEST_MODE: true } });
     assert.equal(blocked.status, 429);
   } finally {
     restoreCache();

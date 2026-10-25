@@ -106,6 +106,12 @@ alter table public.outreach_enrollments enable row level security;
 alter table public.outreach_events enable row level security;
 
 -- Requiere la función is_admin_mfa() de supabase_rls_admin.sql.
+drop policy if exists "Admins manage prospects" on public.prospects;
+drop policy if exists "Admins manage outreach campaigns" on public.outreach_campaigns;
+drop policy if exists "Admins manage outreach steps" on public.outreach_steps;
+drop policy if exists "Admins manage outreach enrollments" on public.outreach_enrollments;
+drop policy if exists "Admins read outreach events" on public.outreach_events;
+
 create policy "Admins manage prospects" on public.prospects for all to authenticated
   using (public.is_admin_mfa()) with check (public.is_admin_mfa());
 create policy "Admins manage outreach campaigns" on public.outreach_campaigns for all to authenticated
@@ -116,3 +122,83 @@ create policy "Admins manage outreach enrollments" on public.outreach_enrollment
   using (public.is_admin_mfa()) with check (public.is_admin_mfa());
 create policy "Admins read outreach events" on public.outreach_events for select to authenticated
   using (public.is_admin_mfa());
+
+grant select, insert, update, delete on public.prospects to authenticated;
+grant select, insert, update, delete on public.outreach_campaigns to authenticated;
+grant select, insert, update, delete on public.outreach_steps to authenticated;
+grant select, insert, update, delete on public.outreach_enrollments to authenticated;
+grant select on public.outreach_events to authenticated;
+
+grant all on public.prospects to service_role;
+grant all on public.outreach_campaigns to service_role;
+grant all on public.outreach_steps to service_role;
+grant all on public.outreach_enrollments to service_role;
+grant all on public.outreach_events to service_role;
+
+create or replace function public.unsubscribe_communications(p_email text, p_unsubscribed_at timestamptz default now())
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if p_email is null or length(p_email) > 254 then
+    raise exception 'Invalid email';
+  end if;
+
+  update public.leads
+    set unsubscribed_at = coalesce(p_unsubscribed_at, now())
+    where lower(email) = lower(trim(p_email)) and unsubscribed_at is null;
+
+  update public.prospects
+    set do_not_contact = true, status = 'baja', updated_at = coalesce(p_unsubscribed_at, now())
+    where lower(email) = lower(trim(p_email));
+end;
+$$;
+revoke all on function public.unsubscribe_communications(text, timestamptz) from public, anon, authenticated;
+grant execute on function public.unsubscribe_communications(text, timestamptz) to service_role;
+
+create table if not exists public.api_rate_limits (
+  bucket_key text primary key,
+  window_started_at timestamptz not null,
+  request_count integer not null check (request_count > 0),
+  updated_at timestamptz not null default now()
+);
+alter table public.api_rate_limits enable row level security;
+revoke all on public.api_rate_limits from public, anon, authenticated;
+grant all on public.api_rate_limits to service_role;
+
+create or replace function public.consume_api_rate_limit(p_bucket_key text, p_max_count integer, p_window_seconds integer)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_window timestamptz := date_trunc('second', clock_timestamp());
+  allowed boolean;
+begin
+  if p_bucket_key is null or p_bucket_key !~ '^[a-f0-9]{64}$'
+    or p_max_count < 1 or p_max_count > 10000
+    or p_window_seconds < 1 or p_window_seconds > 86400 then
+    raise exception 'Invalid rate limit parameters';
+  end if;
+  if random() < 0.01 then
+    delete from public.api_rate_limits where updated_at < current_window - interval '2 days';
+  end if;
+  insert into public.api_rate_limits (bucket_key, window_started_at, request_count, updated_at)
+  values (p_bucket_key, current_window, 1, current_window)
+  on conflict (bucket_key) do update
+    set window_started_at = case
+          when public.api_rate_limits.window_started_at + make_interval(secs => p_window_seconds) <= current_window then current_window
+          else public.api_rate_limits.window_started_at end,
+        request_count = case
+          when public.api_rate_limits.window_started_at + make_interval(secs => p_window_seconds) <= current_window then 1
+          else public.api_rate_limits.request_count + 1 end,
+        updated_at = current_window
+  returning request_count <= p_max_count into allowed;
+  return allowed;
+end;
+$$;
+revoke all on function public.consume_api_rate_limit(text, integer, integer) from public, anon, authenticated;
+grant execute on function public.consume_api_rate_limit(text, integer, integer) to service_role;

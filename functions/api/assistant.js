@@ -10,6 +10,7 @@ import {
   getRequestId,
   jsonResponse,
   log,
+  RateLimitUnavailableError,
   validateText,
   verifyTurnstile,
 } from '../_shared/security.js';
@@ -346,8 +347,14 @@ export async function onRequestPost(context) {
 
     // Límite por IP (ventana de 10 minutos) — antiabuso básico.
     const ipChatLimit = limitFromEnv(env, 'ASSISTANT_IP_CHAT_LIMIT', IP_CHAT_LIMIT);
-    if (!await enforceRateLimit(request, body.mode === 'lead' ? 'assistant-lead' : 'assistant-chat', body.mode === 'lead' ? IP_LEAD_LIMIT : ipChatLimit, IP_WINDOW_SEC)) {
-      return jsonResponse({ error: lang === 'en' ? 'You have reached the message limit for now. Write to us directly and we will help you.' : 'Alcanzaste el límite de mensajes por ahora. Escríbenos directamente y te ayudamos.' }, 429, request, env, requestId, { 'Retry-After': String(IP_WINDOW_SEC) });
+    try {
+      if (!await enforceRateLimit(request, body.mode === 'lead' ? 'assistant-lead' : 'assistant-chat', body.mode === 'lead' ? IP_LEAD_LIMIT : ipChatLimit, IP_WINDOW_SEC, env)) {
+        return jsonResponse({ error: lang === 'en' ? 'You have reached the message limit for now. Write to us directly and we will help you.' : 'Alcanzaste el límite de mensajes por ahora. Escríbenos directamente y te ayudamos.' }, 429, request, env, requestId, { 'Retry-After': String(IP_WINDOW_SEC) });
+      }
+    } catch (error) {
+      if (!(error instanceof RateLimitUnavailableError)) throw error;
+      log('error', 'assistant.rate_limit_unavailable', { requestId });
+      return jsonResponse({ error: lang === 'en' ? 'The assistant is temporarily unavailable. Please try again shortly.' : 'El asistente no está disponible temporalmente. Inténtalo de nuevo en unos minutos.' }, 503, request, env, requestId, { 'Retry-After': '60' });
     }
 
     // Límite por conversación: session_id lo genera el widget una vez por
@@ -356,12 +363,19 @@ export async function onRequestPost(context) {
       ? body.session_id
       : 'anon';
     const sessionLimit = limitFromEnv(env, 'ASSISTANT_SESSION_MESSAGE_LIMIT', SESSION_MESSAGE_LIMIT);
-    if (body.mode === 'chat'
-      && !await enforceRateLimit(request, `assistant-session-${sessionId}`, sessionLimit, SESSION_WINDOW_SEC)) {
-      return jsonResponse({
-        error: lang === 'en' ? 'You have reached the limit of this conversation. If you need more help, contact the team directly.' : 'Alcanzaste el límite de esta conversación. Si necesitas más ayuda, contacta directamente con el equipo.',
-        limit_reached: true,
-      }, 429, request, env, requestId);
+    if (body.mode === 'chat') {
+      try {
+        if (!await enforceRateLimit(request, `assistant-session-${sessionId}`, sessionLimit, SESSION_WINDOW_SEC, env)) {
+          return jsonResponse({
+            error: lang === 'en' ? 'You have reached the limit of this conversation. If you need more help, contact the team directly.' : 'Alcanzaste el límite de esta conversación. Si necesitas más ayuda, contacta directamente con el equipo.',
+            limit_reached: true,
+          }, 429, request, env, requestId);
+        }
+      } catch (error) {
+        if (!(error instanceof RateLimitUnavailableError)) throw error;
+        log('error', 'assistant.session_rate_limit_unavailable', { requestId });
+        return jsonResponse({ error: lang === 'en' ? 'The assistant is temporarily unavailable. Please try again shortly.' : 'El asistente no está disponible temporalmente. Inténtalo de nuevo en unos minutos.' }, 503, request, env, requestId, { 'Retry-After': '60' });
+      }
     }
 
     // Verificación anti-bot del chat: los primeros turnos son libres; a partir
