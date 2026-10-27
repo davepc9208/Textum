@@ -1,14 +1,14 @@
 // AdminPage.tsx
 import { useState, useEffect, useRef } from 'react';
 import { supabase, Post } from '../lib/supabase';
-import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, ShieldCheck, Users, Download, Search, Target } from 'lucide-react';
+import { LogOut, Plus, Trash2, Eye, EyeOff, Save, X, Upload, ImageOff, Loader2, ShieldCheck, Users, Download, Search, Target, FileUp } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import RichTextEditor from '../components/RichTextEditor';
 import AdminDistribute from '../components/AdminDistribute';
 import AdminProspecting from '../components/AdminProspecting';
 import { optimizeImage } from '../lib/imageOptimization';
 import { sanitizeHtml } from '../lib/sanitize';
-import { normalizeKeywords } from '../../functions/_shared/editorial';
+import { normalizeKeywords, parseEditorialSheet } from '../../functions/_shared/editorial';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function slugify(str: string) {
@@ -396,6 +396,11 @@ function PostEditor({
   const [translateError, setTranslateError] = useState('');
   const [lastTranslated, setLastTranslated] = useState<string | null>(null);
 
+  // 🆕 Estados para importar la ficha editorial (.docx)
+  const [importingFicha, setImportingFicha] = useState(false);
+  const [fichaMsg, setFichaMsg] = useState<{ type: 'ok' | 'error'; text: string } | null>(null);
+  const fichaInputRef = useRef<HTMLInputElement>(null);
+
   // ─── ✨ NUEVO: Guardado de draft con límite de 400 KB y compresión ──────
   useEffect(() => {
     try {
@@ -498,6 +503,75 @@ function PostEditor({
   const handleTitleEn = (v: string) => {
     set('title_en', v);
     if (!initial.id && !form.slug_en) set('slug_en', slugify(v));
+  };
+
+  // 🆕 Importa la ficha editorial (.docx) y rellena SOLO los campos vacíos
+  const handleFichaFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setImportingFicha(true);
+    setFichaMsg(null);
+    try {
+      const mammothModule = await import('mammoth');
+      const mammoth = mammothModule.default ?? mammothModule;
+      const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+      const ficha = parseEditorialSheet(result.value);
+
+      if (!ficha.title && !ficha.excerpt && !ficha.keywords) {
+        throw new Error('No se reconoció ningún campo de la ficha editorial. Comprueba que has elegido el .docx de la ficha.');
+      }
+
+      const asignados: string[] = [];
+      const omitidos: string[] = [];
+      const aplicar = (campo: keyof typeof EMPTY, valor: string, nombre: string) => {
+        if (!valor) return;
+        const actual = (form as Record<string, unknown>)[campo];
+        if (typeof actual === 'string' && actual.trim()) {
+          omitidos.push(nombre);
+          return;
+        }
+        set(campo, valor);
+        asignados.push(nombre);
+      };
+
+      aplicar('title_es', ficha.title, 'título');
+      aplicar('subtitle_es', ficha.subtitle, 'subtítulo');
+      aplicar('seo_title_es', ficha.seoTitle, 'título SEO');
+      aplicar('meta_description_es', ficha.metaDescription, 'meta descripción');
+      aplicar('excerpt_es', ficha.excerpt, 'resumen');
+      aplicar('keywords_es', ficha.keywords, 'palabras clave');
+      aplicar('author', ficha.author, 'autora');
+
+      if (ficha.category && !form.category) {
+        set('category', ficha.category);
+        asignados.push('categoría');
+      } else if (ficha.category && form.category) {
+        omitidos.push('categoría');
+      }
+
+      if (ficha.slug && !(form.slug_es || form.slug)) {
+        const s = slugify(ficha.slug);
+        set('slug_es', s);
+        set('slug', s);
+        asignados.push('slug');
+      } else if (ficha.slug) {
+        omitidos.push('slug');
+      }
+
+      setFichaMsg({
+        type: asignados.length > 0 ? 'ok' : 'ok',
+        text:
+          asignados.length > 0
+            ? `Ficha importada: ${asignados.join(', ')}.${omitidos.length ? ` Omitidos por tener contenido: ${omitidos.join(', ')}.` : ''}`
+            : 'La ficha no trae campos nuevos — todo ya estaba relleno en el editor.',
+      });
+    } catch (error) {
+      setFichaMsg({ type: 'error', text: error instanceof Error ? error.message : 'No se pudo importar la ficha.' });
+    } finally {
+      setImportingFicha(false);
+    }
   };
 
   // 🆕 Función para traducir al inglés con IA
@@ -784,6 +858,36 @@ function PostEditor({
               <div className="p-6 bg-white space-y-4">
                 {tab === 'es' ? (
                   <>
+                    {/* 🆕 Importación de la ficha editorial (.docx) */}
+                    <div className="flex items-center justify-between gap-4 p-4 rounded-sm bg-navy/3 border border-navy/8">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-navy/70">Ficha editorial</p>
+                        <p className="text-[11px] text-navy/40 mt-0.5 leading-relaxed">
+                          Importa título, subtítulo, SEO, resumen, palabras clave, slug, autora y categoría desde la ficha editorial (.docx). Solo rellena los campos que aún estén vacíos.
+                        </p>
+                        {fichaMsg && (
+                          <p className={`text-[11px] mt-1 leading-relaxed ${fichaMsg.type === 'ok' ? 'text-emerald-600' : 'text-red-500'}`}>
+                            {fichaMsg.text}
+                          </p>
+                        )}
+                      </div>
+                      <input
+                        ref={fichaInputRef}
+                        type="file"
+                        accept=".docx"
+                        className="hidden"
+                        onChange={handleFichaFile}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fichaInputRef.current?.click()}
+                        disabled={importingFicha}
+                        className="flex items-center gap-2 px-4 py-2.5 text-xs tracking-wide rounded-sm bg-navy text-gold border border-gold/30 hover:bg-navy-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
+                      >
+                        {importingFicha ? <Loader2 size={14} className="animate-spin" /> : <FileUp size={14} />}
+                        {importingFicha ? 'Importando…' : 'Importar ficha'}
+                      </button>
+                    </div>
                     <div>
                       <label className={labelCls}>Título del Artículo o Guía Académica (ES)</label>
                       <input className={inputCls} value={form.title_es} onChange={e => handleTitleEs(e.target.value)} placeholder='Ej: "Cómo estructurar la metodología de tu tesis..."' />
