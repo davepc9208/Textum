@@ -8,22 +8,27 @@ export function normalizeKeywords(value) {
 
 // Etiquetas de la ficha editorial que se reconocen, en su forma canónica y
 // también con variantes habituales (mayúsculas, acentos, paréntesis, etc.).
+// Las fichas se preparan en español y en inglés (artículo ES/EN), así que cada
+// etiqueta reconoce ambas formas. El chequeo va sobre el texto sin acentos ni
+// mayúsculas, de modo que "Título SEO" y "titulo seo" son lo mismo.
 const SHEET_FIELD_PATTERNS = {
-  title:       /^titulo( h1)?$/,
-  subtitle:    /^subtitulo$/,
-  seoTitle:    /^titulo seo$/,
-  metaDescription: /^meta descripcion$/,
-  excerpt:     /^extracto breve$/,
-  summary:     /^resumen( ejecutivo)?$/,
-  keywords:    /^palabras clave$/,
+  title:       /^(titulo|title)( h1)?$/,
+  subtitle:    /^(subtitulo|subtitle)$/,
+  seoTitle:    /^(titulo seo|seo title)$/,
+  metaDescription: /^(meta descripcion|meta description)$/,
+  excerpt:     /^(extracto breve|short excerpt|excerpt)$/,
+  summary:     /^(resumen|summary)( (ejecutivo|executive))?$/,
+  keywords:    /^(palabras clave|keywords)$/,
   slug:        /^slug$/,
-  author:      /^autoria$/,
-  category:    /^categoria( principal)?$/,
+  author:      /^(autoria|author(?:ship)?)$/,
+  category:    /^(categoria|category)( (principal|main))?$/,
 };
 
 // Etiquetas de los selectores de categoría del editor admin → valor de la BD.
+// Se aceptan también los nombres en inglés que puede traer la ficha EN.
 const CATEGORY_KEY_BY_MATCH = [
   ['filosofia', 'filosofia-metodo'],
+  ['philosophy', 'filosofia-metodo'],
   ['rigor', 'rigor-escritura'],
   ['sustentacion', 'sustentacion-defensa'],
   ['defensa', 'sustentacion-defensa'],
@@ -64,7 +69,7 @@ export function parseEditorialSheet(text) {
   }
 
   // El campo largo "Resumen" completa el extracto si la ficha no trae
-  // "Extracto breve".
+  // "Extracto breve" (Summary cumple el mismo papel en la ficha EN).
   if (!values.excerpt && values.summary) values.excerpt = values.summary;
 
   const categoryValue = unaccent(values.category ?? '');

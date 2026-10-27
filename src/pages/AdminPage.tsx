@@ -505,8 +505,9 @@ function PostEditor({
     if (!initial.id && !form.slug_en) set('slug_en', slugify(v));
   };
 
-  // 🆕 Importa la ficha editorial (.docx) y rellena SOLO los campos vacíos
-  const handleFichaFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 🆕 Importa la ficha editorial (.docx) y rellena SOLO los campos vacíos.
+  // `lang` decide si rellena los campos ES o EN de la pestaña activa.
+  const handleFichaFile = async (e: React.ChangeEvent<HTMLInputElement>, lang: 'es' | 'en') => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
@@ -536,28 +537,52 @@ function PostEditor({
         asignados.push(nombre);
       };
 
-      aplicar('title_es', ficha.title, 'título');
-      aplicar('subtitle_es', ficha.subtitle, 'subtítulo');
-      aplicar('seo_title_es', ficha.seoTitle, 'título SEO');
-      aplicar('meta_description_es', ficha.metaDescription, 'meta descripción');
-      aplicar('excerpt_es', ficha.excerpt, 'resumen');
-      aplicar('keywords_es', ficha.keywords, 'palabras clave');
-      aplicar('author', ficha.author, 'autora');
+      if (lang === 'es') {
+        aplicar('title_es', ficha.title, 'título');
+        aplicar('subtitle_es', ficha.subtitle, 'subtítulo');
+        aplicar('seo_title_es', ficha.seoTitle, 'título SEO');
+        aplicar('meta_description_es', ficha.metaDescription, 'meta descripción');
+        aplicar('excerpt_es', ficha.excerpt, 'resumen');
+        aplicar('keywords_es', ficha.keywords, 'palabras clave');
+        aplicar('author', ficha.author, 'autora');
 
-      if (ficha.category && !form.category) {
-        set('category', ficha.category);
-        asignados.push('categoría');
-      } else if (ficha.category && form.category) {
-        omitidos.push('categoría');
-      }
+        if (ficha.category && !form.category) {
+          set('category', ficha.category);
+          asignados.push('categoría');
+        } else if (ficha.category && form.category) {
+          omitidos.push('categoría');
+        }
 
-      if (ficha.slug && !(form.slug_es || form.slug)) {
-        const s = slugify(ficha.slug);
-        set('slug_es', s);
-        set('slug', s);
-        asignados.push('slug');
-      } else if (ficha.slug) {
-        omitidos.push('slug');
+        if (ficha.slug && !(form.slug_es || form.slug)) {
+          const s = slugify(ficha.slug);
+          set('slug_es', s);
+          set('slug', s);
+          asignados.push('slug');
+        } else if (ficha.slug) {
+          omitidos.push('slug');
+        }
+      } else {
+        aplicar('title_en', ficha.title, 'English title');
+        aplicar('subtitle_en', ficha.subtitle, 'English subtitle');
+        aplicar('seo_title_en', ficha.seoTitle, 'English SEO title');
+        aplicar('meta_description_en', ficha.metaDescription, 'English meta description');
+        aplicar('excerpt_en', ficha.excerpt, 'English excerpt');
+        aplicar('keywords_en', ficha.keywords, 'English keywords');
+        aplicar('author', ficha.author, 'autora');
+
+        if (ficha.category && !form.category) {
+          set('category', ficha.category);
+          asignados.push('categoría');
+        } else if (ficha.category && form.category) {
+          omitidos.push('categoría');
+        }
+
+        if (ficha.slug && !form.slug_en) {
+          set('slug_en', slugify(ficha.slug));
+          asignados.push('English slug');
+        } else if (ficha.slug) {
+          omitidos.push('English slug');
+        }
       }
 
       setFichaMsg({
@@ -876,7 +901,7 @@ function PostEditor({
                         type="file"
                         accept=".docx"
                         className="hidden"
-                        onChange={handleFichaFile}
+        onChange={(e) => handleFichaFile(e, 'es')}
                       />
                       <button
                         type="button"
@@ -988,6 +1013,36 @@ function PostEditor({
                         </span>
                       </div>
                     )}
+                    {/* 🆕 Importación de la ficha editorial EN (.docx) */}
+                    <div className="mb-4 flex items-center justify-between gap-4 p-4 rounded-sm bg-navy/3 border border-navy/8">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-navy/70">Ficha editorial (EN)</p>
+                        <p className="text-[11px] text-navy/40 mt-0.5 leading-relaxed">
+                          Importa title, subtitle, SEO title, meta description, excerpt, keywords y English slug desde la ficha editorial en inglés (.docx). Solo rellena los campos que aún estén vacíos.
+                        </p>
+                        {fichaMsg && (
+                          <p className={`text-[11px] mt-1 leading-relaxed ${fichaMsg.type === 'ok' ? 'text-emerald-600' : 'text-red-500'}`}>
+                            {fichaMsg.text}
+                          </p>
+                        )}
+                      </div>
+                      <input
+                        ref={fichaInputRef}
+                        type="file"
+                        accept=".docx"
+                        className="hidden"
+                        onChange={(e) => handleFichaFile(e, 'en')}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fichaInputRef.current?.click()}
+                        disabled={importingFicha}
+                        className="flex items-center gap-2 px-4 py-2.5 text-xs tracking-wide rounded-sm bg-navy text-gold border border-gold/30 hover:bg-navy-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
+                      >
+                        {importingFicha ? <Loader2 size={14} className="animate-spin" /> : <FileUp size={14} />}
+                        {importingFicha ? 'Importando…' : 'Importar ficha EN'}
+                      </button>
+                    </div>
                     <div>
                       <label className={labelCls}>English slug (URL)</label>
                       <input className={inputCls} value={form.slug_en || ''} onChange={e => set('slug_en', slugify(e.target.value))} placeholder="my-article" />

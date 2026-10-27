@@ -73,3 +73,39 @@ test('falls back to the long summary when the sheet lacks the short excerpt', ()
   const sheet = parseEditorialSheet('Resumen: Texto largo que sirve de extracto.\n');
   assert.equal(sheet.excerpt, 'Texto largo que sirve de extracto.');
 });
+
+const ENGLISH_FICHA_SAMPLE = `[
+TEXTUM
+Editorial sheet
+When the general objective and the specific objectives do not tell the same story
+ENGLISH · ARTICLE 12
+Title (H1): When the general objective and the specific objectives do not tell the same story
+Subtitle: How to build coherence between what you want to research and what you actually do
+Authorship: Vilma María Pérez Viñas
+Category (main): Filosofía y método TEXTUM
+Short excerpt: Research objectives may look right in isolation and yet fail to build a coherent direction when read together.
+Summary: Research objectives are neither a task list nor a combination of methodological verbs.
+Keywords: general objective; specific objectives; research objectives; how to formulate objectives
+SEO title: General objective and specific objectives: how to achieve coherence | TEXTUM
+Meta description: Do your research objectives really answer your question?
+Slug: general-objective-specific-objectives-coherence
+`;
+
+test('parses the English-language editorial sheet labels', () => {
+  const sheet = parseEditorialSheet(ENGLISH_FICHA_SAMPLE);
+
+  assert.equal(sheet.title, 'When the general objective and the specific objectives do not tell the same story');
+  assert.equal(sheet.subtitle, 'How to build coherence between what you want to research and what you actually do');
+  assert.equal(sheet.author, 'Vilma María Pérez Viñas');
+  assert.equal(sheet.seoTitle, 'General objective and specific objectives: how to achieve coherence | TEXTUM');
+  assert.equal(sheet.metaDescription, 'Do your research objectives really answer your question?');
+  assert.equal(sheet.excerpt, 'Research objectives may look right in isolation and yet fail to build a coherent direction when read together.');
+  assert.equal(sheet.keywords, 'general objective, specific objectives, research objectives, how to formulate objectives');
+  assert.equal(sheet.slug, 'general-objective-specific-objectives-coherence');
+  assert.equal(sheet.category, 'filosofia-metodo');
+});
+
+test('the English summary still completes the excerpt when the short one is missing', () => {
+  const sheet = parseEditorialSheet('Summary: Long text used as the excerpt.\nCategory: Rigor de la escritura\n');
+  assert.equal(sheet.excerpt, 'Long text used as the excerpt.');
+});
