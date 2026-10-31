@@ -247,7 +247,10 @@ alter table public.posts enable row level security;
 
 create policy "Public can read published posts"
   on public.posts for select
-  using (published = true);
+  to anon, authenticated
+  using (published is true);
+grant usage on schema public to anon, authenticated;
+grant select on table public.posts to anon, authenticated;
 
 create policy "Admins can read all posts"
   on public.posts for select

@@ -88,6 +88,16 @@ create policy "Admins can read all posts"
   to authenticated
   using (public.is_admin());
 
+-- Mantener lectura pública únicamente para artículos publicados. El parche RLS
+-- reemplaza políticas antiguas, pero blog y colecciones dependen de esta regla.
+drop policy if exists "Public can read published posts" on public.posts;
+create policy "Public can read published posts"
+  on public.posts for select
+  to anon, authenticated
+  using (published is true);
+grant usage on schema public to anon, authenticated;
+grant select on table public.posts to anon, authenticated;
+
 drop policy if exists "Admins can insert posts" on public.posts;
 create policy "Admins can insert posts"
   on public.posts for insert
