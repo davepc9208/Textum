@@ -1,0 +1,96 @@
+{
+  "@context": "https://agenticresourcediscovery.org/context/v1",
+  "name": "TEXTUM — Agentic Resource Catalog",
+  "publisher": {
+    "name": "TEXTUM — Mentoría Académica Internacional",
+    "url": "https://www.mentoriatextum.com"
+  },
+  "updatedAt": "2026-11-01",
+  "entries": [
+    {
+      "identifier": "urn:air:mentoriatextum.com:agent:guia-textum",
+      "displayName": "Guía TEXTUM",
+      "type": "application/agent-card+json",
+      "data": {
+        "name": "Guía TEXTUM",
+        "description": "Bilingual academic-mentoring assistant (Spanish/English) that orients researchers on thesis structure, editorial norms, publication readiness and defence preparation, and recommends the TEXTUM program that fits their situation. It does not write theses, articles or assignments.",
+        "protocol": "HTTP+JSON",
+        "endpoint": "https://www.mentoriatextum.com/api/assistant",
+        "method": "POST",
+        "requestShape": {
+          "messages": "[{ role: 'user' | 'assistant', content: string }]",
+          "lang": "'es' | 'en'",
+          "sessionId": "string (optional)"
+        },
+        "responseShape": {
+          "answer": "string",
+          "need": "defensa | publicacion | ajuste | intensidad | flux",
+          "follow_up": "string",
+          "cta": "diagnosis | whatsapp | blog | collections | none"
+        },
+        "authentication": "none (Cloudflare Turnstile bot check and per-IP rate limits apply)",
+        "languages": ["es", "en"],
+        "rateLimit": "12 messages per IP per 10 minutes, 4 lead submissions per IP per 10 minutes, 15 messages per session per day",
+        "capabilities": [
+          "AcademicScopeDiagnosis",
+          "EditorialNormGuidance",
+          "PublicationReadinessReview",
+          "DefencePreparationGuidance",
+          "ServiceRecommendation"
+        ],
+        "limits": [
+          "No ghostwriting, no fabricated results, no plagiarism concealment, no authorship impersonation",
+          "No legal or clinical advice"
+        ],
+        "humanEscalation": "https://www.mentoriatextum.com/#contacto"
+      },
+      "description": "Public conversational agent that diagnoses an academic project (TFG, TFM, doctoral thesis, journal article, defence) and points to the appropriate TEXTUM mentoring program, with prices and integrity boundaries stated explicitly.",
+      "capabilities": [
+        "AcademicScopeDiagnosis",
+        "ServiceRecommendation",
+        "EditorialNormGuidance",
+        "DefencePreparationGuidance"
+      ],
+      "tags": [
+        "academic-writing",
+        "thesis",
+        "research-methodology",
+        "editorial-norms",
+        "publication",
+        "thesis-defence",
+        "spanish",
+        "english"
+      ],
+      "representativeQueries": [
+        "necesito ayuda para estructurar el marco metodológico de mi tesis doctoral",
+        "cómo adapto mi artículo a las normas de una revista indexada en Scopus",
+        "qué servicio de mentoría encaja con un TFM bloqueado y con plazo ajustado",
+        "how do I prepare for my doctoral defence committee and the questions they will ask"
+      ],
+      "version": "1.0.0",
+      "updatedAt": "2026-11-01"
+    },
+    {
+      "identifier": "urn:air:mentoriatextum.com:agent:editorial-knowledge",
+      "displayName": "TEXTUM Academic Knowledge Base",
+      "type": "application/agent-skills+md",
+      "url": "https://www.mentoriatextum.com/llms-full.md",
+      "description": "Machine-readable description of TEXTUM: services, reference prices, methodology TEXTUM FLUX, editorial standards (APA 7, Vancouver, IEEE), academic-integrity policy and frequently asked questions, written as Markdown for language models.",
+      "capabilities": [
+        "ServiceCatalogLookup",
+        "PricingReference",
+        "MethodologyOverview",
+        "IntegrityPolicyReference"
+      ],
+      "tags": ["knowledge-base", "service-catalog", "academic-mentoring", "markdown"],
+      "representativeQueries": [
+        "cuánto cuesta una mentoría para publicar un artículo científico",
+        "en qué consiste la metodología TEXTUM FLUX",
+        "qué normas de citación trabaja TEXTUM y cuál es su política de integridad académica",
+        "what does TEXTUM include in its pre-peer-review program"
+      ],
+      "version": "1.0.0",
+      "updatedAt": "2026-11-01"
+    }
+  ]
+}

@@ -43,4 +43,7 @@ Allow: /llms.txt
 # https://www.mentoriatextum.com/services.md
 # https://www.mentoriatextum.com/schema.jsonld
 
+# Manifiesto de recursos para agentes (ARD / ai-catalog.json)
+Agentmap: https://www.mentoriatextum.com/.well-known/ard.json
+
 Sitemap: https://www.mentoriatextum.com/sitemap.xml
