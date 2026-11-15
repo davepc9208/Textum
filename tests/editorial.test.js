@@ -109,3 +109,174 @@ test('the English summary still completes the excerpt when the short one is miss
   const sheet = parseEditorialSheet('Summary: Long text used as the excerpt.\nCategory: Rigor de la escritura\n');
   assert.equal(sheet.excerpt, 'Long text used as the excerpt.');
 });
+
+// Ficha del artículo 13 tal y como la devuelve mammoth.extractRawText: cada
+// párrafo y cada celda de tabla acaban en salto de línea doble, y la etiqueta
+// queda en un párrafo con el valor en el siguiente.
+const FICHA_TABLA_ES = `T E X T U M
+
+MENTORÍA ACADÉMICA · FICHA EDITORIAL
+
+El estado del arte no es una lista de antecedentes
+
+ESPAÑOL · ARTÍCULO 13
+
+1. Identificación editorial
+
+Título (H1)
+
+El estado del arte no es una lista de antecedentes
+
+Subtítulo
+
+Cómo pasar de acumular literatura a construir un mapa del conocimiento
+
+Autoría
+
+Vilma María Pérez Viñas
+
+Marca
+
+TEXTUM. Mentoría Académica
+
+Idioma
+
+Español
+
+Categoría principal
+
+Filosofía y método TEXTUM
+
+Tipo de contenido
+
+Artículo de blog · divulgación metodológica
+
+2. Propósito y argumento central
+
+Mostrar que el estado del arte no se construye mediante la acumulación de publicaciones.
+
+Idea fuerza
+
+Tener mucha literatura no equivale a comprender el conocimiento disponible.
+
+6. Metadatos SEO y publicación
+
+Meta title
+
+El estado del arte no es una lista de antecedentes
+
+TEXTUM
+
+Meta description
+
+Tener muchos artículos no significa comprender el conocimiento existente. Aprende a analizar la literatura.
+
+Slug recomendado
+
+estado-del-arte-posicionamiento-investigacion
+
+Palabra clave principal
+
+estado del arte
+
+Palabras clave secundarias
+
+cómo hacer un estado del arte; revisión bibliográfica; revisión de literatura
+
+URL canónica
+
+Confirmar en el CMS con el dominio y el slug definitivos.
+
+Resumen editorial
+
+El estado del arte no consiste en acumular antecedentes ni en presentar una sucesión de autores.
+
+Palabras clave
+
+estado del arte; cómo hacer un estado del arte; revisión bibliográfica; revisión de literatura; antecedentes de investigación; posicionamiento de la investigación.
+
+7. Comprobación antes de publicar
+
+☐ El título, subtítulo y autoría coinciden con la versión española aprobada.
+`;
+
+test('parses a sheet laid out as tables (label and value in separate paragraphs)', () => {
+  const sheet = parseEditorialSheet(FICHA_TABLA_ES);
+
+  assert.equal(sheet.title, 'El estado del arte no es una lista de antecedentes');
+  assert.equal(sheet.subtitle, 'Cómo pasar de acumular literatura a construir un mapa del conocimiento');
+  assert.equal(sheet.author, 'Vilma María Pérez Viñas');
+  assert.equal(sheet.seoTitle, 'El estado del arte no es una lista de antecedentes');
+  assert.equal(sheet.metaDescription.startsWith('Tener muchos artículos'), true);
+  assert.equal(sheet.slug, 'estado-del-arte-posicionamiento-investigacion');
+  assert.equal(sheet.excerpt.startsWith('El estado del arte no consiste en acumular'), true);
+  assert.equal(sheet.category, 'filosofia-metodo');
+  assert.equal(
+    sheet.keywords,
+    'estado del arte, cómo hacer un estado del arte, revisión bibliográfica, revisión de literatura, antecedentes de investigación, posicionamiento de la investigación',
+  );
+});
+
+const FICHA_TABLA_EN = `EDITORIAL SHEET — INTERNAL USE
+
+TEXTUM. International Academic Mentoring
+
+Article 13 — English version
+
+Article identification
+
+Title: The State of the Art Is Not a List of Previous Studies
+
+Subtitle: Moving from collecting literature to building a map of knowledge
+
+Author: Vilma María Pérez Viñas
+
+Brand: TEXTUM. International Academic Mentoring
+
+Content type: Methodological blog article
+
+Editorial summary
+
+A state-of-the-art review is not an accumulation of sources or a succession of author-by-author summaries.
+
+Keywords
+
+state-of-the-art review; how to conduct a state-of-the-art review; literature review; research background; research positioning; research gap
+
+SEO editorial
+
+Meta title: The State of the Art Is Not a List of Previous Studies | TEXTUM
+
+Meta description: Downloading many articles does not mean understanding existing knowledge.
+
+Suggested slug: state-of-the-art-research-positioning
+`;
+
+test('parses a sheet with headings and inline labels without colons in the layout', () => {
+  const sheet = parseEditorialSheet(FICHA_TABLA_EN);
+
+  assert.equal(sheet.title, 'The State of the Art Is Not a List of Previous Studies');
+  assert.equal(sheet.subtitle, 'Moving from collecting literature to building a map of knowledge');
+  assert.equal(sheet.author, 'Vilma María Pérez Viñas');
+  assert.equal(sheet.seoTitle, 'The State of the Art Is Not a List of Previous Studies | TEXTUM');
+  assert.equal(sheet.metaDescription.startsWith('Downloading many articles'), true);
+  assert.equal(sheet.slug, 'state-of-the-art-research-positioning');
+  assert.equal(sheet.excerpt.startsWith('A state-of-the-art review'), true);
+  assert.equal(sheet.keywords.split(', ').length, 6);
+});
+
+test('parses a sheet pasted as a markdown table', () => {
+  const sheet = parseEditorialSheet([
+    '| **Título (H1)** | Artículo de prueba |',
+    '| **Subtítulo** | Un subtítulo cualquiera |',
+    '| **Meta title** | Artículo de prueba | TEXTUM |',
+    '| **Slug recomendado** | articulo-de-prueba |',
+    '| **Palabras clave** | coherencia; metodología |',
+  ].join('\n'));
+
+  assert.equal(sheet.title, 'Artículo de prueba');
+  assert.equal(sheet.subtitle, 'Un subtítulo cualquiera');
+  assert.equal(sheet.seoTitle, 'Artículo de prueba | TEXTUM');
+  assert.equal(sheet.slug, 'articulo-de-prueba');
+  assert.equal(sheet.keywords, 'coherencia, metodología');
+});
