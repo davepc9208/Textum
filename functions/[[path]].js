@@ -17,6 +17,118 @@ const LEGACY_REDIRECTS = {
   '/en/contacto': '/?lang=en#contacto',
 };
 
+// Título y descripción por ruta e idioma. El shell de index.html trae los de la
+// portada en español, así que sin esto Google recibe el mismo <title> en todas
+// las rutas y en los dos idiomas, y descarta la versión inglesa por duplicada.
+// La copy es la misma que declara useSEO en cada página, para que el HTML
+// servido y el DOM ya renderizado no discrepen.
+const ROUTE_META = {
+  '/': {
+    es: {
+      title: 'TEXTUM — Mentoría Académica Internacional | Titulación, Publicación y Defensa',
+      description: 'Programas de mentoría académica para titulación, publicación científica y defensa oral. Rigor metodológico, uso ético de IA, estándares internacionales. Diagnóstico gratuito.',
+    },
+    en: {
+      title: 'TEXTUM — International Academic Mentoring | Degree Projects, Publication & Defence',
+      description: 'Academic mentoring programmes for degree projects, scientific publication and oral defence. Methodological rigour, ethical AI use, international standards. Free diagnosis.',
+    },
+  },
+  '/blog': {
+    es: {
+      title: 'Blog Académico | Artículos sobre Investigación y Redacción Científica — TEXTUM',
+      description: 'Lee artículos y guías escritas por nuestras doctoras sobre redacción académica, metodología de investigación, APA 7 y cómo defender tu tesis con éxito.',
+    },
+    en: {
+      title: 'Academic Blog | Research and Scientific Writing Articles — TEXTUM',
+      description: 'Read articles and guides written by our doctors on academic writing, research methodology, APA 7 and how to successfully defend your thesis.',
+    },
+  },
+  '/colecciones': {
+    es: {
+      title: 'Colección TEXTUM | Pensar metodológicamente la investigación científica',
+      description: 'Principios, categorías metodológicas y herramientas para fortalecer el pensamiento metodológico de investigadores y estudiantes de posgrado. TEXTUM Mentoría Académica.',
+    },
+    en: {
+      title: 'TEXTUM Collection | Thinking methodologically about scientific research',
+      description: 'Principles, methodological categories and tools to strengthen methodological thinking for researchers and postgraduate students. TEXTUM Academic Mentoring.',
+    },
+  },
+  '/casos': {
+    es: {
+      title: 'Rigor que puedes comprobar — TEXTUM',
+      description: 'Conoce al equipo, revisa nuestras identificaciones ORCID y consulta publicaciones vinculadas a procesos de mentoría.',
+    },
+    en: {
+      title: 'Rigour you can verify — TEXTUM',
+      description: 'Meet the team, review our ORCID identifiers and consult publications connected to mentoring processes.',
+    },
+  },
+  '/privacidad': {
+    es: {
+      title: 'Política de privacidad — TEXTUM',
+      description: 'Información sobre el tratamiento de datos personales, cookies y derechos de los usuarios de mentoriatextum.com.',
+    },
+    en: {
+      title: 'Privacy Policy — TEXTUM',
+      description: 'Information on personal data processing, cookies and user rights on mentoriatextum.com.',
+    },
+  },
+  '/piloto-doctorado': {
+    es: {
+      title: 'Piloto metodológico para programas de doctorado — TEXTUM',
+      description: 'Un piloto TEXTUM para detectar incoherencias metodológicas en proyectos doctorales antes de que lleguen a la defensa.',
+    },
+  },
+};
+
+// Los listados /colecciones/<tipo> arman su título con la etiqueta del tipo.
+const COLLECTION_META = {
+  principio:   { es: 'Principios TEXTUM',              en: 'TEXTUM Principles' },
+  categoria:   { es: 'Categorías Metodológicas',       en: 'Methodological Categories' },
+  herramienta: { es: 'Herramientas TEXTUM',            en: 'TEXTUM Tools' },
+  eii:         { es: 'Enfoque Investigativo Integral', en: 'Integral Research Approach' },
+  flux:        { es: 'TEXTUM Flux®',                   en: 'TEXTUM Flux®' },
+};
+
+function routeMeta(pathname, lang) {
+  const key = lang === 'en' ? 'en' : 'es';
+
+  const collection = /^\/colecciones\/([^/]+)$/.exec(pathname);
+  if (collection && COLLECTION_META[collection[1]]) {
+    const label = COLLECTION_META[collection[1]][key];
+    return key === 'en'
+      ? { title: label + ' | TEXTUM Collections', description: label + ' — deep editorial content from TEXTUM Academic Mentoring.' }
+      : { title: label + ' | Colecciones TEXTUM', description: label + ' — contenido editorial profundo de TEXTUM Mentoría Académica.' };
+  }
+
+  // Las piezas (/blog/<slug>, /colecciones/<tipo>/<slug>) traen su propio SSR;
+  // aquí solo caen los listados y el resto de rutas de la app.
+  const entry = ROUTE_META[collection ? '/colecciones' : pathname] || ROUTE_META['/'];
+  return entry[key] || entry.es;
+}
+
+function escapeAttr(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Sustituye título, descripción y sus copias sociales por los de la ruta.
+function rewriteMeta(html, meta) {
+  const title = escapeAttr(meta.title);
+  const description = escapeAttr(meta.description);
+  return html
+    .replace(/<title>[^<]*<\/title>/i, '<title>' + title + '</title>')
+    .replace(/<meta name="description"\s+content="[^"]*"\s*\/?>/i, '<meta name="description" content="' + description + '" />')
+    .replace(/<meta property="og:title"\s+content="[^"]*"\s*\/?>/i, '<meta property="og:title" content="' + title + '" />')
+    .replace(/<meta property="og:description"\s+content="[^"]*"\s*\/?>/i, '<meta property="og:description" content="' + description + '" />')
+    .replace(/<meta property="og:locale"\s+content="[^"]*"\s*\/?>/i, '<meta property="og:locale" content="' + meta.locale + '" />')
+    .replace(/<meta name="twitter:title"\s+content="[^"]*"\s*\/?>/i, '<meta name="twitter:title" content="' + title + '" />')
+    .replace(/<meta name="twitter:description"\s+content="[^"]*"\s*\/?>/i, '<meta name="twitter:description" content="' + description + '" />');
+}
+
 // Conserva el query string (p. ej. ?utm_...) al redirigir legacy paths.
 function redirect301(target, search) {
   const url = new URL(target, 'https://www.mentoriatextum.com');
@@ -47,11 +159,12 @@ function legacyPrefixedPath(pathname, search) {
   return redirect301(match[1] === 'en' ? `/${rest}?lang=en` : `/${rest}`, search);
 }
 
-// Reescribe canonical/hreflang/og:url declarados en index.html (todos apuntan
-// a la home) para que canonicalicen a la ruta servida. Con ?lang=en la
+// Reescribe el <head> del shell: título, descripción y copias sociales según
+// ruta e idioma, y canonical/hreflang/og:url para que cada ruta se canonicalice
+// a sí misma. Con ?lang=en la
 // canonical es la variante EN — igual que hace useSEO en el cliente — para que
 // el HTML servido y el DOM renderizado no discrepen.
-function rewriteCanonicals(html, pathname, lang) {
+function rewriteHead(html, pathname, lang) {
   const es = `https://www.mentoriatextum.com${pathname}`;
   const en = `${es}?lang=en`;
   const self = lang === 'en' ? en : es;
@@ -64,7 +177,8 @@ function rewriteCanonicals(html, pathname, lang) {
   if (lang === 'en') {
     out = out.replace(/<html lang="es">/i, '<html lang="en">');
   }
-  return out;
+  const meta = { ...routeMeta(pathname, lang), locale: lang === 'en' ? 'en_GB' : 'es_ES' };
+  return rewriteMeta(out, meta);
 }
 
 const APP_ROUTES = [
@@ -143,7 +257,8 @@ export async function onRequest(context) {
     if (!isNoIndexAppRoute(url.pathname)) {
       const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'es';
       const html = await response.text();
-      const rewritten = rewriteCanonicals(html, url.pathname, lang);
+      const rewritten = rewriteHead(html, url.pathname, lang);
+      headers.delete('content-length');
       return new Response(rewritten, {
         status: 200,
         headers,

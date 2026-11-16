@@ -9,6 +9,13 @@ function makeContext(pathname, { method = 'GET', env = {} } = {}) {
     request: new Request(`${origin}${pathname}`, { method }),
     env,
     next: async () => new Response('<html lang="es"><head>'
+      + '<title>TEXTUM — Mentoría Académica Internacional | Tesis, publicación y defensa</title>'
+      + '<meta name="description" content="Mentoría académica para TFG, TFM y tesis doctoral: metodología TEXTUM FLUX®, publicación en Scopus/Latindex y defensa oral. Diagnóstico gratuito." />'
+      + '<meta property="og:title" content="TEXTUM — Mentoría Académica Internacional | Tesis, publicación y defensa" />'
+      + '<meta property="og:description" content="Mentoría académica para TFG, TFM y tesis doctoral. Método TEXTUM FLUX®. Diagnóstico gratuito." />'
+      + '<meta property="og:locale" content="es_ES" />'
+      + '<meta name="twitter:title" content="TEXTUM — Mentoría Académica Internacional" />'
+      + '<meta name="twitter:description" content="Mentoría académica para TFG, TFM y tesis doctoral. Método TEXTUM FLUX®. Diagnóstico gratuito." />'
       + '<link rel="canonical" href="https://www.mentoriatextum.com/" />'
       + '<link rel="alternate" hreflang="es" href="https://www.mentoriatextum.com/" />'
       + '<link rel="alternate" hreflang="en" href="https://www.mentoriatextum.com/?lang=en" />'
@@ -144,4 +151,30 @@ test('POST requests are passed through', async () => {
   };
   await onRequest(context);
   assert.equal(called, true);
+});
+
+// El HTML servido debe traer el título y la descripción de la ruta y del idioma,
+// no los de la portada: Google descartaba la home inglesa por duplicada.
+test('cada ruta e idioma reciben su propio título y descripción', async () => {
+  const cases = [
+    ['/', '<title>TEXTUM — Mentoría Académica Internacional | Titulación, Publicación y Defensa</title>'],
+    ['/?lang=en', '<title>TEXTUM — International Academic Mentoring | Degree Projects, Publication &amp; Defence</title>'],
+    ['/blog?lang=en', '<title>Academic Blog | Research and Scientific Writing Articles — TEXTUM</title>'],
+    ['/colecciones/herramienta', '<title>Herramientas TEXTUM | Colecciones TEXTUM</title>'],
+    ['/colecciones/herramienta?lang=en', '<title>TEXTUM Tools | TEXTUM Collections</title>'],
+    ['/casos', '<title>Rigor que puedes comprobar — TEXTUM</title>'],
+  ];
+  for (const [pathname, expected] of cases) {
+    const res = await onRequest(makeContext(pathname));
+    const html = await res.text();
+    assert.ok(html.includes(expected), pathname + ' debería servir ' + expected + '\\n' + html.slice(0, 300));
+  }
+});
+
+test('la home inglesa envía su propia descripción y su og:locale', async () => {
+  const res = await onRequest(makeContext('/?lang=en'));
+  const html = await res.text();
+  assert.match(html, /<meta name="description" content="Academic mentoring programmes/);
+  assert.match(html, /<meta property="og:locale" content="en_GB" \/>/);
+  assert.doesNotMatch(html, /Mentoría académica para TFG, TFM y tesis doctoral/);
 });
