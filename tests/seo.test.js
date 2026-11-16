@@ -388,3 +388,47 @@ test('blog SSR sigue añadiendo la marca cuando el título SEO no la trae', asyn
     restore();
   }
 });
+
+
+test('collection SSR no repite la marca cuando el título SEO ya la incluye', async () => {
+  const restore = mockSupabase([{
+    ...post,
+    seo_title_es: 'Categoría de prueba | TEXTUM',
+    seo_title_en: 'Test category | TEXTUM',
+  }]);
+  try {
+    const spanish = await collectionPost({
+      request: new Request(`${origin}/colecciones/principio/pt-01`),
+      env,
+      params: { tipo: 'principio', slug: 'pt-01' },
+    });
+    const spanishHtml = await spanish.text();
+    assert.match(spanishHtml, /<title>Categoría de prueba \| TEXTUM<\/title>/);
+    assert.doesNotMatch(spanishHtml, /TEXTUM — TEXTUM/);
+
+    const english = await collectionPost({
+      request: new Request(`${origin}/colecciones/principio/pt-01?lang=en`),
+      env,
+      params: { tipo: 'principio', slug: 'pt-01' },
+    });
+    const englishHtml = await english.text();
+    assert.match(englishHtml, /<title>Test category \| TEXTUM<\/title>/);
+    assert.doesNotMatch(englishHtml, /TEXTUM — TEXTUM/);
+  } finally {
+    restore();
+  }
+});
+
+test('collection SSR sigue añadiendo la etiqueta y la marca cuando el SEO no la trae', async () => {
+  const restore = mockSupabase([{ ...post, seo_title_es: 'Categoría sin marca', seo_title_en: null }]);
+  try {
+    const spanish = await collectionPost({
+      request: new Request(`${origin}/colecciones/principio/pt-01`),
+      env,
+      params: { tipo: 'principio', slug: 'pt-01' },
+    });
+    assert.match(await spanish.text(), /<title>Categoría sin marca \| Principios TEXTUM — TEXTUM<\/title>/);
+  } finally {
+    restore();
+  }
+});

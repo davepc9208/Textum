@@ -190,6 +190,8 @@ alter table public.leads add column if not exists sequence_step    integer not n
 alter table public.leads add column if not exists sequence_next_at timestamptz;
 alter table public.leads add column if not exists sequence_paused  boolean not null default false;
 alter table public.leads add column if not exists last_nurture_at  timestamptz;
+-- Texto del cajón de preguntas del blog (leads con source = pregunta-articulo).
+alter table public.leads add column if not exists question text;
 
 create index if not exists leads_created_at_idx on public.leads (created_at desc);
 create index if not exists leads_email_idx on public.leads (lower(email));

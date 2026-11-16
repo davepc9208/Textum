@@ -23,6 +23,7 @@ import { PageError, PageSkeleton } from '../components/AsyncState';
 import { NotFoundContent } from './NotFoundPage';
 import { ArticleHero, ImageLightbox } from '../components/ArticleCover';
 import { articleTitle } from '../../functions/_shared/seo';
+import ArticleQuestion from '../components/ArticleQuestion';
 
 const SITE_URL = 'https://www.mentoriatextum.com';
 
@@ -288,6 +289,8 @@ export default function PostPage() {
             {lightbox && (
               <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
             )}
+
+            <ArticleQuestion postSlug={localizedSlug} postTitle={postTitle} />
 
             {/* CTA WhatsApp — aparece antes del ShareCard */}
             <WhatsAppCTA />

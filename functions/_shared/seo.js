@@ -9,8 +9,13 @@
 // igual, porque ahí no hay duplicación.
 const TEXTUM_AT_END = /(^|[\s|—–·:,-])textum\s*$/i;
 
+/** true si el título ya cierra con la marca (sirve para no repetirla). */
+export function endsWithBrand(seoTitle) {
+  return TEXTUM_AT_END.test(String(seoTitle ?? '').trim());
+}
+
 export function articleTitle(seoTitle, brand) {
   const title = String(seoTitle ?? '').trim();
   if (!title) return brand;
-  return TEXTUM_AT_END.test(title) ? title : title + ' — ' + brand;
+  return endsWithBrand(title) ? title : title + ' — ' + brand;
 }

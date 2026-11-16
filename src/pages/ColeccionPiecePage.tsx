@@ -20,6 +20,7 @@ import { localizedPath, localizedUrl } from '../lib/locale';
 import { postCover, postCoverAlt, postSlug, slugFilter } from '../lib/postLocalization';
 import { PageError, PageSkeleton } from '../components/AsyncState';
 import ArticleCover, { ImageLightbox } from '../components/ArticleCover';
+import { endsWithBrand } from '../../functions/_shared/seo';
 
 
 const SITE_URL = 'https://www.mentoriatextum.com';
@@ -112,7 +113,7 @@ export default function ColeccionPiecePage() {
   const typeLabel = tipo ? (TYPE_LABELS[tipo]?.[lang] ?? '') : '';
 
   useSEO(post ? {
-    title: `${seoTitle} | ${typeLabel} — TEXTUM`,
+    title: endsWithBrand(seoTitle) ? seoTitle : `${seoTitle} | ${typeLabel} — TEXTUM`,
     description: metaDescription.slice(0, 155),
     canonical: `/colecciones/${tipo}/${localizedSlug}`,
     alternatePaths: {
