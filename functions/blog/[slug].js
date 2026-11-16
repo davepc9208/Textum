@@ -10,6 +10,7 @@
 import { fetchWithRetry } from '../_shared/security.js';
 import { escapeHtml, sanitizeArticleHtml, stripHtml, truncate } from '../_shared/sanitize-html.js';
 import { renderSsrPage } from '../_shared/ssr-shell.js';
+import { articleTitle } from '../_shared/seo.js';
 
 const SITE_URL = 'https://www.mentoriatextum.com';
 const SITE_NAME = 'TEXTUM — Mentoría Académica Internacional';
@@ -161,7 +162,7 @@ function buildHead(post, lang, requestedSlug) {
   });
 
   return `
-  <title>${escapeHtml(seoTitle)} — ${SITE_NAME}</title>
+  <title>${escapeHtml(articleTitle(seoTitle, SITE_NAME))}</title>
   <meta name="description" content="${escapeHtml(metaDescription)}" />
   <meta name="robots" content="index, follow" />
   <meta name="author" content="${escapeHtml(author)}" />

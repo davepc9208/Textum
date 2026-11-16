@@ -22,6 +22,7 @@ import { postCover, postCoverAlt, postSlug, slugFilter } from '../lib/postLocali
 import { PageError, PageSkeleton } from '../components/AsyncState';
 import { NotFoundContent } from './NotFoundPage';
 import { ArticleHero, ImageLightbox } from '../components/ArticleCover';
+import { articleTitle } from '../../functions/_shared/seo';
 
 const SITE_URL = 'https://www.mentoriatextum.com';
 
@@ -122,7 +123,7 @@ export default function PostPage() {
   const canonicalUrl = post ? localizedUrl(`/blog/${localizedSlug}`, lang) : undefined;
 
   useSEO(post ? {
-    title: `${seoTitle} — TEXTUM Mentoría Académica`,
+    title: articleTitle(seoTitle, 'TEXTUM Mentoría Académica'),
     description: metaDescription.slice(0, 155),
     canonical: `/blog/${localizedSlug}`,
     alternatePaths: {

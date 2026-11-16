@@ -327,3 +327,64 @@ test('dynamic sitemap publishes one URL per locale with correct hreflang pairs',
     restore();
   }
 });
+
+
+test('blog SSR no repite la marca cuando el título SEO ya la incluye', async () => {
+  const restore = mockSupabase([{
+    ...post,
+    collection_type: null,
+    title_es: 'El estado del arte no es una lista de antecedentes',
+    title_en: 'The State of the Art Is Not a List of Previous Studies',
+    seo_title_es: 'El estado del arte no es una lista de antecedentes | TEXTUM',
+    seo_title_en: 'The State of the Art Is Not a List of Previous Studies | TEXTUM',
+    meta_description_es: 'Descripción ES.',
+    meta_description_en: 'Description EN.',
+  }]);
+  try {
+    const spanish = await blogPost({
+      request: new Request(`${origin}/blog/test-principle`),
+      env,
+      params: { slug: 'test-principle' },
+    });
+    const spanishHtml = await spanish.text();
+    assert.match(spanishHtml, /<title>El estado del arte no es una lista de antecedentes \| TEXTUM<\/title>/);
+    assert.doesNotMatch(spanishHtml, /TEXTUM — TEXTUM/);
+
+    const english = await blogPost({
+      request: new Request(`${origin}/blog/test-principle?lang=en`),
+      env,
+      params: { slug: 'test-principle' },
+    });
+    const englishHtml = await english.text();
+    assert.match(englishHtml, /<title>The State of the Art Is Not a List of Previous Studies \| TEXTUM<\/title>/);
+    assert.doesNotMatch(englishHtml, /TEXTUM — TEXTUM/);
+  } finally {
+    restore();
+  }
+});
+
+test('blog SSR sigue añadiendo la marca cuando el título SEO no la trae', async () => {
+  const restore = mockSupabase([{
+    ...post,
+    collection_type: null,
+    seo_title_es: 'Título sin marca',
+    seo_title_en: 'Title without brand',
+  }]);
+  try {
+    const spanish = await blogPost({
+      request: new Request(`${origin}/blog/test-principle`),
+      env,
+      params: { slug: 'test-principle' },
+    });
+    assert.match(await spanish.text(), /<title>Título sin marca — TEXTUM/);
+
+    const english = await blogPost({
+      request: new Request(`${origin}/blog/test-principle?lang=en`),
+      env,
+      params: { slug: 'test-principle' },
+    });
+    assert.match(await english.text(), /<title>Title without brand — TEXTUM/);
+  } finally {
+    restore();
+  }
+});
